@@ -42,3 +42,9 @@ jobs:
 
       - name: Package Check
         run: pnpm pack:check
+
+      # Advisory: surfaces repository-memory health without blocking the build.
+      # The checks above (lint, format, test, typecheck, build, pack) are the required gates.
+      - name: Doctor (advisory)
+        run: node dist/cli.js doctor
+        continue-on-error: true
