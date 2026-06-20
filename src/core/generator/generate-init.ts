@@ -399,9 +399,33 @@ Agents should not implement meaningful feature work without a feature plan or cl
     path: "docs/adrs/README.md",
     content: `# Architecture Decision Records
 
-Accepted architecture choices belong here.
+Accepted ADRs live in this directory as \`ADR-####-<slug>.md\` with \`## Status\` set to \`Accepted\`.
+Proposed ADRs live under \`docs/adrs/proposed/\`.
 
-Presets and AI agents may propose decisions, but humans accept them.
+There is no \`accepted/\` subdirectory: accepted ADRs sit at the top level of \`docs/adrs/\`.
+
+Presets and AI agents may propose decisions; humans accept them with \`recall adr accept <name>\`,
+which promotes a proposal into an accepted ADR here.
+`,
+  },
+  {
+    path: ".github/workflows/recall.yml",
+    content: `name: Recall OS
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate repository memory
+        run: npx --yes recall-os@latest doctor
 `,
   },
 ];

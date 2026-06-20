@@ -30,6 +30,51 @@ describe("doctor content checks", () => {
     );
   }
 
+  async function writeModule(rootDir: string, purpose: string, owns: string): Promise<void> {
+    const moduleDir = path.join(rootDir, "docs/30-modules/blog-store");
+    await mkdir(moduleDir, { recursive: true });
+    await writeFile(
+      path.join(moduleDir, "MODULE.md"),
+      `# Module: Blog Store\n\n## Purpose\n\n${purpose}\n\n## Owns\n\n${owns}\n`,
+      "utf8",
+    );
+  }
+
+  it("warns when module memory is still the unfilled template", async () => {
+    const rootDir = await createRoot("content-module-unfilled");
+    await writeModule(rootDir, "Describe what this module owns and why it exists.", "- TBD");
+
+    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "content-module",
+        message: "Module memory purpose is still an unfilled template.",
+      }),
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "content-module",
+        message: "Module memory owns section is still an unfilled template.",
+      }),
+    );
+  });
+
+  it("produces no finding for filled module memory", async () => {
+    const rootDir = await createRoot("content-module-filled");
+    await writeModule(
+      rootDir,
+      "Owns durable persistence and the typed data-access boundary for the blog.",
+      "- The SQLite schema and the typed repository.",
+    );
+
+    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+  });
+
   it("warns when a feature PRD is still the unfilled template", async () => {
     const rootDir = await createRoot("content-unfilled");
     await writePrd(

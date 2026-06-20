@@ -18,6 +18,8 @@ import {
 } from "../core/hooks/generate-hook.js";
 import { getPreset } from "../core/presets/preset-registry.js";
 import type { Preset } from "../core/presets/preset-schema.js";
+import { generateSkillFiles } from "../core/skills/generate-skill.js";
+import { listCatalogSkillNames } from "../core/skills/skill-catalog.js";
 import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
 export type InitOptions = {
@@ -102,6 +104,12 @@ export function formatInitResult(result: InitResult): string {
     `Preset: ${result.preset ?? "none"}`,
   ];
 
+  if (!result.dryRun) {
+    lines.push(
+      `Generated repository memory, ${listCatalogSkillNames().length} agent skills, a pre-commit hook, and a CI workflow.`,
+    );
+  }
+
   appendWriteSummary(lines, {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
@@ -124,8 +132,10 @@ export function formatInitResult(result: InitResult): string {
   if (!result.dryRun) {
     appendNextSteps(lines, [
       "Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.",
+      "AI agent skills are in .claude/skills/ and .agents/skills/ — restart your AI tool to load them.",
+      "CI is wired in .github/workflows/recall.yml; the pre-commit hook is in .recall/hooks/.",
       "Plan your first feature: `recall feature create <name>`.",
-      "Record a decision: `recall adr create <title>`.",
+      "Record a decision: `recall adr create <title>`, then accept it with `recall adr accept`.",
       "Check repository memory health anytime: `recall doctor`.",
     ]);
   }
@@ -163,5 +173,8 @@ function createInitWriteFiles(
       content: renderPreCommitHook(config.preCommitGates),
       executable: true,
     },
+    // Generate the agent skill set so a fresh repo has the workflows that guide AI agents,
+    // not just the docs. Written to both the Claude and portable Agent Skills targets.
+    ...listCatalogSkillNames().flatMap((name) => generateSkillFiles(name).files),
   ];
 }

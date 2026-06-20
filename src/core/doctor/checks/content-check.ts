@@ -8,9 +8,9 @@ const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 /**
  * Content-completeness check.
  *
- * Flags feature PRDs whose required sections are still unedited template stubs, so generated
- * scaffolds become an enforced workflow rather than silent empty docs. Findings are warnings: they
- * surface gaps without hard-failing structurally healthy repositories.
+ * Flags feature PRDs and module memory whose required sections are still unedited template stubs, so
+ * generated scaffolds become an enforced workflow rather than silent empty docs. Findings are
+ * warnings: they surface gaps without hard-failing structurally healthy repositories.
  */
 export async function checkContent(context: DoctorCheckContext): Promise<DoctorFinding[]> {
   if (context.config === undefined) {
@@ -50,6 +50,36 @@ export async function checkContent(context: DoctorCheckContext): Promise<DoctorF
     }
   }
 
+  const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
+  const moduleFolders = moduleEntries.filter((entry) => entry.isDirectory());
+
+  for (const folder of moduleFolders) {
+    const modulePath = path.posix.join(context.config.modulesDir, folder.name, "MODULE.md");
+    const moduleDoc = await readFileIfExists(context.rootDir, modulePath);
+
+    if (moduleDoc === undefined) {
+      continue;
+    }
+
+    if (sectionIsUnfilled(moduleDoc, "Purpose")) {
+      findings.push({
+        severity: "warning",
+        check: "content-module",
+        message: "Module memory purpose is still an unfilled template.",
+        path: modulePath,
+      });
+    }
+
+    if (sectionIsUnfilled(moduleDoc, "Owns")) {
+      findings.push({
+        severity: "warning",
+        check: "content-module",
+        message: "Module memory owns section is still an unfilled template.",
+        path: modulePath,
+      });
+    }
+  }
+
   return findings;
 }
 
@@ -80,7 +110,10 @@ function isUnfilled(value: string): boolean {
     return true;
   }
 
-  return normalized.includes("describe why this feature exists");
+  return (
+    normalized.includes("describe why this feature exists") ||
+    normalized.includes("describe what this module owns")
+  );
 }
 
 function getSection(content: string, heading: string): string | undefined {
