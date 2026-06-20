@@ -103,9 +103,14 @@ not silently accept architecture choices.
 Built-in presets:
 
 - `generic`
-- `nextjs`
-- `ios-swift`
+- `nextjs` (opinionated)
+- `ios-swift` (opinionated)
+- `kotlin-android` (opinionated)
+- `python-fastapi` (opinionated)
 - `flutter`
+
+Opinionated presets ship rich proposed guidance and several proposed ADRs covering the stack's real
+decision forks. Every preset decision stays `Proposed` until a human accepts it.
 
 Default `recall init` is architecture-neutral.
 
@@ -163,6 +168,8 @@ Example generated outputs are committed under `examples/`:
 - `examples/generated-generic/`
 - `examples/generated-nextjs/`
 - `examples/generated-ios-swift/`
+- `examples/generated-kotlin-android/`
+- `examples/generated-python-fastapi/`
 - `examples/generated-flutter/`
 
 These examples show the shape of repository memory created by `recall init`.

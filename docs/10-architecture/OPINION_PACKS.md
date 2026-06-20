@@ -34,9 +34,26 @@ recall init --preset startup
 
 ## Implementation Direction
 
-P4 starts with preset contracts and minimal built-in content.
+P4 started with preset contracts and minimal built-in content.
 
-Rich framework guidance should be added later only when real usage proves the preset model works.
+The contract is now proven: presets ship, validate, render through the safe write pipeline, and stay
+non-authoritative. Rich framework guidance is therefore added under the content standard below.
+
+## Opinionated Preset Content Standard
+
+An opinionated preset must follow this shape so every stack reads consistently:
+
+1. A rich guidance template at `docs/ai/presets/<id>-guidance.md` that:
+   - frames every choice as proposed, not accepted;
+   - names the stack's real decision forks (for example UI framework, concurrency, persistence,
+     dependency injection or data layer, and testing);
+   - lists recommended structure, testing, and security considerations.
+2. At least four proposed ADRs at `docs/adrs/proposed/ADR-PROPOSED-<id>-<topic>.md`, each with
+   Status, Context, Decision, Alternatives, and Consequences sections, all marked `Proposed`.
+3. `guidance` entries that summarize the same decision forks for quick reference.
+
+The preset schema enforces neutrality structurally: every preset decision must use
+`status: "proposed"`, so richer content cannot silently accept a choice.
 
 ## Non-Authority Rule
 

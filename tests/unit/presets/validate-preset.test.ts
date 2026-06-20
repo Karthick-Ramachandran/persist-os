@@ -19,7 +19,9 @@ describe("preset validation and registry", () => {
       "flutter",
       "generic",
       "ios-swift",
+      "kotlin-android",
       "nextjs",
+      "python-fastapi",
     ]);
 
     for (const preset of presets) {

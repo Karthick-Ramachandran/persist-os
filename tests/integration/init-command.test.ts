@@ -137,7 +137,7 @@ describe("init command", () => {
     const config = await readGeneratedJson<RecallConfig>(rootDir, ".recall/config.json");
     expect(config.preset).toBe("nextjs");
     expect(await readGeneratedFile(rootDir, "docs/ai/presets/nextjs-guidance.md")).toContain(
-      "non-authoritative",
+      "proposed guidance",
     );
 
     const proposedDecision = await readGeneratedFile(
