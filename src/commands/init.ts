@@ -7,6 +7,12 @@ import {
 } from "../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
 import { generateInitFiles } from "../core/generator/generate-init.js";
+import { detectPreCommitGates } from "../core/hooks/detect-gates.js";
+import {
+  HOOKS_PATH_ACTIVATION_COMMAND,
+  PRE_COMMIT_HOOK_PATH,
+  renderPreCommitHook,
+} from "../core/hooks/generate-hook.js";
 import { getPreset } from "../core/presets/preset-registry.js";
 import type { Preset } from "../core/presets/preset-schema.js";
 import { appendWriteSummary } from "./write-summary.js";
@@ -41,7 +47,8 @@ export class InitError extends Error {
 
 export async function initProject(options: InitOptions): Promise<InitResult> {
   const preset = resolvePreset(options.preset);
-  const config = createDefaultConfig({ preset: preset?.id ?? null });
+  const preCommitGates = await detectPreCommitGates(options.rootDir);
+  const config = createDefaultConfig({ preset: preset?.id ?? null, preCommitGates });
   const files = createInitWriteFiles(options.rootDir, config, preset);
   const plan = createWritePlan({
     rootDir: options.rootDir,
@@ -80,6 +87,20 @@ export function formatInitResult(result: InitResult): string {
     writeResult: result.writeResult,
   });
 
+  const hookWritten =
+    result.writeResult.created.includes(PRE_COMMIT_HOOK_PATH) ||
+    result.writeResult.overwritten.includes(PRE_COMMIT_HOOK_PATH);
+
+  if (hookWritten) {
+    lines.push("");
+    lines.push(
+      result.dryRun
+        ? "Pre-commit hook will be written to .recall/hooks/pre-commit."
+        : "Pre-commit hook written to .recall/hooks/pre-commit.",
+    );
+    lines.push(`Enable it once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`);
+  }
+
   return `${lines.join("\n")}\n`;
 }
 
@@ -108,5 +129,10 @@ function createInitWriteFiles(
       content: `${JSON.stringify(config, null, 2)}\n`,
     },
     ...generateInitFiles({ rootDir, preset }),
+    {
+      path: PRE_COMMIT_HOOK_PATH,
+      content: renderPreCommitHook(config.preCommitGates),
+      executable: true,
+    },
   ];
 }

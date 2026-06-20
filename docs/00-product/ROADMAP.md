@@ -14,6 +14,7 @@ Completed capabilities:
 - Structural Doctor checks.
 - Doctor standards checks for completion, review, ADR consequence, and security-impact evidence.
 - Doctor drift checks for ADR reference integrity in feature and module memory.
+- Pre-commit hook generation that enforces Doctor and configured gates at commit time.
 - AI command memory.
 - Packaged `recall` CLI build.
 - README, examples, CI, release-candidate workflow, and package validation.

@@ -12,10 +12,10 @@ pnpm typecheck
 recall doctor
 ```
 
-If `recall doctor` reports errors, fix them or report why they cannot be fixed.
+If `recall doctor` reports errors, fix them or report why they cannot be fixed. If it reports
+warnings, address them or record why they are acceptable.
 
-Until package `bin` wiring exists in P10, this repository validates Doctor through `main(argv, io)`
-integration tests.
+Package binary behavior is covered by binary integration tests.
 
 ## Commands
 
@@ -28,6 +28,10 @@ Options:
 - `--preset <id>`: apply optional preset guidance and proposed decisions.
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
+
+Init also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
+`recall doctor` plus any `preCommitGates` in `.recall/config.json`. Init proposes, but does not run,
+the activation command `git config core.hooksPath .recall/hooks`.
 
 ### `recall preset list`
 
@@ -62,7 +66,12 @@ Options:
 
 ### `recall doctor`
 
-Check whether repository memory is structurally healthy enough for AI-assisted work.
+Check whether repository memory is structurally healthy enough for AI-assisted work, whether basic
+engineering evidence is present, and whether memory references decisions that exist and are
+accepted.
+
+Doctor also runs deterministic drift checks: feature or module memory that references a missing ADR
+is an error, and memory that references a not-yet-accepted ADR is a warning.
 
 Exit codes:
 

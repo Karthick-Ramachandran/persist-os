@@ -12,12 +12,14 @@ const DEFAULT_CONFIG = {
   modulesDir: "docs/30-modules",
   adrDir: "docs/adrs",
   writePolicy: "skip-existing",
+  preCommitGates: [],
 } satisfies RecallConfig;
 
 export function createDefaultConfig(overrides: Partial<RecallConfig> = {}): RecallConfig {
   return parseConfig({
     ...DEFAULT_CONFIG,
     aiTools: [...DEFAULT_CONFIG.aiTools],
+    preCommitGates: [...DEFAULT_CONFIG.preCommitGates],
     ...overrides,
   });
 }

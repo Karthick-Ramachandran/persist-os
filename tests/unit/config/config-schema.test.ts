@@ -20,6 +20,7 @@ describe("config schema", () => {
       modulesDir: "docs/30-modules",
       adrDir: "docs/adrs",
       writePolicy: "skip-existing",
+      preCommitGates: [],
     });
   });
 
@@ -50,6 +51,23 @@ describe("config schema", () => {
     expect(() => parseConfig({ ...baseConfig, preset: 42 })).toThrow(ConfigValidationError);
     expect(() => parseConfig({ ...baseConfig, preset: "Next JS" })).toThrow(ConfigValidationError);
     expect(() => parseConfig({ ...baseConfig, preset: "../../evil" })).toThrow(
+      ConfigValidationError,
+    );
+  });
+
+  it("accepts valid pre-commit gates and defaults them to empty", () => {
+    expect(createDefaultConfig().preCommitGates).toEqual([]);
+    expect(
+      parseConfig({ ...createDefaultConfig(), preCommitGates: ["pnpm run test", "npm run lint"] })
+        .preCommitGates,
+    ).toEqual(["pnpm run test", "npm run lint"]);
+  });
+
+  it("rejects pre-commit gates with control characters", () => {
+    expect(() =>
+      parseConfig({ ...createDefaultConfig(), preCommitGates: ["pnpm test\nrm -rf /"] }),
+    ).toThrow(ConfigValidationError);
+    expect(() => parseConfig({ ...createDefaultConfig(), preCommitGates: [""] })).toThrow(
       ConfigValidationError,
     );
   });

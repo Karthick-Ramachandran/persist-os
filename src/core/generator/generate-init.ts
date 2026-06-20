@@ -250,6 +250,10 @@ Options:
 - \`--dry-run\`: show planned writes without writing files.
 - \`--force\`: overwrite existing files explicitly.
 
+Init also generates a tracked pre-commit hook at \`.recall/hooks/pre-commit\` that runs \`recall doctor\`
+plus any \`preCommitGates\` in \`.recall/config.json\`. Init proposes, but does not run, the activation
+command \`git config core.hooksPath .recall/hooks\`.
+
 ### \`recall preset list\`
 
 List built-in presets.

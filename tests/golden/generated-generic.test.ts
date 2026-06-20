@@ -27,6 +27,7 @@ describe("generic init golden output", () => {
     expect(result.exitCode).toBe(0);
     expect(await listRelativeFiles(rootDir)).toEqual([
       ".recall/config.json",
+      ".recall/hooks/pre-commit",
       "AGENTS.md",
       "CLAUDE.md",
       "docs/00-product/BRD.md",

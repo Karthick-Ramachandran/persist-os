@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -31,6 +31,18 @@ describe("executeWritePlan", () => {
 
     expect(result.created).toEqual(["docs/A.md"]);
     await expect(readFile(path.join(rootDir, "docs", "A.md"), "utf8")).resolves.toBe("hello");
+  });
+
+  it("writes executable entries with the owner execute bit set", async () => {
+    const plan = createWritePlan({
+      rootDir,
+      files: [{ path: ".recall/hooks/pre-commit", content: "#!/bin/sh\n", executable: true }],
+    });
+
+    await executeWritePlan(plan);
+
+    const mode = (await stat(path.join(rootDir, ".recall/hooks/pre-commit"))).mode;
+    expect(mode & 0o100).toBe(0o100);
   });
 
   it("skips existing files by default", async () => {

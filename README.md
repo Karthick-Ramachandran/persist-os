@@ -74,6 +74,15 @@ Check whether the repository memory is healthy enough for AI-assisted work:
 recall doctor
 ```
 
+`recall init` also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
+`recall doctor` plus any `preCommitGates` you configure. Enable it once per clone:
+
+```bash
+git config core.hooksPath .recall/hooks
+```
+
+Recall OS proposes this command but never runs it for you.
+
 ## Commands
 
 | Command                        | Purpose                                                 |

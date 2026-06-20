@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -85,6 +85,37 @@ describe("init command", () => {
     expect(result.stdout).toContain("Overwritten:");
     expect(result.stdout).toContain("- AGENTS.md");
     expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toContain("Agent Instructions");
+  });
+
+  it("generates an executable pre-commit hook and proposes activation", async () => {
+    const rootDir = await createRoot("init-hook");
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Pre-commit hook written to .recall/hooks/pre-commit.");
+    expect(result.stdout).toContain("git config core.hooksPath .recall/hooks");
+
+    const hookPath = path.join(rootDir, ".recall/hooks/pre-commit");
+    const hook = await readFile(hookPath, "utf8");
+    expect(hook.startsWith("#!/bin/sh")).toBe(true);
+    expect(hook).toContain("recall doctor");
+    expect((await stat(hookPath)).mode & 0o100).toBe(0o100);
+
+    const config = await readGeneratedJson<RecallConfig>(rootDir, ".recall/config.json");
+    expect(config.preCommitGates).toEqual([]);
+  });
+
+  it("skips an existing pre-commit hook unless forced", async () => {
+    const rootDir = await createRoot("init-hook-skip");
+    await mkdir(path.join(rootDir, ".recall/hooks"), { recursive: true });
+    await writeFile(path.join(rootDir, ".recall/hooks/pre-commit"), "#!/bin/sh\ncustom\n", "utf8");
+
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(await readFile(path.join(rootDir, ".recall/hooks/pre-commit"), "utf8")).toBe(
+      "#!/bin/sh\ncustom\n",
+    );
   });
 
   it("fails clearly for unknown presets and writes nothing", async () => {

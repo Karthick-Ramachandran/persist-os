@@ -7,6 +7,7 @@ import { resolveSafePath } from "./safe-path.js";
 export type WriteFileInput = {
   path: string;
   content: string;
+  executable?: boolean;
 };
 
 export type WritePlanCreateEntry = {
@@ -14,6 +15,7 @@ export type WritePlanCreateEntry = {
   path: string;
   absolutePath: string;
   content: string;
+  executable?: boolean;
 };
 
 export type WritePlanSkipEntry = {
@@ -28,6 +30,7 @@ export type WritePlanOverwriteEntry = {
   path: string;
   absolutePath: string;
   content: string;
+  executable?: boolean;
 };
 
 export type WritePlanErrorEntry = {
@@ -82,6 +85,7 @@ export function createWritePlan(options: CreateWritePlanOptions): WritePlan {
             path: safePath.path,
             absolutePath: safePath.absolutePath,
             content: file.content,
+            executable: file.executable,
           });
         } else {
           entries.push({
@@ -99,6 +103,7 @@ export function createWritePlan(options: CreateWritePlanOptions): WritePlan {
         path: safePath.path,
         absolutePath: safePath.absolutePath,
         content: file.content,
+        executable: file.executable,
       });
     } catch (error) {
       entries.push({

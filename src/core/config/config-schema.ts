@@ -5,6 +5,8 @@ import { normalizeOutputPath } from "../filesystem/safe-path.js";
 
 const PRESET_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/u;
+// Reject empty strings and any ASCII control characters (including newlines and tabs).
+const PRE_COMMIT_GATE_PATTERN = /^[^\u0000-\u001f\u007f]+$/u;
 
 export const memoryProfileSchema = z.enum(["lite", "standard", "strict"]);
 export const aiToolTargetSchema = z.enum(["claude", "codex", "cursor", "generic"]);
@@ -37,6 +39,15 @@ const presetSchema = z.union([
     .regex(PRESET_ID_PATTERN, "Preset must use lowercase letters, numbers, and single hyphens."),
 ]);
 
+const preCommitGateSchema = z
+  .string()
+  .min(1, "Pre-commit gate cannot be empty.")
+  .max(200, "Pre-commit gate cannot exceed 200 characters.")
+  .regex(
+    PRE_COMMIT_GATE_PATTERN,
+    "Pre-commit gate must be a single line without control characters.",
+  );
+
 const safeRelativePathSchema = z.string().transform((value, context) => {
   try {
     return normalizeOutputPath(value);
@@ -62,6 +73,7 @@ export const recallConfigSchema = z
     modulesDir: safeRelativePathSchema,
     adrDir: safeRelativePathSchema,
     writePolicy: configWritePolicySchema,
+    preCommitGates: z.array(preCommitGateSchema).max(50, "Too many pre-commit gates.").default([]),
   })
   .strict()
   .superRefine((config, context) => {

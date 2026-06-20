@@ -29,6 +29,10 @@ Options:
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 
+Init also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
+`recall doctor` plus any `preCommitGates` in `.recall/config.json`. Init proposes, but does not run,
+the activation command `git config core.hooksPath .recall/hooks`.
+
 ### `recall preset list`
 
 List built-in presets.
@@ -63,7 +67,8 @@ Options:
 ### `recall doctor`
 
 Check whether repository memory is structurally healthy enough for AI-assisted work, whether basic
-engineering evidence is present, and whether memory references decisions that exist and are accepted.
+engineering evidence is present, and whether memory references decisions that exist and are
+accepted.
 
 Doctor also runs deterministic drift checks: feature or module memory that references a missing ADR
 is an error, and memory that references a not-yet-accepted ADR is a warning.

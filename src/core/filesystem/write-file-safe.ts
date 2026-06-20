@@ -1,4 +1,4 @@
-import { mkdir, writeFile, lstat } from "node:fs/promises";
+import { chmod, mkdir, writeFile, lstat } from "node:fs/promises";
 import path from "node:path";
 
 import type {
@@ -81,6 +81,10 @@ export async function writeFileSafe(
     encoding: "utf8",
     flag: entry.action === "create" ? "wx" : "w",
   });
+
+  if (entry.executable === true) {
+    await chmod(entry.absolutePath, 0o755);
+  }
 }
 
 async function assertNoSymlinkInExistingPath(absolutePath: string): Promise<void> {
