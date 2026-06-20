@@ -4,6 +4,15 @@
   "description": "Architecture-neutral repository memory for AI-assisted software teams.",
   "type": "module",
   "license": "MIT",
+  "author": "Karthick Ramachandran",
+  "homepage": "https://github.com/Karthick-Ramachandran/recall-os#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Karthick-Ramachandran/recall-os.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Karthick-Ramachandran/recall-os/issues"
+  },
   "keywords": [
     "repository-memory",
     "engineering-memory",
