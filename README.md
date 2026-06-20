@@ -47,17 +47,21 @@ them.
 
 ## Install
 
-```bash
-# Local development
-pnpm install
-pnpm build
-node dist/cli.js --help
-```
+Install the CLI globally from npm:
 
 ```bash
-# Once published to npm
 npm install -g recall-os
+recall --help
 ```
+
+Or run it without installing:
+
+```bash
+npx recall-os --help
+```
+
+(Requires Node.js >= 20. Published at
+[npmjs.com/package/recall-os](https://www.npmjs.com/package/recall-os).)
 
 ## Quickstart
 
@@ -69,11 +73,16 @@ recall init --preset kotlin-android   # optional, proposes stack decisions
 # 2. Capture intent and decisions as you work
 recall feature create checkout
 recall adr create payment-provider
-recall module create billing
+recall adr accept payment-provider    # promote a proposal to accepted memory
 
-# 3. Validate the memory is healthy and complete
+# 3. Bring an MCP server's context into durable memory (offline)
+recall mcp add figma
+
+# 4. Validate the memory is healthy and complete
 recall doctor
 ```
+
+Every command guides you — it names the file it created, where it is, and what to do next.
 
 `recall init` also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
 `recall doctor` plus any gates you configure. Enable it once per clone — Recall OS proposes the
