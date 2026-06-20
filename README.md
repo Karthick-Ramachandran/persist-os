@@ -159,17 +159,7 @@ Adding a preset is a small contribution — see [CONTRIBUTING.md](CONTRIBUTING.m
 
 ## How It Works
 
-```txt
-                Recall OS creates and validates memory under docs/ and .recall/
-
-  intent ─┐
-  decisions ─┤        recall init / feature / adr / module        ┌─ humans review
-  ownership ─┼──────────────────────────────────────────────────►│
-  standards ─┤              docs/ + .recall/config.json           └─ agents re-read
-  security ─┘                          │
-                                       ▼
-                                 recall doctor  ──►  0 / 1 / 2  ──►  hook or CI gate
-```
+![How Recall OS works: you capture intent, decisions, ownership, standards, and security with recall init / feature / adr / module; it writes durable, reviewable memory under docs/ and .recall/config.json that humans review in pull requests and agents re-read every session; recall doctor validates it deterministically, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate.](https://raw.githubusercontent.com/Karthick-Ramachandran/recall-os/main/docs/media/how-it-works.png)
 
 ## How agents load the memory
 
