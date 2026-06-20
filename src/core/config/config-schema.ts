@@ -81,7 +81,7 @@ export const recallConfigSchema = z
       context.addIssue({
         code: "custom",
         path: ["mode"],
-        message: "Mode must match memoryProfile in P2.",
+        message: "Mode must match memoryProfile.",
       });
     }
 

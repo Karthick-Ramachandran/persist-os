@@ -72,7 +72,7 @@ describe("config schema", () => {
     );
   });
 
-  it("requires memoryProfile and mode to match in P2", () => {
+  it("requires memoryProfile and mode to match", () => {
     expect(() =>
       parseConfig({ ...createDefaultConfig(), memoryProfile: "lite", mode: "standard" }),
     ).toThrow(ConfigValidationError);

@@ -34,20 +34,18 @@ competitor, agent runtime, or model hosting platform.
 
 ## Install
 
-P10 prepares the package for release but does not publish it to npm.
-
-After publishing, the intended install command is:
-
-```bash
-npm install -g recall-os
-```
-
 During local development:
 
 ```bash
 pnpm install
 pnpm build
 node dist/cli.js --help
+```
+
+Once published to npm:
+
+```bash
+npm install -g recall-os
 ```
 
 ## Quickstart
@@ -133,25 +131,9 @@ The default source-of-truth order is:
 
 If external context or chat history conflicts with repository memory, repository memory wins.
 
-## Product Direction
-
-Recall OS grows in layers:
-
-1. Create repository memory.
-2. Validate memory with Doctor.
-3. Make Doctor part of the AI completion gate.
-4. Detect drift from accepted repository memory (first deterministic checks shipped: ADR reference
-   integrity).
-5. Distribute context across AI tools.
-6. Make engineering standards increasingly checkable.
-7. Adopt memory from legacy repositories without silently accepting inferred decisions.
-8. Support organization memory across repositories.
-
-The long-term moat is memory, discipline, governance, decision tracking, and drift detection.
-
 ## Local-First Runtime
 
-Recall OS MVP does not:
+Recall OS does not:
 
 - Make network calls at runtime.
 - Collect telemetry.
@@ -188,16 +170,3 @@ pnpm pack:check
 
 Before claiming implementation work is complete, run the test and quality gates listed above. Use
 `recall doctor` once the CLI binary is built.
-
-## Release Status
-
-Recall OS is prepared for package release in P10. P10 does not publish to npm, create tags, or
-require npm credentials.
-
-Before any public publish, recheck package name ownership for `recall-os` and review the package
-contents with:
-
-```bash
-pnpm build
-pnpm pack:check
-```
