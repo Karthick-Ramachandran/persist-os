@@ -6,7 +6,7 @@ import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-
 import { generateFeatureFiles } from "../../core/generator/generate-feature.js";
 import { getFeatureFolderForSlug } from "../../core/naming/feature-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
-import { appendWriteSummary } from "../write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type FeatureCreateOptions = {
   rootDir: string;
@@ -91,6 +91,14 @@ export function formatFeatureCreateResult(result: FeatureCreateResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      `Start in ${result.featurePath}: write PRD.md (why) and ACCEPTANCE.md (how you will know it works).`,
+      "Then PLAN.md, TASKS.md, and TEST_PLAN.md before you implement.",
+      "Run `recall doctor` to check the memory is complete.",
+    ]);
+  }
 
   return `${lines.join("\n")}\n`;
 }

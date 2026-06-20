@@ -6,7 +6,7 @@ import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-
 import { generateAdrFile } from "../../core/generator/generate-adr.js";
 import { getAdrFileForSlug } from "../../core/naming/adr-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
-import { appendWriteSummary } from "../write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type AdrCreateOptions = {
   rootDir: string;
@@ -86,6 +86,13 @@ export function formatAdrCreateResult(result: AdrCreateResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      `Open ${result.adrPath} and fill: Context, Decision, Alternatives, Consequences.`,
+      "It is Proposed — set Status to Accepted once the team agrees.",
+    ]);
+  }
 
   return `${lines.join("\n")}\n`;
 }

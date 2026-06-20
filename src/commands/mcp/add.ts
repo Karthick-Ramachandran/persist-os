@@ -6,7 +6,7 @@ import { generateSkillFiles } from "../../core/skills/generate-skill.js";
 import { createWritePlan, type WritePlan } from "../../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
-import { appendWriteSummary } from "../write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type McpAddOptions = {
   rootDir: string;
@@ -84,6 +84,14 @@ export function formatMcpAddResult(result: McpAddResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      `Open ${result.docPath} and confirm purpose, data accessed, and permissions.`,
+      "Your agent records durable context into the Captured Context section via the capture-mcp-context skill.",
+      "Accept the proposed ADR once you adopt the server.",
+    ]);
+  }
 
   return `${lines.join("\n")}\n`;
 }

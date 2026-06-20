@@ -5,7 +5,7 @@ import { generateAdoptionFiles } from "../core/adopt/generate-adoption.js";
 import { inspectRepo, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { createWritePlan, type WritePlan } from "../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
-import { appendWriteSummary } from "./write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
 export type AdoptOptions = {
   rootDir: string;
@@ -77,6 +77,14 @@ export function formatAdoptResult(result: AdoptResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      "Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.",
+      "Run `recall init` to establish neutral repository memory if it does not exist yet.",
+      "Accept or reject each proposed ADR under docs/adrs/proposed/.",
+    ]);
+  }
 
   return `${lines.join("\n")}\n`;
 }

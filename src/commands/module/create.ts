@@ -4,7 +4,7 @@ import { createWritePlan, type WritePlan } from "../../core/filesystem/write-pla
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { generateModuleFiles } from "../../core/generator/generate-module.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
-import { appendWriteSummary } from "../write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type ModuleCreateOptions = {
   rootDir: string;
@@ -81,6 +81,13 @@ export function formatModuleCreateResult(result: ModuleCreateResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      `Open ${result.modulePath}/MODULE.md and describe what this module owns and does not own.`,
+      "Record durable decisions in DECISIONS.md, or link an ADR.",
+    ]);
+  }
 
   return `${lines.join("\n")}\n`;
 }

@@ -2,7 +2,7 @@ import { createWritePlan, type WritePlan } from "../../core/filesystem/write-pla
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { generateSkillFiles } from "../../core/skills/generate-skill.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
-import { appendWriteSummary } from "../write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type SkillCreateOptions = {
   rootDir: string;
@@ -73,6 +73,21 @@ export function formatSkillCreateResult(result: SkillCreateResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  if (!result.dryRun) {
+    appendNextSteps(
+      lines,
+      result.fromCatalog
+        ? [
+            `The skill is ready in .claude/skills/${result.slug}/ and .agents/skills/${result.slug}/.`,
+            "Restart your AI tool to load it; the agent triggers it from the description.",
+          ]
+        : [
+            `Open .claude/skills/${result.slug}/SKILL.md and fill the description, process, and quality bar.`,
+            "Keep the same content in .agents/skills/ for portability.",
+          ],
+    );
+  }
 
   return `${lines.join("\n")}\n`;
 }

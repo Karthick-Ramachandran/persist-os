@@ -18,7 +18,7 @@ import {
 } from "../core/hooks/generate-hook.js";
 import { getPreset } from "../core/presets/preset-registry.js";
 import type { Preset } from "../core/presets/preset-schema.js";
-import { appendWriteSummary } from "./write-summary.js";
+import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
 export type InitOptions = {
   rootDir: string;
@@ -119,6 +119,15 @@ export function formatInitResult(result: InitResult): string {
         : "Pre-commit hook written to .recall/hooks/pre-commit.",
     );
     lines.push(`Enable it once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`);
+  }
+
+  if (!result.dryRun) {
+    appendNextSteps(lines, [
+      "Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.",
+      "Plan your first feature: `recall feature create <name>`.",
+      "Record a decision: `recall adr create <title>`.",
+      "Check repository memory health anytime: `recall doctor`.",
+    ]);
   }
 
   return `${lines.join("\n")}\n`;
