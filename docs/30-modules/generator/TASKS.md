@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-006-template-renderer/`
+- `docs/40-features/F-008-init-command/`
 
 ## Tasks
 
@@ -13,3 +13,4 @@
 - Done: Implement template rendering.
 - Done: Add unit tests.
 - Done: Complete verification.
+- Done: Add init memory file planning.

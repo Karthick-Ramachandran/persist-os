@@ -1,0 +1,145 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+import { afterEach, describe, expect, it } from "vitest";
+
+import {
+  createTempRoot,
+  listRelativeFiles,
+  readGeneratedFile,
+  readGeneratedJson,
+  removeTempRoot,
+  runInitCommand
+} from "../helpers/init-test-helpers.js";
+import type { SpecForgeConfig } from "../../src/core/config/config-schema.js";
+
+describe("init command", () => {
+  const roots: string[] = [];
+
+  async function createRoot(prefix: string): Promise<string> {
+    const rootDir = await createTempRoot(prefix);
+    roots.push(rootDir);
+    return rootDir;
+  }
+
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
+  });
+
+  it("creates config and repository memory in an empty folder", async () => {
+    const rootDir = await createRoot("init-empty");
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("SpecForge init complete.");
+    expect(result.stdout).toContain("Created:");
+
+    const config = await readGeneratedJson<SpecForgeConfig>(
+      rootDir,
+      ".specforge/config.json"
+    );
+    expect(config.preset).toBeNull();
+    expect(await readGeneratedFile(rootDir, "AGENTS.md")).toContain(
+      "repository memory"
+    );
+    expect(await readGeneratedFile(rootDir, "docs/10-architecture/ARCHITECTURE.md"))
+      .toContain("No architecture decisions are accepted yet.");
+  });
+
+  it("works in a non-Git directory", async () => {
+    const rootDir = await createRoot("init-non-git");
+    const result = await runInitCommand(rootDir);
+    const files = await listRelativeFiles(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(files).toContain(".specforge/config.json");
+    expect(files).not.toContain(".git/config");
+  });
+
+  it("skips existing files by default", async () => {
+    const rootDir = await createRoot("init-skip");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "custom agents\n", "utf8");
+
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toBe(
+      "custom agents\n"
+    );
+    expect(result.stdout).toContain("Skipped:");
+    expect(result.stdout).toContain("- AGENTS.md");
+  });
+
+  it("dry run writes nothing and reports planned files", async () => {
+    const rootDir = await createRoot("init-dry-run");
+    const result = await runInitCommand(rootDir, ["--dry-run"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("SpecForge init dry run complete.");
+    expect(result.stdout).toContain("Planned creates:");
+    expect(await listRelativeFiles(rootDir)).toEqual([]);
+  });
+
+  it("force overwrites explicitly", async () => {
+    const rootDir = await createRoot("init-force");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "custom agents\n", "utf8");
+
+    const result = await runInitCommand(rootDir, ["--force"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Overwritten:");
+    expect(result.stdout).toContain("- AGENTS.md");
+    expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toContain(
+      "Agent Instructions"
+    );
+  });
+
+  it("fails clearly for unknown presets and writes nothing", async () => {
+    const rootDir = await createRoot("init-unknown-preset");
+    const result = await runInitCommand(rootDir, ["--preset", "unknown"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain('Unknown preset "unknown".');
+    expect(await listRelativeFiles(rootDir)).toEqual([]);
+  });
+
+  it("applies preset guidance and proposed decisions without accepting them", async () => {
+    const rootDir = await createRoot("init-preset");
+    const result = await runInitCommand(rootDir, ["--preset", "nextjs"]);
+
+    expect(result.exitCode).toBe(0);
+
+    const config = await readGeneratedJson<SpecForgeConfig>(
+      rootDir,
+      ".specforge/config.json"
+    );
+    expect(config.preset).toBe("nextjs");
+    expect(await readGeneratedFile(rootDir, "docs/ai/presets/nextjs-guidance.md"))
+      .toContain("non-authoritative");
+
+    const proposedDecision = await readGeneratedFile(
+      rootDir,
+      "docs/adrs/proposed/ADR-PROPOSED-nextjs-framework.md"
+    );
+    expect(proposedDecision).toContain("## Status\n\nProposed");
+    expect(proposedDecision).not.toContain("## Status\n\nAccepted");
+  });
+
+  it("initializes inside existing app folders without requiring framework files", async () => {
+    const rootDir = await createRoot("init-existing-app");
+    await mkdir(path.join(rootDir, "src"));
+    await writeFile(path.join(rootDir, "src", "index.ts"), "export {};\n", "utf8");
+
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(await readFile(path.join(rootDir, "src", "index.ts"), "utf8")).toBe(
+      "export {};\n"
+    );
+    expect(await readGeneratedFile(rootDir, ".specforge/config.json")).toContain(
+      '"preset": null'
+    );
+  });
+});

@@ -9,7 +9,7 @@ export const nextjsPreset: Preset = {
       destination: "docs/ai/presets/nextjs-guidance.md",
       description: "Next.js guidance that remains non-authoritative until accepted.",
       content:
-        "# Next.js Preset Guidance\n\nTreat Next.js assumptions as guidance. Convert any architecture choice into a proposed ADR before accepting it.\n"
+        "# Next.js Preset Guidance\n\nTreat Next.js assumptions as non-authoritative guidance. Convert any architecture choice into a proposed ADR before accepting it.\n"
     }
   ],
   guidance: [

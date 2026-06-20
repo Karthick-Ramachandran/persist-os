@@ -10,12 +10,11 @@ It initializes repository memory, not application code.
 
 - Empty-folder init semantics.
 - Neutral init expectations.
-- Future init command product behavior.
+- Init command product behavior.
 - Relationship between init, presets, and detected guidance.
 
 ## Does Not Own
 
-- Runtime CLI implementation in P1.7.
 - Template rendering implementation.
 - Config schema implementation.
 - Technology detection implementation.
@@ -24,7 +23,7 @@ It initializes repository memory, not application code.
 
 ## Public Interface Direction
 
-Future CLI behavior:
+CLI behavior:
 
 ```bash
 specforge init
@@ -35,7 +34,7 @@ specforge init --preset <name>
 
 ## Current Decision
 
-P1.7 documents repository memory first.
+P5 implements repository memory init.
 
 Git initializes source control.
 

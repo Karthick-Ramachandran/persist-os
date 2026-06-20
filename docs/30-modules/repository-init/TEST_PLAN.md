@@ -8,13 +8,11 @@
 - Confirm presets remain optional opinion packs.
 - Confirm no runtime init behavior changed in P1.7.
 
-## Future Runtime Tests
+## P5 Runtime Tests
 
-When init is implemented, add tests for:
-
-- Empty directory init.
-- Non-Git directory init.
-- Existing repository init.
-- Existing files skipped by default.
-- Preset guidance marked as proposed or optional.
-- Technology detection does not create accepted decisions.
+- Done: Empty directory init.
+- Done: Non-Git directory init.
+- Done: Existing repository init.
+- Done: Existing files skipped by default.
+- Done: Preset guidance marked as proposed or optional.
+- Deferred: Technology detection does not create accepted decisions.

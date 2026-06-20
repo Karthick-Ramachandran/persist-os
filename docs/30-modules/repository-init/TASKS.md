@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-004-empty-folder-init-repository-memory-first/`
+- `docs/40-features/F-008-init-command/`
 
 ## Tasks
 
@@ -10,3 +10,6 @@
 - Done: Document neutral init as repository memory.
 - Done: Update product and architecture docs.
 - Done: Complete verification.
+- Done: Implement init command orchestration.
+- Done: Add dry-run, force, skip-existing, and preset init behavior.
+- Done: Add integration and golden tests.

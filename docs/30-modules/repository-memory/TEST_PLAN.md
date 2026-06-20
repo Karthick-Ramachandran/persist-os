@@ -9,9 +9,7 @@
 
 ## Future Runtime Tests
 
-When relevant commands are implemented, add tests for:
-
-- Neutral memory generation in empty folders.
-- Existing repository memory generation.
-- Detected stack suggestions remain proposed.
-- `adopt` creates reviewable memory rather than silently accepting inferred decisions.
+- Done: Neutral memory generation in empty folders.
+- Done: Existing repository memory generation.
+- Deferred: Detected stack suggestions remain proposed.
+- Deferred: `adopt` creates reviewable memory rather than silently accepting inferred decisions.

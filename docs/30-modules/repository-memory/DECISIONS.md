@@ -11,3 +11,9 @@ SpecForge initializes and protects repository memory.
 Technology detection may inform suggestions.
 
 Technology detection must not become accepted repository memory by itself.
+
+## P5: Minimal Runtime Memory
+
+`specforge init` now creates minimal durable repository memory.
+
+Generated docs are concise placeholders meant to route humans and agents to source-of-truth files.

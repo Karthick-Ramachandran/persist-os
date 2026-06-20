@@ -12,8 +12,8 @@
 
 ## Future Tests
 
-- Golden tests for generated documents.
-- Integration tests for command-driven generation.
+- Done: Golden tests for init-generated documents.
+- Done: Integration tests for init command generation.
 - Security tests for unsafe output destinations after generator plans are connected to filesystem writes.
 
 ## Security Expectations
