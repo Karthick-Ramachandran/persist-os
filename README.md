@@ -89,6 +89,7 @@ git config core.hooksPath .recall/hooks
 | ------------------------------ | --------------------------------------------------------- |
 | `recall init`                  | Create neutral repository memory (and a pre-commit hook). |
 | `recall init --preset <id>`    | Add an opinion pack: rich guidance and proposed ADRs.     |
+| `recall adopt`                 | Inspect an existing repo and propose reviewable memory.   |
 | `recall preset list`           | List built-in presets.                                    |
 | `recall feature create <name>` | Scaffold feature memory (PRD, acceptance, tests, review). |
 | `recall adr create <title>`    | Create a proposed architecture decision record.           |

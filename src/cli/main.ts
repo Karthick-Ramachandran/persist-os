@@ -6,6 +6,7 @@ import {
   FeatureCreateError,
   formatFeatureCreateResult,
 } from "../commands/feature/create.js";
+import { adoptProject, AdoptError, formatAdoptResult } from "../commands/adopt.js";
 import { doctorProject, formatDoctorResult } from "../commands/doctor.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
 import {
@@ -63,6 +64,21 @@ export function createCliProgram(
         stdout.write(formatInitResult(result));
       },
     );
+
+  program
+    .command("adopt")
+    .description("Inspect an existing repository and propose reviewable memory.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(async (options: { dryRun?: boolean; force?: boolean }) => {
+      const result = await adoptProject({
+        rootDir: cwd,
+        dryRun: options.dryRun,
+        force: options.force,
+      });
+
+      stdout.write(formatAdoptResult(result));
+    });
 
   const featureCommand = program.command("feature").description("Manage Recall OS feature memory.");
 
@@ -164,6 +180,14 @@ export async function main(
     }
 
     if (error instanceof FeatureCreateError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof AdoptError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);
