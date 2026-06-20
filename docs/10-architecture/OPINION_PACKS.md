@@ -32,6 +32,12 @@ specforge init --preset startup
 
 `specforge init --preset flutter` means neutral repository memory plus Flutter-aware guidance and proposed decisions.
 
+## Implementation Direction
+
+P4 starts with preset contracts and minimal built-in content.
+
+Rich framework guidance should be added later only when real usage proves the preset model works.
+
 ## Non-Authority Rule
 
 Opinion packs can suggest.

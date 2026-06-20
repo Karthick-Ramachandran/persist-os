@@ -474,6 +474,8 @@ The CLI term remains `preset`.
 
 Presets may provide optional starter guidance and proposed ADRs. They must not silently create accepted architecture decisions.
 
+P4 should prove the preset contract with minimal built-in content. Rich framework guidance is deferred until real usage proves the model works.
+
 Build:
 
 ```txt

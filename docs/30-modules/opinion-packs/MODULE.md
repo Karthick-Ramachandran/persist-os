@@ -10,6 +10,7 @@ Opinion packs are optional presets that provide starter guidance without becomin
 - Proposed ADR behavior.
 - Optional stack-aware memory guidance.
 - Preset safety constraints.
+- Opinion-pack architecture semantics.
 
 ## Does Not Own
 
@@ -22,3 +23,5 @@ Opinion packs are optional presets that provide starter guidance without becomin
 The CLI term remains `preset`.
 
 The architecture term is `opinion pack`.
+
+P4 implements preset contracts plus minimal built-in content. Rich framework guidance is deferred.
