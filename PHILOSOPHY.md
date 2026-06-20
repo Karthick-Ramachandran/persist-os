@@ -3,7 +3,7 @@
 This is the honest version of _why_ this tool exists. The README tells you what it does. This tells
 you the problem I kept hitting and the small, workable thing I built to deal with it.
 
-## The problem I see non technical founder kept running into
+## The problem I kept running into
 
 AI makes it fast to get software to a working shape. The gap shows up later: most of the _why_ — the
 decisions, the constraints, the rules — lives in the chat, not in the repo. The code ships, but the
