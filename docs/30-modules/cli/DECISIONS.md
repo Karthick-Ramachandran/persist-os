@@ -35,3 +35,9 @@ Config loading and command error handling remain command-specific in P8.
 `module create` command code loads config, calls naming, generator, and filesystem modules, then formats output.
 
 The CLI layer does not own module document content or write safety rules.
+
+## P9: Doctor Is A Completion Gate
+
+The `doctor` command reports repository memory health for humans and AI agents.
+
+The CLI layer dispatches Doctor and returns its exit code, but `core/doctor` owns the health checks and report content.

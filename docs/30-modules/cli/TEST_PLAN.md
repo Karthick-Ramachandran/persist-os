@@ -59,3 +59,16 @@
 - Covered by `tests/integration/module-create-command.test.ts`.
 - Regression-covered by init, feature, and ADR command integration tests.
 - Full verification passed with `pnpm test:run` and `pnpm typecheck`.
+
+## P9 Tests
+
+- `main(["doctor"])` reports Doctor findings.
+- Missing config returns exit code `2`.
+- Healthy initialized repositories return exit code `0`.
+- Doctor output includes grouped findings and result status.
+
+## P9 Results
+
+- Covered by `tests/integration/doctor-command.test.ts`.
+- Focused P9 verification passed.
+- Full verification passed with `pnpm test:run`, `pnpm typecheck`, and `git diff --check`.

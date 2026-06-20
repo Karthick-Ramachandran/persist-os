@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-011-module-create-command/`
+- `docs/40-features/F-012-doctor-command/`
 
 ## Tasks
 
@@ -19,3 +19,5 @@
 - Done: Extract shared write-summary formatting.
 - Done: Route `module create <name>` to command orchestration.
 - Done: Add module create integration tests.
+- Done: Route `doctor` to command orchestration.
+- Done: Add Doctor integration tests.

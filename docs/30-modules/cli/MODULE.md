@@ -23,6 +23,7 @@ The CLI module owns command parser wiring, user-facing output, and process-level
 - Feature numbering or generation rules.
 - ADR numbering or generation rules.
 - Module generation rules.
+- Doctor health check rules.
 - Package `bin` or release wiring in P5.
 - Network, telemetry, MCP runtime, AI API, or cloud behavior.
 
@@ -41,3 +42,5 @@ P6 routes `feature create <name>` to command orchestration while keeping busines
 P7 routes `adr create <title>` to command orchestration while keeping business rules in core modules.
 
 P8 routes `module create <name>` to command orchestration while keeping business rules in core modules.
+
+P9 routes `doctor` to Doctor orchestration while keeping repository memory checks in `core/doctor`.

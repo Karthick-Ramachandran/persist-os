@@ -10,6 +10,7 @@ Agent rules define how AI tools should behave when working in the repository.
 - AI stop conditions.
 - Required reading for agents.
 - Completion evidence behavior.
+- Doctor completion gate guidance.
 
 ## Does Not Own
 
@@ -21,3 +22,5 @@ Agent rules define how AI tools should behave when working in the repository.
 ## Current Decision
 
 Agents must follow repository memory over model preference and stop when instructions conflict.
+
+P9 adds Doctor as the repository memory health check agents should run before claiming completion when the CLI binary is available.

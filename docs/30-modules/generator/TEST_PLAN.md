@@ -57,3 +57,17 @@
 
 - Covered by `tests/unit/generator/generate-module.test.ts`.
 - Full verification passed with `pnpm test:run` and `pnpm typecheck`.
+
+## P9 Tests
+
+- Init generation includes `docs/ai/SPECFORGE_COMMANDS.md`.
+- Init generation includes `docs/30-modules/README.md`.
+- Init generation includes `docs/40-features/README.md`.
+- Command reference lists current commands and the Doctor completion gate.
+
+## P9 Results
+
+- Covered by `tests/integration/doctor-command.test.ts`.
+- Covered by `tests/golden/generated-generic.test.ts`.
+- Focused P9 verification passed.
+- Full verification passed with `pnpm test:run`, `pnpm typecheck`, and `git diff --check`.

@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-011-module-create-command/`
+- `docs/40-features/F-012-doctor-command/`
 
 ## Tasks
 
@@ -17,3 +17,4 @@
 - Done: Add feature memory file planning.
 - Done: Add ADR file planning.
 - Done: Add module memory file planning.
+- Done: Add init-generated command reference memory.

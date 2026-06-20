@@ -11,6 +11,7 @@ It initializes repository memory, not application code.
 - Empty-folder init semantics.
 - Neutral init expectations.
 - Init command product behavior.
+- Init-generated command-reference memory.
 - Relationship between init, presets, and detected guidance.
 
 ## Does Not Own
@@ -39,3 +40,5 @@ P5 implements repository memory init.
 Git initializes source control.
 
 SpecForge initializes repository memory.
+
+P9 adds local command-reference memory so humans and AI agents can discover available SpecForge workflows after init.

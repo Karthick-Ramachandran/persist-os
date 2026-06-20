@@ -10,6 +10,7 @@ import {
   FeatureCreateError,
   formatFeatureCreateResult
 } from "../commands/feature/create.js";
+import { doctorProject, formatDoctorResult } from "../commands/doctor.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
 import {
   createModule,
@@ -27,7 +28,10 @@ export type CliIo = {
   stderr?: CliWritable;
 };
 
-export function createCliProgram(io: CliIo = {}): Command {
+export function createCliProgram(
+  io: CliIo = {},
+  state: { exitCode: number } = { exitCode: 0 }
+): Command {
   const stdout = io.stdout ?? process.stdout;
   const stderr = io.stderr ?? process.stderr;
   const cwd = io.cwd ?? process.cwd();
@@ -122,16 +126,27 @@ export function createCliProgram(io: CliIo = {}): Command {
       stdout.write(formatModuleCreateResult(result));
     });
 
+  program
+    .command("doctor")
+    .description("Check whether SpecForge repository memory is healthy.")
+    .action(async () => {
+      const result = await doctorProject({ rootDir: cwd });
+
+      stdout.write(formatDoctorResult(result));
+      state.exitCode = result.exitCode;
+    });
+
   return program;
 }
 
 export async function main(argv: string[] = process.argv.slice(2), io: CliIo = {}): Promise<number> {
   const stderr = io.stderr ?? process.stderr;
-  const program = createCliProgram(io);
+  const state = { exitCode: 0 };
+  const program = createCliProgram(io, state);
 
   try {
     await program.parseAsync(argv, { from: "user" });
-    return 0;
+    return state.exitCode;
   } catch (error) {
     if (error instanceof InitError) {
       stderr.write(`${error.message}\n`);

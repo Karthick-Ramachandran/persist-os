@@ -28,6 +28,7 @@ For implementation constraints, read:
 - `docs/60-engineering/AI_AGENT_RULES.md`
 - `docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md`
 - `docs/ai/MODULE_DELIVERY_WORKFLOW.md`
+- `docs/ai/SPECFORGE_COMMANDS.md`
 
 ## Module Work Rule
 
@@ -84,3 +85,11 @@ If instructions conflict, stop and report the conflict.
 ## Delivery Standard
 
 Do not claim completion without evidence: files changed, commands run, results, skipped checks, remaining risks, and documentation updates.
+
+Before claiming implementation work is complete, run:
+
+- `pnpm test:run`
+- `pnpm typecheck`
+- `specforge doctor` when the CLI binary is available
+
+Until P10 package/bin wiring exists, validate Doctor through `main(argv, io)` integration tests.

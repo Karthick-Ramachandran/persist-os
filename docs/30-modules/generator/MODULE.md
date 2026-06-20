@@ -13,6 +13,7 @@ The generator module owns deterministic rendering and future document generation
 - Feature memory file planning.
 - ADR file planning.
 - Module memory file planning.
+- Init command-reference memory planning.
 
 ## Does Not Own
 

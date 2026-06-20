@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-008-init-command/`
+- `docs/40-features/F-012-doctor-command/`
 
 ## Tasks
 
@@ -13,3 +13,5 @@
 - Done: Implement init command orchestration.
 - Done: Add dry-run, force, skip-existing, and preset init behavior.
 - Done: Add integration and golden tests.
+- Done: Add init-generated `docs/ai/SPECFORGE_COMMANDS.md`.
+- Done: Add init-generated module and feature index docs.

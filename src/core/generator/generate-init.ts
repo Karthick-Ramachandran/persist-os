@@ -218,6 +218,119 @@ If MCP is introduced later, document trusted servers, data accessed, permissions
 `
   },
   {
+    path: "docs/ai/SPECFORGE_COMMANDS.md",
+    content: `# SpecForge Commands
+
+This document records the SpecForge commands available to humans and AI agents.
+
+## Completion Gate
+
+Before claiming implementation work is complete, run:
+
+\`\`\`txt
+pnpm test:run
+pnpm typecheck
+specforge doctor
+\`\`\`
+
+If \`specforge doctor\` reports errors, fix them or report why they cannot be fixed.
+
+Until package \`bin\` wiring exists in P10, this repository validates Doctor through \`main(argv, io)\` integration tests.
+
+## Commands
+
+### \`specforge init\`
+
+Initialize neutral repository memory.
+
+Options:
+
+- \`--preset <id>\`: apply optional preset guidance and proposed decisions.
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
+### \`specforge feature create <name>\`
+
+Create feature memory docs under the configured features directory.
+
+Options:
+
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
+### \`specforge adr create <title>\`
+
+Create a proposed ADR under the configured ADR directory.
+
+Options:
+
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
+### \`specforge module create <name>\`
+
+Create module memory docs under the configured modules directory.
+
+Options:
+
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
+### \`specforge doctor\`
+
+Check whether repository memory is structurally healthy enough for AI-assisted work.
+
+Exit codes:
+
+- \`0\`: healthy
+- \`1\`: warnings only
+- \`2\`: errors
+`
+  },
+  {
+    path: "docs/30-modules/README.md",
+    content: `# Module Memory
+
+Module memory records what each important module owns, how it should be tested, and which decisions affect it.
+
+Future module folders should use:
+
+\`\`\`txt
+docs/30-modules/<module>/
+  MODULE.md
+  TASKS.md
+  TEST_PLAN.md
+  DECISIONS.md
+\`\`\`
+
+Agents should update module memory when implementation changes responsibilities, boundaries, tests, risks, or decisions.
+`
+  },
+  {
+    path: "docs/40-features/README.md",
+    content: `# Feature Memory
+
+Feature memory records requirements, acceptance criteria, plans, tests, reviews, and completion evidence.
+
+Future feature folders should use:
+
+\`\`\`txt
+docs/40-features/F-###-<feature>/
+  PRD.md
+  ACCEPTANCE.md
+  ARCHITECTURE_IMPACT.md
+  CHANGE_REQUESTS.md
+  PLAN.md
+  TASKS.md
+  TEST_PLAN.md
+  REVIEW.md
+  COMPLETION_REPORT.md
+\`\`\`
+
+Agents should not implement meaningful feature work without a feature plan or clear source-of-truth reference.
+`
+  },
+  {
     path: "docs/adrs/README.md",
     content: `# Architecture Decision Records
 

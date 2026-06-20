@@ -25,3 +25,9 @@ Package `bin`, build, and release wiring remain P10 scope.
 ## P5: Minimal Useful Skeleton
 
 P5 generates a concise neutral memory skeleton, not the full SpecForge dogfood tree.
+
+## P9: Init Includes AI Command Memory
+
+Init generates `docs/ai/SPECFORGE_COMMANDS.md` locally.
+
+This file helps agents and humans understand available SpecForge commands without network access.

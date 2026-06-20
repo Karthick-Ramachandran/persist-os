@@ -16,3 +16,9 @@
 - Done: Existing files skipped by default.
 - Done: Preset guidance marked as proposed or optional.
 - Deferred: Technology detection does not create accepted decisions.
+
+## P9 Runtime Tests
+
+- Done: Init generates `docs/ai/SPECFORGE_COMMANDS.md`.
+- Done: Command reference lists current commands and Doctor.
+- Done: Init golden tests include command-reference and index docs.

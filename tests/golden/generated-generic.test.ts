@@ -36,6 +36,8 @@ describe("generic init golden output", () => {
       "docs/10-architecture/MEMORY_ENGINE.md",
       "docs/20-security/SECURITY_MODEL.md",
       "docs/20-security/THREAT_MODEL.md",
+      "docs/30-modules/README.md",
+      "docs/40-features/README.md",
       "docs/50-quality/QUALITY_GATES.md",
       "docs/50-quality/TESTING_STRATEGY.md",
       "docs/60-engineering/AI_AGENT_RULES.md",
@@ -43,7 +45,8 @@ describe("generic init golden output", () => {
       "docs/adrs/README.md",
       "docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md",
       "docs/ai/MCP_STRATEGY.md",
-      "docs/ai/presets/generic-guidance.md"
+      "docs/ai/presets/generic-guidance.md",
+      "docs/ai/SPECFORGE_COMMANDS.md"
     ]);
 
     const config = await readGeneratedJson<SpecForgeConfig>(

@@ -43,3 +43,9 @@ Humans accept ADRs by reviewing and editing repository memory.
 P8 generates concise module memory structure, not completed module ownership analysis.
 
 Humans or agents fill in module substance after the module memory folder exists.
+
+## P9: Command Reference Is Local Memory
+
+P9 adds `docs/ai/SPECFORGE_COMMANDS.md` to init output.
+
+This document is generated locally from in-code starter content. It must not be downloaded from the network in MVP.
