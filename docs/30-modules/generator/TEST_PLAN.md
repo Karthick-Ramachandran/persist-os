@@ -14,6 +14,7 @@
 
 - Done: Golden tests for init-generated documents.
 - Done: Integration tests for init command generation.
+- Done: Unit tests for generated feature document paths and starter content.
 - Security tests for unsafe output destinations after generator plans are connected to filesystem writes.
 
 ## Security Expectations
@@ -22,3 +23,14 @@
 - The renderer must not load template files.
 - The renderer must not write files.
 - Future file generation must use `core/filesystem`.
+
+## P6 Tests
+
+- `generateFeatureFiles` emits all required feature docs.
+- `generateFeatureFiles` returns write inputs only.
+- Unsafe feature names are rejected before write planning.
+
+## P6 Results
+
+- Covered by `tests/unit/generator/generate-feature.test.ts`.
+- Full verification passed with `pnpm test:run` and `pnpm typecheck`.

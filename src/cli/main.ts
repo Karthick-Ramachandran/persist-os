@@ -1,5 +1,10 @@
 import { Command, CommanderError } from "commander";
 
+import {
+  createFeature,
+  FeatureCreateError,
+  formatFeatureCreateResult
+} from "../commands/feature/create.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
 
 export type CliWritable = {
@@ -44,6 +49,27 @@ export function createCliProgram(io: CliIo = {}): Command {
       stdout.write(formatInitResult(result));
     });
 
+  const featureCommand = program
+    .command("feature")
+    .description("Manage SpecForge feature memory.");
+
+  featureCommand
+    .command("create")
+    .description("Create feature memory docs.")
+    .argument("<name>", "Feature name.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(async (name: string, options: { dryRun?: boolean; force?: boolean }) => {
+      const result = await createFeature({
+        rootDir: cwd,
+        name,
+        dryRun: options.dryRun,
+        force: options.force
+      });
+
+      stdout.write(formatFeatureCreateResult(result));
+    });
+
   return program;
 }
 
@@ -56,6 +82,14 @@ export async function main(argv: string[] = process.argv.slice(2), io: CliIo = {
     return 0;
   } catch (error) {
     if (error instanceof InitError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof FeatureCreateError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

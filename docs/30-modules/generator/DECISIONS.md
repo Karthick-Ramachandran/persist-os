@@ -25,3 +25,9 @@ Generator outputs should preserve important project memory in durable docs so hu
 P5 uses concise in-code templates for the minimal init skeleton.
 
 Template file loading remains future work.
+
+## P6: Feature Docs Are Starter Memory
+
+P6 generates concise feature document structure, not complete PRDs or implementation plans.
+
+Humans or agents fill in feature substance after the feature memory folder exists.

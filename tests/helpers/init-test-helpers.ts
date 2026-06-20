@@ -23,9 +23,16 @@ export async function runInitCommand(
   rootDir: string,
   args: string[] = []
 ): Promise<InitCommandRun> {
+  return runCommand(rootDir, ["init", ...args]);
+}
+
+export async function runCommand(
+  rootDir: string,
+  args: string[]
+): Promise<InitCommandRun> {
   let stdout = "";
   let stderr = "";
-  const exitCode = await main(["init", ...args], {
+  const exitCode = await main(args, {
     cwd: rootDir,
     stdout: {
       write(message) {

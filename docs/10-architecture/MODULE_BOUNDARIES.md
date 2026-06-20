@@ -31,6 +31,12 @@ Command code should orchestrate. Core modules should own decisions and be testab
 - Owns template rendering and generation plans.
 - Must not write files directly.
 
+`core/naming`
+
+- Owns safe name normalization, feature numbering, and future ADR numbering.
+- Must reject unsafe user-facing names before generated paths are planned.
+- Must not write files directly.
+
 `core/presets`
 
 - Owns preset/opinion-pack schemas, registry, and validation.

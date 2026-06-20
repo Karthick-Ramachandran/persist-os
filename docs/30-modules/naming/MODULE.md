@@ -10,17 +10,23 @@ The naming module owns safe user-facing name normalization.
 - Unsafe name rejection.
 - Windows reserved name rejection.
 - Length limits.
+- Feature number scanning.
+- Existing feature folder resolution by slug.
 
 ## Does Not Own
 
 - Filesystem path resolution.
 - Write planning.
 - CLI parsing.
-- Feature or ADR numbering.
+- ADR numbering.
 
 ## Public Interfaces
 
 - `slugify`
+- `getNextFeatureNumber`
+- `getFeatureFolderForSlug`
+- `formatFeatureNumber`
+- `parseFeatureNumber`
 
 ## Security Boundaries
 
@@ -30,3 +36,4 @@ The naming module owns safe user-facing name normalization.
 ## Related Docs
 
 - `docs/40-features/F-001-core-filesystem-safety/`
+- `docs/40-features/F-009-feature-create-command/`

@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-008-init-command/`
+- `docs/40-features/F-009-feature-create-command/`
 
 ## Tasks
 
@@ -14,3 +14,4 @@
 - Done: Add unit tests.
 - Done: Complete verification.
 - Done: Add init memory file planning.
+- Done: Add feature memory file planning.

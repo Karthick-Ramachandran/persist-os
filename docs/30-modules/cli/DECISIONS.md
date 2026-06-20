@@ -11,3 +11,9 @@ Package `bin`, build, and release wiring are deferred to P10 so the project does
 CLI output should list created, skipped, overwritten, or planned files.
 
 Completion claims must be backed by write results.
+
+## P6: Commands Orchestrate Only
+
+`feature create` command code loads config, calls naming, generator, and filesystem modules, then formats output.
+
+The CLI layer does not own feature numbering, document content, or write safety rules.

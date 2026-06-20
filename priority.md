@@ -562,6 +562,7 @@ Tests:
 ```txt
 tests/integration/feature-create-command.test.ts
 tests/unit/generator/generate-feature.test.ts
+tests/unit/naming/feature-number.test.ts
 ```
 
 Acceptance criteria:
@@ -569,7 +570,7 @@ Acceptance criteria:
 * Creates feature folder with required docs.
 * Feature number increments.
 * Unsafe names are rejected.
-* Existing feature is skipped by default.
+* Existing same-slug feature memory is reused and skipped by default.
 * Generated feature docs include PRD, acceptance, architecture impact, change requests, task plan, test plan, review, and completion report.
 
 Reason:

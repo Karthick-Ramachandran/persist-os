@@ -19,6 +19,7 @@ The CLI module owns command parser wiring, user-facing output, and process-level
 - Template rendering.
 - Preset validation.
 - Init document generation rules.
+- Feature numbering or generation rules.
 - Package `bin` or release wiring in P5.
 - Network, telemetry, MCP runtime, AI API, or cloud behavior.
 
@@ -31,3 +32,5 @@ The CLI module owns command parser wiring, user-facing output, and process-level
 ## Current Decision
 
 P5 adds parser wiring without package `bin` or build/release setup.
+
+P6 routes `feature create <name>` to command orchestration while keeping business rules in core modules.
