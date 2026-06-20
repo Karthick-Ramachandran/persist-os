@@ -95,6 +95,7 @@ git config core.hooksPath .recall/hooks
 | `recall adr create <title>`    | Create a proposed architecture decision record.             |
 | `recall module create <name>`  | Scaffold module memory (ownership, boundaries, tests).      |
 | `recall skill create <name>`   | Generate a portable AI agent skill (Claude + Agent Skills). |
+| `recall mcp add <server>`      | Generate offline, proposed memory for an MCP server.        |
 | `recall doctor`                | Validate memory health, evidence, and drift.                |
 
 ## What Doctor Checks

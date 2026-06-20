@@ -9,6 +9,7 @@ import {
 import { adoptProject, AdoptError, formatAdoptResult } from "../commands/adopt.js";
 import { doctorProject, formatDoctorResult } from "../commands/doctor.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
+import { mcpAdd, McpAddError, formatMcpAddResult } from "../commands/mcp/add.js";
 import {
   createModule,
   formatModuleCreateResult,
@@ -153,6 +154,25 @@ export function createCliProgram(
       state.exitCode = result.exitCode;
     });
 
+  const mcpCommand = program.command("mcp").description("Manage Recall OS MCP context memory.");
+
+  mcpCommand
+    .command("add")
+    .description("Generate proposed, offline memory for an MCP server.")
+    .argument("<server>", "MCP server name, e.g. figma.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(async (server: string, options: { dryRun?: boolean; force?: boolean }) => {
+      const result = await mcpAdd({
+        rootDir: cwd,
+        server,
+        dryRun: options.dryRun,
+        force: options.force,
+      });
+
+      stdout.write(formatMcpAddResult(result));
+    });
+
   const skillCommand = program.command("skill").description("Manage Recall OS agent skills.");
 
   skillCommand
@@ -244,6 +264,14 @@ export async function main(
     }
 
     if (error instanceof SkillCreateError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof McpAddError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

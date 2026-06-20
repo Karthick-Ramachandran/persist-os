@@ -283,6 +283,17 @@ Options:
 
 List the built-in catalog skills.
 
+### \`recall mcp add <server>\`
+
+Generate offline, proposed memory for an MCP server (for example \`figma\`) as \`docs/ai/mcp/<server>.md\`
+plus a proposed adoption ADR. Recall OS never connects to the MCP server or makes network calls; the
+agent records durable MCP-derived context into the generated memory for human review.
+
+Options:
+
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
 ### \`recall preset list\`
 
 List built-in presets.
