@@ -1,6 +1,6 @@
 ---
 name: update-module-memory
-description: Update module memory docs after module behavior, ownership, boundaries, tests, risks, or decisions change.
+description: Update module memory docs after module behavior, ownership, boundaries, tests, risks, or decisions change. Use when a module's behavior, ownership, boundaries, tests, risks, or decisions change.
 ---
 
 # Skill: Update Module Memory
@@ -18,12 +18,9 @@ Keep module docs accurate so agents do not rediscover ownership, boundaries, tes
 
 ## Required Reading
 
-- `docs/10-architecture/MODULE_BOUNDARIES.md`
 - `docs/60-engineering/ENGINEERING_STANDARDS.md`
 - `docs/ai/MODULE_DELIVERY_WORKFLOW.md`
 - Relevant `docs/30-modules/<module>/MODULE.md`
-- Relevant `docs/30-modules/<module>/TASKS.md`
-- Relevant `docs/30-modules/<module>/TEST_PLAN.md`
 - Relevant `docs/30-modules/<module>/DECISIONS.md`
 - Relevant feature docs and ADRs.
 
@@ -59,6 +56,5 @@ Stop and request human decision if:
 - Module docs are concise and current.
 - Boundaries are clear.
 - Test expectations are actionable.
-- Engineering standards that affect the module are reflected.
 - Decisions link to ADRs where appropriate.
 - Future agents can tell what the module owns and what it must not own.

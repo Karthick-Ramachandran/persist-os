@@ -1,6 +1,6 @@
 ---
 name: implement-task
-description: Implement one scoped engineering task while preserving requirements, architecture boundaries, security posture, tests, docs, and completion evidence.
+description: Implement one scoped engineering task while preserving requirements, architecture boundaries, security posture, tests, docs, and completion evidence. Use when implementing a single task from an approved plan.
 ---
 
 # Skill: Implement Task
@@ -18,14 +18,10 @@ Implement a bounded task safely from approved requirements and plans.
 ## Required Reading
 
 - `AGENTS.md`
-- `docs/00-product/PRD.md`
 - `docs/10-architecture/ARCHITECTURE.md`
-- `docs/10-architecture/MODULE_BOUNDARIES.md`
 - `docs/10-architecture/FILE_WRITE_POLICY.md`
 - `docs/20-security/SECURITY_MODEL.md`
-- `docs/50-quality/DEFINITION_OF_DONE.md`
 - `docs/60-engineering/ENGINEERING_STANDARDS.md`
-- `docs/ai/MODULE_DELIVERY_WORKFLOW.md`
 - Relevant feature, module, and ADR docs.
 
 ## Output Files
@@ -53,7 +49,6 @@ Stop and request human decision if:
 - The task requires adding runtime network, telemetry, cloud, MCP, AI API, or generated production app behavior in MVP.
 - A dependency is needed without ADR consideration.
 - Tests cannot be designed from the available requirements.
-- A module task lacks feature delivery docs or module memory.
 
 ## Quality Bar
 

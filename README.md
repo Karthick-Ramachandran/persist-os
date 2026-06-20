@@ -85,16 +85,17 @@ git config core.hooksPath .recall/hooks
 
 ## Commands
 
-| Command                        | Purpose                                                   |
-| ------------------------------ | --------------------------------------------------------- |
-| `recall init`                  | Create neutral repository memory (and a pre-commit hook). |
-| `recall init --preset <id>`    | Add an opinion pack: rich guidance and proposed ADRs.     |
-| `recall adopt`                 | Inspect an existing repo and propose reviewable memory.   |
-| `recall preset list`           | List built-in presets.                                    |
-| `recall feature create <name>` | Scaffold feature memory (PRD, acceptance, tests, review). |
-| `recall adr create <title>`    | Create a proposed architecture decision record.           |
-| `recall module create <name>`  | Scaffold module memory (ownership, boundaries, tests).    |
-| `recall doctor`                | Validate memory health, evidence, and drift.              |
+| Command                        | Purpose                                                     |
+| ------------------------------ | ----------------------------------------------------------- |
+| `recall init`                  | Create neutral repository memory (and a pre-commit hook).   |
+| `recall init --preset <id>`    | Add an opinion pack: rich guidance and proposed ADRs.       |
+| `recall adopt`                 | Inspect an existing repo and propose reviewable memory.     |
+| `recall preset list`           | List built-in presets.                                      |
+| `recall feature create <name>` | Scaffold feature memory (PRD, acceptance, tests, review).   |
+| `recall adr create <title>`    | Create a proposed architecture decision record.             |
+| `recall module create <name>`  | Scaffold module memory (ownership, boundaries, tests).      |
+| `recall skill create <name>`   | Generate a portable AI agent skill (Claude + Agent Skills). |
+| `recall doctor`                | Validate memory health, evidence, and drift.                |
 
 ## What Doctor Checks
 

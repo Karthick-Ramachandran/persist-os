@@ -1,6 +1,6 @@
 ---
 name: create-prd
-description: Create or update a feature PRD with user intent, scope, acceptance criteria, non-goals, security notes, test expectations, and source-of-truth links.
+description: Create or update a feature PRD with user intent, scope, acceptance criteria, non-goals, security notes, test expectations, and source-of-truth links. Use when starting a feature, drafting or updating a PRD, or defining acceptance criteria.
 ---
 
 # Skill: Create PRD
@@ -19,7 +19,6 @@ Create a useful feature PRD that helps humans and AI agents understand what shou
 
 - `docs/00-product/BRD.md`
 - `docs/00-product/PRD.md`
-- `docs/00-product/BUILD_PRIORITY.md`
 - Relevant existing `docs/40-features/<feature>/`
 - Relevant accepted ADRs in `docs/adrs/`
 

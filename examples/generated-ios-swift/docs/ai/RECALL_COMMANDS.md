@@ -47,6 +47,21 @@ Options:
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 
+### `recall skill create <name>`
+
+Generate a portable AI agent skill as `SKILL.md` for both Claude Code (`.claude/skills/`) and the
+portable Agent Skills target (`.agents/skills/`). Known names use the built-in catalog; unknown
+names produce a valid skeleton. Generated skills contain no scripts.
+
+Options:
+
+- `--dry-run`: show planned writes without writing files.
+- `--force`: overwrite existing files explicitly.
+
+### `recall skill list`
+
+List the built-in catalog skills.
+
 ### `recall preset list`
 
 List built-in presets.

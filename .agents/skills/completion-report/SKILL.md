@@ -1,6 +1,6 @@
 ---
 name: completion-report
-description: Write a completion report with files changed, tests run, results, skipped checks, docs updated, remaining risks, and release readiness notes.
+description: Write a completion report with files changed, tests run, results, skipped checks, docs updated, remaining risks, and release readiness notes. Use when recording evidence that a task or feature is complete and ready for review.
 ---
 
 # Skill: Completion Report
@@ -20,7 +20,6 @@ Record evidence that a task is complete and safe to review.
 
 ## Required Reading
 
-- `docs/50-quality/DEFINITION_OF_DONE.md`
 - `docs/50-quality/QUALITY_GATES.md`
 - `docs/60-engineering/ENGINEERING_STANDARDS.md`
 - Relevant feature `TASKS.md`
@@ -58,5 +57,4 @@ Stop and request human decision if:
 - The report is evidence-based.
 - It does not hide skipped checks.
 - It separates completed work from remaining risk.
-- It states whether engineering standards were followed.
 - A reviewer can decide what to do next from the report alone.

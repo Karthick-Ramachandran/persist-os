@@ -1,6 +1,6 @@
 ---
 name: write-tests
-description: Design and write meaningful tests from acceptance criteria, risk, security invariants, module boundaries, and regression history.
+description: Write meaningful tests from acceptance criteria, risk, security invariants, module boundaries, and regression history. Use when adding or updating tests, writing a test plan, or covering a new feature or bug fix.
 ---
 
 # Skill: Write Tests
@@ -21,14 +21,13 @@ Create professional tests that prove important behavior, not random happy paths.
 - `docs/50-quality/TESTING_STRATEGY.md`
 - `docs/50-quality/QUALITY_GATES.md`
 - `docs/20-security/SECURITY_MODEL.md`
-- `docs/10-architecture/MODULE_BOUNDARIES.md`
 - `docs/60-engineering/ENGINEERING_STANDARDS.md`
 - Relevant feature `TEST_PLAN.md`
 - Relevant module `TEST_PLAN.md`
 
 ## Output Files
 
-- Test files under the appropriate future `tests/` area.
+- Test files under the appropriate `tests/` area.
 - Updated `TEST_PLAN.md` when test strategy changes.
 - Completion evidence listing commands and results.
 
@@ -56,4 +55,4 @@ Stop and request human decision if:
 - Security invariants are covered.
 - Test names describe behavior.
 - Engineering standards for evidence and skipped checks are followed.
-- Completion report includes commands and results.
+- The completion report includes commands and results.

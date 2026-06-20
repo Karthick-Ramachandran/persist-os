@@ -15,6 +15,12 @@ import {
   ModuleCreateError,
 } from "../commands/module/create.js";
 import { formatPresetListResult, listPresetEntries } from "../commands/preset/list.js";
+import {
+  createSkill,
+  formatSkillCreateResult,
+  SkillCreateError,
+} from "../commands/skill/create.js";
+import { formatSkillListResult } from "../commands/skill/list.js";
 
 export type CliWritable = {
   write(message: string): void;
@@ -147,6 +153,32 @@ export function createCliProgram(
       state.exitCode = result.exitCode;
     });
 
+  const skillCommand = program.command("skill").description("Manage Recall OS agent skills.");
+
+  skillCommand
+    .command("create")
+    .description("Generate an agent skill for Claude Code and the portable Agent Skills target.")
+    .argument("<name>", "Skill name.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(async (name: string, options: { dryRun?: boolean; force?: boolean }) => {
+      const result = await createSkill({
+        rootDir: cwd,
+        name,
+        dryRun: options.dryRun,
+        force: options.force,
+      });
+
+      stdout.write(formatSkillCreateResult(result));
+    });
+
+  skillCommand
+    .command("list")
+    .description("List built-in catalog skills.")
+    .action(() => {
+      stdout.write(formatSkillListResult());
+    });
+
   const presetCommand = program.command("preset").description("Inspect Recall OS presets.");
 
   presetCommand
@@ -204,6 +236,14 @@ export async function main(
     }
 
     if (error instanceof ModuleCreateError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof SkillCreateError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

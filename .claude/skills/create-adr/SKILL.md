@@ -1,6 +1,6 @@
 ---
 name: create-adr
-description: Create an Architecture Decision Record for a meaningful architecture, dependency, security, file-write, MCP, or workflow decision.
+description: Create an Architecture Decision Record for a meaningful architecture, dependency, security, file-write, MCP, or workflow decision. Use when recording such a decision so future agents do not contradict it.
 ---
 
 # Skill: Create ADR
@@ -19,8 +19,6 @@ Record durable architecture decisions so future humans and agents do not redisco
 ## Required Reading
 
 - `docs/10-architecture/ARCHITECTURE.md`
-- `docs/10-architecture/TECH_STACK.md`
-- `docs/10-architecture/DEPENDENCY_POLICY.md`
 - `docs/10-architecture/FILE_WRITE_POLICY.md`
 - `docs/20-security/SECURITY_MODEL.md`
 - Relevant existing ADRs in `docs/adrs/`
@@ -43,11 +41,11 @@ Stop and request human decision if:
 
 - The decision changes security posture, network behavior, telemetry, file writes, auth, secrets, cloud, or runtime MCP.
 - The requested decision conflicts with an accepted ADR.
-- The decision is not actually made yet and should remain an RFC or proposal.
+- The decision is not actually made yet and should remain a proposal.
 
 ## Quality Bar
 
-- ADR explains why the decision exists, not just what changed.
+- The ADR explains why the decision exists, not just what changed.
 - Alternatives and consequences are honest.
 - Status is clear.
 - Related documents are linked.
