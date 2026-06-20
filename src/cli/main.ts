@@ -49,16 +49,20 @@ export function createCliProgram(
     .option("--preset <id>", "Apply optional preset guidance and proposed decisions.")
     .option("--dry-run", "Show planned writes without writing files.")
     .option("--force", "Overwrite existing files explicitly.")
-    .action(async (options: { preset?: string; dryRun?: boolean; force?: boolean }) => {
-      const result = await initProject({
-        rootDir: cwd,
-        preset: options.preset,
-        dryRun: options.dryRun,
-        force: options.force,
-      });
+    .option("--reinit", "Allow --force to overwrite an existing Recall OS installation.")
+    .action(
+      async (options: { preset?: string; dryRun?: boolean; force?: boolean; reinit?: boolean }) => {
+        const result = await initProject({
+          rootDir: cwd,
+          preset: options.preset,
+          dryRun: options.dryRun,
+          force: options.force,
+          reinit: options.reinit,
+        });
 
-      stdout.write(formatInitResult(result));
-    });
+        stdout.write(formatInitResult(result));
+      },
+    );
 
   const featureCommand = program.command("feature").description("Manage Recall OS feature memory.");
 

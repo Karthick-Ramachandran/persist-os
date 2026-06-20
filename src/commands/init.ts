@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import { createDefaultConfig } from "../core/config/default-config.js";
 import { CONFIG_PATH } from "../core/config/load-config.js";
 import {
@@ -22,6 +25,7 @@ export type InitOptions = {
   preset?: string;
   dryRun?: boolean;
   force?: boolean;
+  reinit?: boolean;
 };
 
 export type InitResult = {
@@ -31,7 +35,7 @@ export type InitResult = {
   writeResult: WriteResult;
 };
 
-export type InitErrorCode = "UNKNOWN_PRESET" | "WRITE_PLAN_ERROR";
+export type InitErrorCode = "UNKNOWN_PRESET" | "WRITE_PLAN_ERROR" | "EXISTING_INSTALLATION";
 
 export class InitError extends Error {
   readonly code: InitErrorCode;
@@ -46,6 +50,22 @@ export class InitError extends Error {
 }
 
 export async function initProject(options: InitOptions): Promise<InitResult> {
+  if (
+    options.force === true &&
+    options.reinit !== true &&
+    existsSync(path.join(options.rootDir, CONFIG_PATH))
+  ) {
+    throw new InitError(
+      "EXISTING_INSTALLATION",
+      "Refusing to re-initialize an existing Recall OS installation.",
+      [
+        "An existing .recall/config.json was found in this directory.",
+        "Running init --force here would overwrite existing repository memory.",
+        "Pass --reinit together with --force to overwrite an existing installation.",
+      ],
+    );
+  }
+
   const preset = resolvePreset(options.preset);
   const preCommitGates = await detectPreCommitGates(options.rootDir);
   const config = createDefaultConfig({ preset: preset?.id ?? null, preCommitGates });

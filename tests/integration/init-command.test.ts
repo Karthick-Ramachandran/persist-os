@@ -118,6 +118,32 @@ describe("init command", () => {
     );
   });
 
+  it("refuses init --force on an existing installation without --reinit", async () => {
+    const rootDir = await createRoot("init-force-existing");
+    await runInitCommand(rootDir);
+    await writeFile(path.join(rootDir, "AGENTS.md"), "custom agents\n", "utf8");
+
+    const result = await runInitCommand(rootDir, ["--force"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain(
+      "Refusing to re-initialize an existing Recall OS installation.",
+    );
+    expect(result.stderr).toContain("--reinit");
+    expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toBe("custom agents\n");
+  });
+
+  it("allows init --force --reinit on an existing installation", async () => {
+    const rootDir = await createRoot("init-force-reinit");
+    await runInitCommand(rootDir);
+    await writeFile(path.join(rootDir, "AGENTS.md"), "custom agents\n", "utf8");
+
+    const result = await runInitCommand(rootDir, ["--force", "--reinit"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toContain("Agent Instructions");
+  });
+
   it("fails clearly for unknown presets and writes nothing", async () => {
     const rootDir = await createRoot("init-unknown-preset");
     const result = await runInitCommand(rootDir, ["--preset", "unknown"]);

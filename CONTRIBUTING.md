@@ -62,7 +62,8 @@ Read `docs/10-architecture/OPINION_PACKS.md` for the full content standard, then
 4. Add a unit test (see `tests/unit/presets/opinionated-presets.test.ts`) and a golden test
    (see `tests/golden/generated-*.test.ts`).
 5. Add an example under `examples/generated-<id>/` by running
-   `recall init --preset <id>` inside that folder, plus a short `README.md`.
+   `recall init --preset <id>` inside that folder, plus a short `README.md`. To regenerate an
+   existing example folder, use `recall init --preset <id> --force --reinit`.
 6. Run the completion gate.
 
 Use the existing `kotlin-android` and `python-fastapi` presets as references.

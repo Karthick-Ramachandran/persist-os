@@ -249,6 +249,9 @@ Options:
 - \`--preset <id>\`: apply optional preset guidance and proposed decisions.
 - \`--dry-run\`: show planned writes without writing files.
 - \`--force\`: overwrite existing files explicitly.
+- \`--reinit\`: required with \`--force\` to overwrite an existing Recall OS installation
+  (a directory that already has \`.recall/config.json\`). Without it, \`--force\` refuses, protecting
+  existing repository memory.
 
 Init also generates a tracked pre-commit hook at \`.recall/hooks/pre-commit\` that runs \`recall doctor\`
 plus any \`preCommitGates\` in \`.recall/config.json\`. Init proposes, but does not run, the activation
