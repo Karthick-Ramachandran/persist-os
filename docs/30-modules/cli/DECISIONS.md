@@ -23,3 +23,15 @@ The CLI layer does not own feature numbering, document content, or write safety 
 `adr create` command code loads config, calls naming, generator, and filesystem modules, then formats output.
 
 The CLI layer does not own ADR numbering, document content, or write safety rules.
+
+## P8: Shared Write Summary Helper
+
+Command output uses a shared write-summary helper for created, overwritten, skipped, and planned file lists.
+
+Config loading and command error handling remain command-specific in P8.
+
+## P8: Module Create Follows Command Boundary
+
+`module create` command code loads config, calls naming, generator, and filesystem modules, then formats output.
+
+The CLI layer does not own module document content or write safety rules.

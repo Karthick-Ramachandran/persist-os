@@ -44,3 +44,18 @@
 
 - Covered by `tests/integration/adr-create-command.test.ts`.
 - Full verification passed with `pnpm test:run` and `pnpm typecheck`.
+
+## P8 Tests
+
+- Existing init, feature, and ADR command tests preserve output behavior after write-summary helper extraction.
+- `main(["module", "create", "<name>"])` requires initialized config.
+- `module create` creates module docs.
+- `module create --dry-run` writes nothing and reports planned files.
+- `module create --force` overwrites explicitly.
+- Unsafe module names return failure output.
+
+## P8 Results
+
+- Covered by `tests/integration/module-create-command.test.ts`.
+- Regression-covered by init, feature, and ADR command integration tests.
+- Full verification passed with `pnpm test:run` and `pnpm typecheck`.

@@ -6,6 +6,7 @@ import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-
 import { generateFeatureFiles } from "../../core/generator/generate-feature.js";
 import { getFeatureFolderForSlug } from "../../core/naming/feature-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
+import { appendWriteSummary } from "../write-summary.js";
 
 export type FeatureCreateOptions = {
   rootDir: string;
@@ -88,13 +89,10 @@ export function formatFeatureCreateResult(result: FeatureCreateResult): string {
     `Feature: ${result.featurePath}`
   ];
 
-  appendFileList(lines, result.dryRun ? "Planned creates" : "Created", result.writeResult.created);
-  appendFileList(
-    lines,
-    result.dryRun ? "Planned overwrites" : "Overwritten",
-    result.writeResult.overwritten
-  );
-  appendFileList(lines, "Skipped", result.writeResult.skipped);
+  appendWriteSummary(lines, {
+    dryRun: result.dryRun,
+    writeResult: result.writeResult
+  });
 
   return `${lines.join("\n")}\n`;
 }
@@ -124,16 +122,5 @@ async function loadRequiredConfig(rootDir: string) {
     }
 
     throw error;
-  }
-}
-
-function appendFileList(lines: string[], label: string, paths: string[]): void {
-  if (paths.length === 0) {
-    return;
-  }
-
-  lines.push(`${label}:`);
-  for (const filePath of paths) {
-    lines.push(`- ${filePath}`);
   }
 }

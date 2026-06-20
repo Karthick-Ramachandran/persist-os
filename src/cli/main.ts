@@ -11,6 +11,11 @@ import {
   formatFeatureCreateResult
 } from "../commands/feature/create.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
+import {
+  createModule,
+  formatModuleCreateResult,
+  ModuleCreateError
+} from "../commands/module/create.js";
 
 export type CliWritable = {
   write(message: string): void;
@@ -96,6 +101,27 @@ export function createCliProgram(io: CliIo = {}): Command {
       stdout.write(formatAdrCreateResult(result));
     });
 
+  const moduleCommand = program
+    .command("module")
+    .description("Manage SpecForge module memory.");
+
+  moduleCommand
+    .command("create")
+    .description("Create module memory docs.")
+    .argument("<name>", "Module name.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(async (name: string, options: { dryRun?: boolean; force?: boolean }) => {
+      const result = await createModule({
+        rootDir: cwd,
+        name,
+        dryRun: options.dryRun,
+        force: options.force
+      });
+
+      stdout.write(formatModuleCreateResult(result));
+    });
+
   return program;
 }
 
@@ -124,6 +150,14 @@ export async function main(argv: string[] = process.argv.slice(2), io: CliIo = {
     }
 
     if (error instanceof AdrCreateError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof ModuleCreateError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

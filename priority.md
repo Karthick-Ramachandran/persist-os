@@ -625,6 +625,7 @@ Tests:
 
 ```txt
 tests/integration/module-create-command.test.ts
+tests/unit/generator/generate-module.test.ts
 ```
 
 Acceptance criteria:
@@ -632,6 +633,7 @@ Acceptance criteria:
 * Creates module docs.
 * Rejects unsafe names.
 * Skips existing module docs by default.
+* Respects configured `modulesDir`.
 * Includes MODULE.md, TASKS.md, TEST_PLAN.md, DECISIONS.md.
 
 Reason:

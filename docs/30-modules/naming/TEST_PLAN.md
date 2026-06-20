@@ -35,3 +35,14 @@
 
 - Covered by `tests/unit/naming/adr-number.test.ts`.
 - Full verification passed with `pnpm test:run` and `pnpm typecheck`.
+
+## P8 Tests
+
+- Unsafe module names are rejected through `slugify`.
+- Module output paths use normalized slugs.
+
+## P8 Results
+
+- Covered by `tests/unit/generator/generate-module.test.ts`.
+- Covered by `tests/integration/module-create-command.test.ts`.
+- Full verification passed with `pnpm test:run` and `pnpm typecheck`.

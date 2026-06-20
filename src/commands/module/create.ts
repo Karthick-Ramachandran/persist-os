@@ -1,55 +1,51 @@
 import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
-import { resolveSafePath } from "../../core/filesystem/safe-path.js";
 import { createWritePlan, type WritePlan } from "../../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
-import { generateAdrFile } from "../../core/generator/generate-adr.js";
-import { getAdrFileForSlug } from "../../core/naming/adr-number.js";
+import { generateModuleFiles } from "../../core/generator/generate-module.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendWriteSummary } from "../write-summary.js";
 
-export type AdrCreateOptions = {
+export type ModuleCreateOptions = {
   rootDir: string;
-  title: string;
+  name: string;
   dryRun?: boolean;
   force?: boolean;
 };
 
-export type AdrCreateResult = {
-  adrId: string;
+export type ModuleCreateResult = {
   slug: string;
-  adrPath: string;
+  modulePath: string;
   dryRun: boolean;
   plan: WritePlan;
   writeResult: WriteResult;
 };
 
-export type AdrCreateErrorCode =
+export type ModuleCreateErrorCode =
   | "CONFIG_REQUIRED"
-  | "INVALID_ADR_TITLE"
+  | "INVALID_MODULE_NAME"
   | "WRITE_PLAN_ERROR";
 
-export class AdrCreateError extends Error {
-  readonly code: AdrCreateErrorCode;
+export class ModuleCreateError extends Error {
+  readonly code: ModuleCreateErrorCode;
   readonly details: string[];
 
-  constructor(code: AdrCreateErrorCode, message: string, details: string[] = []) {
+  constructor(code: ModuleCreateErrorCode, message: string, details: string[] = []) {
     super(message);
-    this.name = "AdrCreateError";
+    this.name = "ModuleCreateError";
     this.code = code;
     this.details = details;
   }
 }
 
-export async function createAdr(options: AdrCreateOptions): Promise<AdrCreateResult> {
-  const slug = createAdrSlug(options.title);
+export async function createModule(
+  options: ModuleCreateOptions
+): Promise<ModuleCreateResult> {
+  const slug = createModuleSlug(options.name);
   const config = await loadRequiredConfig(options.rootDir);
-  const adrDirPath = resolveSafePath(options.rootDir, config.adrDir);
-  const adrFile = await getAdrFileForSlug(adrDirPath.absolutePath, slug);
-  const files = generateAdrFile({
-    adrDir: config.adrDir,
-    adrId: adrFile.id,
-    title: options.title
+  const files = generateModuleFiles({
+    modulesDir: config.modulesDir,
+    moduleName: options.name
   });
   const plan = createWritePlan({
     rootDir: options.rootDir,
@@ -58,9 +54,9 @@ export async function createAdr(options: AdrCreateOptions): Promise<AdrCreateRes
   });
 
   if (plan.hasErrors) {
-    throw new AdrCreateError(
+    throw new ModuleCreateError(
       "WRITE_PLAN_ERROR",
-      "ADR create write plan contains errors.",
+      "Module create write plan contains errors.",
       plan.entries
         .filter((entry) => entry.action === "error")
         .map((entry) => `${entry.path}: ${entry.reason}`)
@@ -70,21 +66,20 @@ export async function createAdr(options: AdrCreateOptions): Promise<AdrCreateRes
   const writeResult = await executeWritePlan(plan, { dryRun: options.dryRun });
 
   return {
-    adrId: adrFile.id,
     slug,
-    adrPath: `${config.adrDir}/${adrFile.fileName}`,
+    modulePath: `${config.modulesDir}/${slug}`,
     dryRun: options.dryRun ?? false,
     plan,
     writeResult
   };
 }
 
-export function formatAdrCreateResult(result: AdrCreateResult): string {
+export function formatModuleCreateResult(result: ModuleCreateResult): string {
   const lines = [
     result.dryRun
-      ? "SpecForge ADR create dry run complete."
-      : "SpecForge ADR create complete.",
-    `ADR: ${result.adrPath}`
+      ? "SpecForge module create dry run complete."
+      : "SpecForge module create complete.",
+    `Module: ${result.modulePath}`
   ];
 
   appendWriteSummary(lines, {
@@ -95,12 +90,12 @@ export function formatAdrCreateResult(result: AdrCreateResult): string {
   return `${lines.join("\n")}\n`;
 }
 
-function createAdrSlug(title: string): string {
+function createModuleSlug(name: string): string {
   try {
-    return slugify(title);
+    return slugify(name);
   } catch (error) {
     if (error instanceof SlugifyError) {
-      throw new AdrCreateError("INVALID_ADR_TITLE", error.message);
+      throw new ModuleCreateError("INVALID_MODULE_NAME", error.message);
     }
 
     throw error;
@@ -112,7 +107,7 @@ async function loadRequiredConfig(rootDir: string) {
     return await loadConfig(rootDir);
   } catch (error) {
     if (error instanceof ConfigLoadError || error instanceof ConfigValidationError) {
-      throw new AdrCreateError(
+      throw new ModuleCreateError(
         "CONFIG_REQUIRED",
         "SpecForge config not found or invalid. Run `specforge init` first.",
         [error.message]

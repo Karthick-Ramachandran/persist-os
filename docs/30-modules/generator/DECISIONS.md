@@ -37,3 +37,9 @@ Humans or agents fill in feature substance after the feature memory folder exist
 P7 generates concise ADR drafts with status `Proposed`.
 
 Humans accept ADRs by reviewing and editing repository memory.
+
+## P8: Module Docs Are Starter Memory
+
+P8 generates concise module memory structure, not completed module ownership analysis.
+
+Humans or agents fill in module substance after the module memory folder exists.

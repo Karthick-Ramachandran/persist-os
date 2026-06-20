@@ -46,3 +46,14 @@
 
 - Covered by `tests/unit/generator/generate-adr.test.ts`.
 - Full verification passed with `pnpm test:run` and `pnpm typecheck`.
+
+## P8 Tests
+
+- `generateModuleFiles` emits required module docs.
+- `generateModuleFiles` returns write inputs only.
+- Unsafe module names are rejected before write planning.
+
+## P8 Results
+
+- Covered by `tests/unit/generator/generate-module.test.ts`.
+- Full verification passed with `pnpm test:run` and `pnpm typecheck`.

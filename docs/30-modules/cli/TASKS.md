@@ -2,7 +2,7 @@
 
 ## Active Feature
 
-- `docs/40-features/F-010-adr-create-command/`
+- `docs/40-features/F-011-module-create-command/`
 
 ## Tasks
 
@@ -16,3 +16,6 @@
 - Done: Add feature create integration tests.
 - Done: Route `adr create <title>` to command orchestration.
 - Done: Add ADR create integration tests.
+- Done: Extract shared write-summary formatting.
+- Done: Route `module create <name>` to command orchestration.
+- Done: Add module create integration tests.
