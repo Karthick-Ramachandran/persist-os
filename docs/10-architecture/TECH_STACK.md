@@ -7,7 +7,7 @@
 - Package manager: pnpm
 - CLI framework: Commander
 - Validation: Zod
-- Template engine: Eta
+- Template engine: internal deterministic placeholder renderer
 - Tests: Vitest
 - Build: tsup
 - Linting: ESLint
@@ -30,3 +30,5 @@ This stack supports `npx specforge init`, strong typing, deterministic builds, f
 ## Future Review
 
 Any change to language, runtime, package manager, template engine, validation library, build system, or distribution model requires an ADR.
+
+The P3 template renderer decision is recorded in `docs/adrs/ADR-0001-deterministic-placeholder-renderer.md`. Advanced template engines such as Eta are deferred until a future ADR.

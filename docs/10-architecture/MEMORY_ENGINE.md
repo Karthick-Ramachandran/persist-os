@@ -122,6 +122,16 @@ Technology detection may provide guidance, suggest opinion packs, or draft propo
 
 Technology detection must not become accepted repository memory by itself.
 
+## Agent Memory Reliability
+
+Root agent instruction files are entry points, not guarantees.
+
+SpecForge must assume AI agents may forget context, continue after compaction, skip re-reading root instructions, or behave differently across vendors.
+
+Durable repository memory belongs in `docs/`.
+
+Future review and `doctor` workflows should validate repository memory after agent work instead of assuming the agent remembered every instruction.
+
 ## Drift Definition
 
 Architecture drift is not difference from a SpecForge recommendation.

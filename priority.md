@@ -147,8 +147,8 @@ specforge/
       CODE_REVIEW_RULES.md
 
     adrs/
-      ADR-0001-typescript-node-cli.md
-      ADR-0002-template-driven-generation.md
+      ADR-0001-deterministic-placeholder-renderer.md
+      ADR-0002-typescript-node-cli.md
       ADR-0003-local-first-no-telemetry.md
       ADR-0004-non-destructive-file-write-policy.md
 
@@ -250,23 +250,23 @@ specforge/
 
     templates/
       common/
-        CLAUDE.md.eta
-        AGENTS.md.eta
-        ARCHITECTURE.md.eta
-        MODULE_BOUNDARIES.md.eta
-        FEATURE_PRD.md.eta
-        ACCEPTANCE.md.eta
-        ARCHITECTURE_IMPACT.md.eta
-        CHANGE_REQUESTS.md.eta
-        TEST_PLAN.md.eta
-        MODULE.md.eta
-        ADR.md.eta
-        SECURITY_MODEL.md.eta
-        THREAT_MODEL.md.eta
-        DEFINITION_OF_DONE.md.eta
-        AI_REVIEW_CHECKLIST.md.eta
-        ARCHITECTURE_DRIFT_CHECKLIST.md.eta
-        COMPLETION_REPORT.md.eta
+        CLAUDE.md.template
+        AGENTS.md.template
+        ARCHITECTURE.md.template
+        MODULE_BOUNDARIES.md.template
+        FEATURE_PRD.md.template
+        ACCEPTANCE.md.template
+        ARCHITECTURE_IMPACT.md.template
+        CHANGE_REQUESTS.md.template
+        TEST_PLAN.md.template
+        MODULE.md.template
+        ADR.md.template
+        SECURITY_MODEL.md.template
+        THREAT_MODEL.md.template
+        DEFINITION_OF_DONE.md.template
+        AI_REVIEW_CHECKLIST.md.template
+        ARCHITECTURE_DRIFT_CHECKLIST.md.template
+        COMPLETION_REPORT.md.template
 
   tests/
     unit/
@@ -456,6 +456,7 @@ Acceptance criteria:
 
 * Renders deterministic templates.
 * Fails clearly on missing required values.
+* Validates context keys before rendering.
 * Does not execute user-provided code.
 * Supports common markdown templates.
 

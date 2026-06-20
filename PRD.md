@@ -1219,7 +1219,7 @@ Runtime: Node.js LTS
 Package manager: pnpm
 CLI framework: Commander
 Validation: Zod
-Template engine: Eta
+Template engine: internal deterministic placeholder renderer
 Testing: Vitest
 Build: tsup
 Linting: ESLint
@@ -1237,6 +1237,8 @@ Why:
 * Deterministic builds
 * Fast tests
 * Minimal framework ceremony
+
+Advanced template engines such as Eta are deferred until a future ADR shows they are needed.
 
 ---
 
