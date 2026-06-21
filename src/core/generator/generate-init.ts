@@ -491,6 +491,21 @@ Exit codes:
 - \`0\`: healthy
 - \`1\`: warnings only
 - \`2\`: errors
+
+### \`recall guard\`
+
+Fail when staged source changes have no accompanying test changes, so "tests are mandatory for every
+change" is enforced rather than hoped for. Deterministic and read-only (a \`git diff\`); it only acts
+when told what counts as source, and skips gracefully outside a git repository.
+
+Options:
+
+- \`--source <list>\`: comma-separated source directories to guard, e.g. \`src,app\`.
+- \`--base <ref>\`: compare against a git ref instead of the staged index.
+
+Add it to your gates to enforce it in the generated hooks, for example set \`preCommitGates\` in
+\`.recall/config.json\` to include \`recall guard --source src\`. Exit code \`1\` blocks the commit/push
+when source changed without tests; \`0\` otherwise.
 `,
   },
   {

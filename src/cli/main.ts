@@ -14,6 +14,7 @@ import {
 } from "../commands/feature/create.js";
 import { adoptProject, AdoptError, formatAdoptResult } from "../commands/adopt.js";
 import { doctorProject, formatDoctorResult } from "../commands/doctor.js";
+import { runGuard, formatGuardResult } from "../commands/guard.js";
 import { formatInitResult, initProject, InitError } from "../commands/init.js";
 import { mcpAdd, McpAddError, formatMcpAddResult } from "../commands/mcp/add.js";
 import {
@@ -220,6 +221,26 @@ export function createCliProgram(
       const result = await doctorProject({ rootDir: cwd });
 
       stdout.write(formatDoctorResult(result));
+      state.exitCode = result.exitCode;
+    });
+
+  program
+    .command("guard")
+    .description("Fail when staged source changes have no accompanying test changes.")
+    .option("--source <list>", "Comma-separated source directories to guard, e.g. src,app.")
+    .option("--base <ref>", "Compare against a git ref instead of the staged index.")
+    .action(async (options: { source?: string; base?: string }) => {
+      const source =
+        options.source === undefined
+          ? undefined
+          : options.source
+              .split(",")
+              .map((dir) => dir.trim())
+              .filter((dir) => dir.length > 0);
+
+      const result = await runGuard({ rootDir: cwd, source, base: options.base });
+
+      stdout.write(formatGuardResult(result));
       state.exitCode = result.exitCode;
     });
 
