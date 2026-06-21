@@ -128,6 +128,7 @@ git config core.hooksPath .recall/hooks
 | `recall skill list`                | List the built-in agent skill catalog.                                         |
 | `recall mcp add <server>`          | Generate offline, proposed memory for an MCP server.                           |
 | `recall doctor`                    | Validate memory health, evidence, and drift.                                   |
+| `recall guard --source <dirs>`     | Fail when staged source changed without tests (add to your gates to enforce).  |
 
 ## What Doctor Checks
 

@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { TEST_FILE_PATTERNS } from "../naming/test-files.js";
+
 /**
  * Read-only signals inferred from a repository's manifest and marker files.
  *
@@ -281,17 +283,6 @@ async function detectTestsEvidence(
 
   return null;
 }
-
-const TEST_FILE_PATTERNS = [
-  /_test\.go$/u,
-  /\.(test|spec)\.[cm]?[jt]sx?$/u,
-  /^test_.+\.py$/u,
-  /_test\.py$/u,
-  /.+Tests?\.(java|kt)$/u,
-  /.+Test\.php$/u,
-  /_spec\.rb$/u,
-  /_test\.rb$/u,
-];
 
 const TEST_WALK_SKIP_DIRS = new Set([
   "node_modules",
