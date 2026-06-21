@@ -74,6 +74,7 @@
       }
       * { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
+      html, body { overflow-x: hidden; max-width: 100%; }
       body {
         margin: 0;
         background: var(--bg);
@@ -110,8 +111,9 @@
           var(--bg);
       }
       h1 {
-        font-size: clamp(36px, 6.4vw, 66px);
-        line-height: 1.04; margin: 0 0 20px; letter-spacing: -0.035em; font-weight: 700; color: var(--ink);
+        font-size: clamp(30px, 7vw, 66px);
+        line-height: 1.05; margin: 0 0 20px; letter-spacing: -0.035em; font-weight: 700; color: var(--ink);
+        overflow-wrap: break-word;
       }
       h1 .accent {
         background: linear-gradient(95deg, var(--accent), var(--accent-2));
@@ -173,7 +175,7 @@
       .card .ic { font-size: 24px; margin-bottom: 10px; display: block; }
 
       /* Tables */
-      .tablecard { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); background: #fff; }
+      .tablecard { border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; box-shadow: var(--shadow); background: #fff; }
       table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
       th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
       th { color: var(--faint); font-weight: 600; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bg-alt); }
@@ -191,6 +193,12 @@
         .grid { grid-template-columns: 1fr; }
         td.cmd { white-space: normal; }
         section { padding: 48px 0; }
+        /* The in-page anchors crowd the bar on a phone; the page is a short scroll,
+           so on mobile we keep just the brand and the two CTAs (GitHub, npm). */
+        .nav-sec { display: none; }
+        .nav-links { gap: 18px; }
+        nav .wrap { height: 56px; }
+        .wrap { padding: 0 18px; }
       }
     </style>
   </head>
@@ -199,10 +207,10 @@
       <div class="wrap">
         <div class="brand">Recall<span>&nbsp;OS</span></div>
         <div class="nav-links">
-          <a href="#demo">Demo</a>
-          <a href="#how">How it works</a>
-          <a href="#commands">Commands</a>
-          <a href="#presets">Presets</a>
+          <a class="nav-sec" href="#demo">Demo</a>
+          <a class="nav-sec" href="#how">How it works</a>
+          <a class="nav-sec" href="#commands">Commands</a>
+          <a class="nav-sec" href="#presets">Presets</a>
           <a href="https://github.com/Karthick-Ramachandran/recall-os">GitHub</a>
           <a href="https://www.npmjs.com/package/recall-os">npm</a>
         </div>
