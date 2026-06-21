@@ -46,6 +46,10 @@ them.
   the repo, not trapped in an agent's context window.
 - **A gate, not just docs.** `recall doctor` is deterministic and returns an exit code, so "is this
   work actually finished and consistent?" becomes a check you can run in a hook or CI.
+- **Decisions change safely.** When a decision changes, `recall adr supersede` records it (the old
+  ADR is marked superseded, the new one links back) and Doctor flags any memory still citing the old
+  one — so the trail stays auditable instead of silently contradicted. The generated agent rules
+  even carry the CLI commands inline, so your AI tool uses them itself.
 - **Architecture-neutral by design.** Recall OS records and protects _your_ decisions. It never
   silently picks a framework, database, or pattern for you.
 - **Local-first and private.** No network calls, no telemetry, no AI API calls, no remote templates.
@@ -116,6 +120,7 @@ git config core.hooksPath .recall/hooks
 | `recall adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR. |
 | `recall module create <name>`      | Scaffold module memory (ownership, boundaries, tests).                        |
 | `recall skill create <name>`       | Generate a portable AI agent skill (Claude + Agent Skills).                   |
+| `recall skill list`                | List the built-in agent skill catalog.                                        |
 | `recall mcp add <server>`          | Generate offline, proposed memory for an MCP server.                          |
 | `recall doctor`                    | Validate memory health, evidence, and drift.                                  |
 

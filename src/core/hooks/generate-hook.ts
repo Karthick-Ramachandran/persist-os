@@ -22,7 +22,7 @@ export function renderSessionStartHook(): string {
 adrs=$(ls docs/adrs/ADR-*.md 2>/dev/null | sed 's|.*/||;s|\\.md$||' | tr '\\n' ' ')
 modules=$(ls -d docs/30-modules/*/ 2>/dev/null | sed 's|docs/30-modules/||;s|/$||' | tr '\\n' ' ')
 
-context="Recall OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): \${adrs:-none yet}. Modules (docs/30-modules/): \${modules:-none yet}. Run 'recall doctor' before claiming work complete."
+context="Recall OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): \${adrs:-none yet}. Modules (docs/30-modules/): \${modules:-none yet}. Use the Recall OS CLI commands listed in AGENTS.md (recall feature/adr/module create, recall adr accept and supersede, recall doctor) yourself; do not web-search them. Run 'recall doctor' before claiming work complete."
 
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\\n' "$context"
 `;

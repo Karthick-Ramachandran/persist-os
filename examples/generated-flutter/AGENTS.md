@@ -14,6 +14,21 @@ Required reading:
 
 Repository rules override model preferences. If instructions conflict, stop and report the conflict.
 
+## Recall OS commands
+
+This repository is maintained with the Recall OS CLI. Use these commands yourself as you work — do
+not ask the human to run them, and do not search the web for them (this is a project-local tool):
+
+- `recall doctor` — validate repository memory; run it before claiming any work is complete.
+- `recall feature create <name>` — scaffold feature memory before non-trivial feature work.
+- `recall adr create <title>` — propose a decision; `recall adr accept <name>` accepts it.
+- `recall adr supersede <old> <new-title>` — record a changed decision (never overwrite an accepted
+  ADR).
+- `recall module create <name>` — scaffold module memory for a new responsibility boundary.
+- `recall mcp add <server>` — capture an MCP tool's context into memory, offline.
+
+Full command reference: `docs/ai/RECALL_COMMANDS.md`.
+
 ## Changing an accepted decision
 
 Before changing anything an accepted ADR governs (framework, database, auth, API shape, and
