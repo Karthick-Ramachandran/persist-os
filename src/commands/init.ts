@@ -286,7 +286,9 @@ function keepForTools(filePath: string, aiTools: readonly string[]): boolean {
     return aiTools.includes("cursor");
   }
   if (filePath.startsWith(".agents/")) {
-    return aiTools.includes("codex") || aiTools.includes("generic");
+    // The portable Agent Skills are how Codex, Cursor, and other AGENTS.md-aware tools consume the
+    // generated workflow skills — Cursor has no skills format of its own, so it relies on these.
+    return aiTools.includes("codex") || aiTools.includes("generic") || aiTools.includes("cursor");
   }
   return true;
 }
