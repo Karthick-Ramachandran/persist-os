@@ -104,19 +104,20 @@ git config core.hooksPath .recall/hooks
 
 ## Commands
 
-| Command                        | Purpose                                                     |
-| ------------------------------ | ----------------------------------------------------------- |
-| `recall init`                  | Create neutral repository memory (and a pre-commit hook).   |
-| `recall init --preset <id>`    | Add an opinion pack: rich guidance and proposed ADRs.       |
-| `recall adopt`                 | Inspect an existing repo and propose reviewable memory.     |
-| `recall preset list`           | List built-in presets.                                      |
-| `recall feature create <name>` | Scaffold feature memory (PRD, acceptance, tests, review).   |
-| `recall adr create <title>`    | Create a proposed architecture decision record.             |
-| `recall adr accept <name>`     | Promote a proposed ADR to accepted source-of-truth.         |
-| `recall module create <name>`  | Scaffold module memory (ownership, boundaries, tests).      |
-| `recall skill create <name>`   | Generate a portable AI agent skill (Claude + Agent Skills). |
-| `recall mcp add <server>`      | Generate offline, proposed memory for an MCP server.        |
-| `recall doctor`                | Validate memory health, evidence, and drift.                |
+| Command                            | Purpose                                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `recall init`                      | Create neutral repository memory (and a pre-commit hook).                     |
+| `recall init --preset <id>`        | Add an opinion pack: rich guidance and proposed ADRs.                         |
+| `recall adopt`                     | Inspect an existing repo and propose reviewable memory.                       |
+| `recall preset list`               | List built-in presets.                                                        |
+| `recall feature create <name>`     | Scaffold feature memory (PRD, acceptance, tests, review).                     |
+| `recall adr create <title>`        | Create a proposed architecture decision record.                               |
+| `recall adr accept <name>`         | Promote a proposed ADR to accepted source-of-truth.                           |
+| `recall adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR. |
+| `recall module create <name>`      | Scaffold module memory (ownership, boundaries, tests).                        |
+| `recall skill create <name>`       | Generate a portable AI agent skill (Claude + Agent Skills).                   |
+| `recall mcp add <server>`          | Generate offline, proposed memory for an MCP server.                          |
+| `recall doctor`                    | Validate memory health, evidence, and drift.                                  |
 
 ## What Doctor Checks
 
@@ -130,6 +131,7 @@ local, and read-only.
 | ADR quality         | An accepted ADR with no meaningful consequences                                         | error / warn |
 | Security            | A security-sensitive feature with no documented security impact                         | error / warn |
 | Drift               | Memory that references a missing, or not-yet-accepted, ADR                              | error / warn |
+| Superseded          | Memory still citing a decision that has been superseded by a newer ADR                  | warning      |
 | Content             | A feature PRD, module, or (once work exists) the threat / security model left as a stub | warning      |
 
 ```txt

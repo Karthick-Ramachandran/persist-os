@@ -58,6 +58,73 @@ export function generateAdrFile(options: GenerateAdrFileOptions): WriteFileInput
   ];
 }
 
+export type GenerateSupersedingAdrOptions = {
+  adrDir: string;
+  adrId: string;
+  title: string;
+  supersedesRef: string;
+};
+
+const supersedingAdrTemplate = `# {{adrId}}: {{title}}
+
+## Status
+
+Accepted
+
+## Supersedes
+
+- {{supersedesRef}}
+
+## Context
+
+What changed, and why the previous decision no longer holds?
+
+## Decision
+
+What is the new decision?
+
+## Alternatives Considered
+
+What other options were considered?
+
+## Consequences
+
+What improves, what worsens, and what risks remain?
+
+## Related Documents
+
+- PRD:
+- Architecture:
+- Security:
+- Feature:
+`;
+
+/**
+ * Render a new, accepted ADR that supersedes an existing one. Used by `recall adr supersede`: a human
+ * recording a changed decision, so the new ADR is Accepted and carries a `## Supersedes` link back to
+ * the decision it replaces.
+ */
+export function generateSupersedingAdr(options: GenerateSupersedingAdrOptions): {
+  path: string;
+  content: string;
+  slug: string;
+} {
+  const slug = slugify(options.title);
+  const title = titleizeAdrTitle(options.title);
+  const context = createTemplateContext({
+    adrId: options.adrId,
+    slug,
+    title,
+    supersedesRef: options.supersedesRef,
+  });
+
+  return {
+    path: path.posix.join(options.adrDir, `${options.adrId}-${slug}.md`),
+    content: renderTemplate(supersedingAdrTemplate, context),
+    slug,
+  };
+}
+
 function titleizeAdrTitle(title: string): string {
   return title
     .trim()

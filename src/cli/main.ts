@@ -3,6 +3,11 @@ import { Command, CommanderError } from "commander";
 import { acceptAdr, AdrAcceptError, formatAdrAcceptResult } from "../commands/adr/accept.js";
 import { createAdr, AdrCreateError, formatAdrCreateResult } from "../commands/adr/create.js";
 import {
+  supersedeAdr,
+  AdrSupersedeError,
+  formatAdrSupersedeResult,
+} from "../commands/adr/supersede.js";
+import {
   createFeature,
   FeatureCreateError,
   formatFeatureCreateResult,
@@ -143,6 +148,29 @@ export function createCliProgram(
       stdout.write(formatAdrAcceptResult(result));
     });
 
+  adrCommand
+    .command("supersede")
+    .description(
+      "Record a changed decision: mark an accepted ADR superseded by a new accepted ADR.",
+    )
+    .argument("<old>", "Accepted ADR name or slug being superseded, e.g. database-postgres.")
+    .argument("<new-title>", "Title of the new decision that replaces it.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .option("--force", "Overwrite existing files explicitly.")
+    .action(
+      async (oldName: string, newTitle: string, options: { dryRun?: boolean; force?: boolean }) => {
+        const result = await supersedeAdr({
+          rootDir: cwd,
+          oldName,
+          newTitle,
+          dryRun: options.dryRun,
+          force: options.force,
+        });
+
+        stdout.write(formatAdrSupersedeResult(result));
+      },
+    );
+
   const moduleCommand = program.command("module").description("Manage Recall OS module memory.");
 
   moduleCommand
@@ -274,6 +302,14 @@ export async function main(
     }
 
     if (error instanceof AdrAcceptError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof AdrSupersedeError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

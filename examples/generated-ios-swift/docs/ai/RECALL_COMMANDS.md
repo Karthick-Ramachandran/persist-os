@@ -108,6 +108,17 @@ Options:
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 
+### `recall adr supersede <old> <new-title>`
+
+Record a changed decision. Marks an accepted ADR as `Accepted — superseded by ADR-####` and creates
+a new accepted ADR that declares what it supersedes, so the reasoning trail stays auditable instead
+of being overwritten. Doctor then warns about any memory still referencing the superseded decision.
+
+Options:
+
+- `--dry-run`: show planned writes without writing files.
+- `--force`: overwrite existing files explicitly.
+
 ### `recall module create <name>`
 
 Create module memory docs under the configured modules directory.
@@ -124,7 +135,8 @@ engineering evidence is present, and whether memory references decisions that ex
 accepted.
 
 Doctor also runs deterministic drift checks: feature or module memory that references a missing ADR
-is an error, and memory that references a not-yet-accepted ADR is a warning.
+is an error, memory that references a not-yet-accepted ADR is a warning, and memory that still
+references a superseded decision is a warning.
 
 Exit codes:
 

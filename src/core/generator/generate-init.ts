@@ -34,6 +34,18 @@ Required reading:
 - \`docs/60-engineering/ENGINEERING_STANDARDS.md\`
 
 Repository rules override model preferences. If instructions conflict, stop and report the conflict.
+
+## Changing an accepted decision
+
+Before changing anything an accepted ADR governs (framework, database, auth, API shape, and similar):
+
+1. Check \`docs/adrs/\` for an accepted ADR that covers it.
+2. If your change contradicts one, stop and confirm with a human first — do not silently change the
+   code and leave the ADR saying the opposite.
+3. Record the change as a new decision with \`recall adr supersede <old> <new-title>\`. That supersedes
+   the old ADR instead of overwriting history, so the reasoning stays auditable.
+
+Repository memory is only trustworthy if decisions change through this trail, not silently.
 `,
   },
   {
@@ -70,6 +82,8 @@ Before non-trivial work:
 - Read \`AGENTS.md\` and the docs it routes to.
 - Accepted decisions live in \`docs/adrs/\`; module memory lives in \`docs/30-modules/\`.
 - If an instruction conflicts with accepted repository memory, stop and report the conflict.
+- Before changing what an accepted ADR governs, confirm with a human and record it with
+  \`recall adr supersede <old> <new-title>\` — never silently contradict an accepted decision.
 
 Source-of-truth order: accepted ADRs and repository decisions, then architecture docs, engineering
 standards, the current PRD, security and testing docs, module docs, feature plans, then chat history.
@@ -278,6 +292,15 @@ Baseline rules:
 AI agents must follow repository memory over model preference.
 
 If a request conflicts with accepted repository memory or engineering standards, stop and report the conflict.
+
+## Changing an accepted decision
+
+When work would change something an accepted ADR governs:
+
+1. Find the accepted ADR in \`docs/adrs/\` that covers it.
+2. If the change contradicts it, stop and confirm with a human before changing the code.
+3. Record the new decision with \`recall adr supersede <old> <new-title>\` so the old ADR is marked
+   superseded and the reasoning is preserved, instead of silently editing or contradicting it.
 `,
   },
   {
@@ -411,6 +434,17 @@ Options:
 - \`--dry-run\`: show planned writes without writing files.
 - \`--force\`: overwrite existing files explicitly.
 
+### \`recall adr supersede <old> <new-title>\`
+
+Record a changed decision. Marks an accepted ADR as \`Accepted — superseded by ADR-####\` and creates a
+new accepted ADR that declares what it supersedes, so the reasoning trail stays auditable instead of
+being overwritten. Doctor then warns about any memory still referencing the superseded decision.
+
+Options:
+
+- \`--dry-run\`: show planned writes without writing files.
+- \`--force\`: overwrite existing files explicitly.
+
 ### \`recall module create <name>\`
 
 Create module memory docs under the configured modules directory.
@@ -426,7 +460,8 @@ Check whether repository memory is structurally healthy enough for AI-assisted w
 engineering evidence is present, and whether memory references decisions that exist and are accepted.
 
 Doctor also runs deterministic drift checks: feature or module memory that references a missing ADR
-is an error, and memory that references a not-yet-accepted ADR is a warning.
+is an error, memory that references a not-yet-accepted ADR is a warning, and memory that still
+references a superseded decision is a warning.
 
 Exit codes:
 

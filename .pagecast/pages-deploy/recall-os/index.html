@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recall OS — durable, AI-ready engineering memory for your repository</title>
+    <meta
+      name="description"
+      content="Recall OS is a local-first CLI that turns a repository into durable, AI-ready memory of the decisions behind it — and validates that memory with a deterministic recall doctor. Architecture-neutral. No network, no telemetry, no AI API calls."
+    />
+    <link rel="canonical" href="https://github.com/Karthick-Ramachandran/recall-os" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Recall OS — durable, AI-ready engineering memory for your repository" />
+    <meta
+      property="og:description"
+      content="Git tracks what changed. Recall tracks why. A local-first CLI for durable repository memory, validated by a deterministic doctor."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/Karthick-Ramachandran/recall-os/main/docs/media/how-it-works.png"
+    />
+    <meta property="og:url" content="https://github.com/Karthick-Ramachandran/recall-os" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Recall OS — durable, AI-ready engineering memory" />
+    <meta
+      name="twitter:description"
+      content="Git tracks what changed. Recall tracks why. A local-first CLI for durable repository memory, validated by a deterministic doctor."
+    />
+    <meta
+      name="twitter:image"
+      content="https://raw.githubusercontent.com/Karthick-Ramachandran/recall-os/main/docs/media/how-it-works.png"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Structured data so search engines and LLMs understand the project -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Recall OS",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS, Linux, Windows (Node.js >= 20)",
+        "description": "A local-first CLI that turns a repository into durable, AI-ready engineering memory — the decisions behind the code — and validates that memory with a deterministic recall doctor. Architecture-neutral, with no network calls, telemetry, or AI API usage.",
+        "url": "https://github.com/Karthick-Ramachandran/recall-os",
+        "downloadUrl": "https://www.npmjs.com/package/recall-os",
+        "license": "https://opensource.org/licenses/MIT",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+
+    <style>
+      :root {
+        --bg: #ffffff;
+        --bg-alt: #f7f8fa;
+        --ink: #0f1115;
+        --text: #1c2027;
+        --muted: #5b616e;
+        --faint: #8a909c;
+        --border: #e7e9ee;
+        --border-strong: #d8dbe2;
+        --accent: #4f46e5;
+        --accent-2: #7c3aed;
+        --accent-soft: #eef0fe;
+        --code-bg: #f3f4f7;
+        --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 30px rgba(16, 24, 40, 0.06);
+        --maxw: 1080px;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      html, body { overflow-x: hidden; max-width: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Geist", "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.62;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      .mono { font-family: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+      /* Nav */
+      nav {
+        position: sticky; top: 0; z-index: 10;
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.78);
+        border-bottom: 1px solid var(--border);
+      }
+      nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+      .brand { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; color: var(--ink); }
+      .brand span { color: var(--accent); }
+      .nav-links { display: flex; gap: 24px; align-items: center; }
+      .nav-links a { color: var(--muted); font-size: 14.5px; font-weight: 500; }
+      .nav-links a:hover { color: var(--ink); text-decoration: none; }
+
+      /* Hero */
+      header.hero {
+        padding: 92px 0 48px; text-align: center; position: relative; overflow: hidden;
+        background:
+          radial-gradient(620px 320px at 50% -40px, var(--accent-soft) 0%, rgba(238, 240, 254, 0) 70%),
+          var(--bg);
+      }
+      h1 {
+        font-size: clamp(30px, 7vw, 66px);
+        line-height: 1.05; margin: 0 0 20px; letter-spacing: -0.035em; font-weight: 700; color: var(--ink);
+        overflow-wrap: break-word;
+      }
+      h1 .accent {
+        background: linear-gradient(95deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .kicker { font-size: 18px; color: var(--ink); font-weight: 500; margin: 0 auto 22px; }
+      .kicker .mono { color: var(--accent); font-weight: 600; }
+      .sub { font-size: clamp(16px, 2.3vw, 20px); color: var(--muted); max-width: 700px; margin: 0 auto 28px; }
+
+      .install {
+        display: inline-flex; align-items: center; gap: 12px; margin: 0 auto 18px;
+        background: var(--code-bg); border: 1px solid var(--border-strong); border-radius: 12px;
+        padding: 13px 18px; font-size: 15px; color: var(--ink);
+      }
+      .install .dollar { color: var(--accent); }
+
+      .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 22px; border-radius: 11px; font-weight: 600; font-size: 15px;
+        border: 1px solid var(--border-strong); color: var(--ink); background: #fff; transition: all .15s ease;
+      }
+      .btn:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
+      .btn.primary {
+        background: linear-gradient(95deg, var(--accent), var(--accent-2)); color: #fff; border: 0;
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
+      }
+      .btn.primary:hover { filter: brightness(1.06); color: #fff; }
+
+      .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+      .badge {
+        font-size: 12.5px; color: var(--muted); border: 1px solid var(--border);
+        border-radius: 999px; padding: 5px 13px; background: #fff;
+      }
+
+      /* Sections */
+      section { padding: 66px 0; }
+      section.alt { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+      h2 { font-size: clamp(26px, 3.6vw, 36px); margin: 0 0 12px; letter-spacing: -0.025em; color: var(--ink); font-weight: 700; }
+      .lead { color: var(--muted); max-width: 720px; margin: 0 0 32px; font-size: 17.5px; }
+      .center { text-align: center; }
+      .center .lead { margin-left: auto; margin-right: auto; }
+
+      .shot {
+        width: 100%; border-radius: 16px; border: 1px solid var(--border-strong);
+        background: #0b1021; display: block; box-shadow: var(--shadow);
+      }
+      figure { margin: 0; }
+      figcaption { color: var(--faint); font-size: 13.5px; text-align: center; margin-top: 12px; }
+
+      /* Feature grid */
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+      .card {
+        background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 24px;
+        box-shadow: var(--shadow);
+      }
+      .card h3 { margin: 0 0 8px; font-size: 17px; color: var(--ink); }
+      .card p { margin: 0; color: var(--muted); font-size: 15px; }
+      .card .ic { font-size: 24px; margin-bottom: 10px; display: block; }
+
+      /* Tables */
+      .tablecard { border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; box-shadow: var(--shadow); background: #fff; }
+      table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+      th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      th { color: var(--faint); font-weight: 600; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bg-alt); }
+      tr:last-child td { border-bottom: 0; }
+      td.cmd { white-space: nowrap; }
+      td .mono, .install .mono { color: var(--accent); }
+      td.muted-td { color: var(--muted); }
+
+      /* Footer */
+      footer { border-top: 1px solid var(--border); padding: 36px 0 60px; color: var(--muted); font-size: 14.5px; background: var(--bg-alt); }
+      footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+      footer a { color: var(--muted); }
+
+      @media (max-width: 760px) {
+        .grid { grid-template-columns: 1fr; }
+        td.cmd { white-space: normal; }
+        section { padding: 48px 0; }
+        /* The in-page anchors crowd the bar on a phone; the page is a short scroll,
+           so on mobile we keep just the brand and the two CTAs (GitHub, npm). */
+        .nav-sec { display: none; }
+        .nav-links { gap: 18px; }
+        nav .wrap { height: 56px; }
+        .wrap { padding: 0 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="wrap">
+        <div class="brand">Recall<span>&nbsp;OS</span></div>
+        <div class="nav-links">
+          <a class="nav-sec" href="#demo">Demo</a>
+          <a class="nav-sec" href="#how">How it works</a>
+          <a class="nav-sec" href="#commands">Commands</a>
+          <a class="nav-sec" href="#presets">Presets</a>
+          <a href="https://github.com/Karthick-Ramachandran/recall-os">GitHub</a>
+          <a href="https://www.npmjs.com/package/recall-os">npm</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="wrap">
+        <h1>Durable, AI-ready memory<br />for your <span class="accent">repository</span></h1>
+        <p class="kicker">Git tracks <em>what</em> changed. <span class="mono">recall</span> tracks <em>why</em>.</p>
+        <p class="sub">
+          A local-first CLI that writes the decisions, constraints, and standards behind your code into
+          plain files that live next to it — and validates that memory with a deterministic
+          <span class="mono">recall&nbsp;doctor</span>. Architecture-neutral. No network, no telemetry, no AI API calls.
+        </p>
+
+        <div class="install mono"><span class="dollar">$</span><span>npx recall-os@latest init</span></div>
+        <p class="sub" style="margin: 6px auto 18px; font-size: 14.5px;">No install needed — run any command with <span class="mono">npx recall-os &lt;command&gt;</span>, or <span class="mono">npm i -g recall-os</span>.</p>
+
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/Karthick-Ramachandran/recall-os">★ Star on GitHub</a>
+          <a class="btn" href="https://www.npmjs.com/package/recall-os">View on npm</a>
+          <a class="btn" href="#commands">See the commands</a>
+        </div>
+
+        <div class="badges">
+          <span class="badge">MIT licensed</span>
+          <span class="badge">Local-first</span>
+          <span class="badge">No telemetry</span>
+          <span class="badge">No network calls</span>
+          <span class="badge">Node.js ≥ 20</span>
+        </div>
+      </div>
+    </header>
+
+    <section id="problem">
+      <div class="wrap">
+        <h2>The reasoning shouldn't live in the chat</h2>
+        <p class="lead">
+          AI gets software to a working shape fast — but most of the <em>why</em> ends up in a chat window
+          that resets every session. When a teammate, a real engineering team, or a fresh agent takes over,
+          they inherit the code without the context. Recall OS keeps that reasoning in the repository, where
+          it survives every session and gets reviewed in pull requests.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <span class="ic">🧠</span>
+            <h3>Memory that outlives the chat</h3>
+            <p>Decisions, ownership, and constraints are committed to the repo — not trapped in a context window.</p>
+          </div>
+          <div class="card">
+            <span class="ic">✅</span>
+            <h3>A gate, not just docs</h3>
+            <p><span class="mono">recall doctor</span> is deterministic and returns an exit code, so "is this actually done and consistent?" becomes a check you can run.</p>
+          </div>
+          <div class="card">
+            <span class="ic">🧭</span>
+            <h3>It proposes, you decide</h3>
+            <p>Presets, adopt, and MCP capture produce <em>proposed</em> memory. A human accepts it with <span class="mono">recall adr accept</span> — nothing becomes truth silently.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="center alt">
+      <div class="wrap">
+        <h2>See it in 40 seconds</h2>
+        <p class="lead">Create memory, accept a decision, capture an MCP tool's context, and let the gate flag what's still missing.</p>
+        <figure>
+          <img class="shot" src="assets/recall-demo.gif" alt="Terminal demo of Recall OS: recall init scaffolds repository memory, recall adr accept promotes a proposed decision, recall mcp add figma captures context offline, and recall doctor flags the unfilled threat model." loading="lazy" />
+          <figcaption>A real terminal session — <span class="mono">init → adr accept → mcp add → doctor</span>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="how" class="center">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <p class="lead">You capture intent and decisions; Recall writes durable memory that humans review and agents re-read; the doctor validates it for a hook or CI gate.</p>
+        <figure>
+          <img class="shot" src="assets/how-it-works.png" alt="Flow diagram: intent, decisions, ownership, standards, and security feed recall init / feature / adr / module, which writes durable memory under docs/ and .recall/config.json. Humans review it in pull requests and agents re-read it every session. recall doctor validates it, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate." loading="lazy" />
+        </figure>
+      </div>
+    </section>
+
+    <section id="commands" class="alt">
+      <div class="wrap">
+        <h2>Every command</h2>
+        <p class="lead">Each command guides you — it names the file it created, where it lives, and what to do next.</p>
+        <div class="tablecard">
+          <table>
+            <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td class="cmd"><span class="mono">recall init</span></td><td class="muted-td">Create neutral repository memory, plus agent skills, a pre-commit hook, a CI workflow, a Claude SessionStart hook, and a Cursor rule. Surfaces the detected stack (proposed).</td></tr>
+              <tr><td class="cmd"><span class="mono">recall init --preset &lt;id&gt;</span></td><td class="muted-td">Add an opinion pack: rich guidance and proposed ADRs for a real stack.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall adopt</span></td><td class="muted-td">Inspect an existing repo (read-only) and propose reviewable memory, with the source each signal was inferred from.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall preset list</span></td><td class="muted-td">List the built-in opinion packs.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall feature create &lt;name&gt;</span></td><td class="muted-td">Scaffold feature memory: PRD, acceptance, tests, review, completion report.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall adr create &lt;title&gt;</span></td><td class="muted-td">Create a proposed architecture decision record.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall adr accept &lt;name&gt;</span></td><td class="muted-td">Promote a proposed ADR to accepted source-of-truth.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall module create &lt;name&gt;</span></td><td class="muted-td">Scaffold module memory: ownership, boundaries, tests, decisions.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall skill create &lt;name&gt;</span></td><td class="muted-td">Generate a portable AI agent skill for Claude Code and the Agent Skills format.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall mcp add &lt;server&gt;</span></td><td class="muted-td">Generate offline, proposed memory for an MCP server (e.g. Figma) and a capture skill.</td></tr>
+              <tr><td class="cmd"><span class="mono">recall doctor</span></td><td class="muted-td">Validate memory health, completion evidence, drift, and unfilled security docs. Exit codes 0 / 1 / 2.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="presets">
+      <div class="wrap">
+        <h2>Opinion packs for real stacks</h2>
+        <p class="lead">Presets propose vetted, stack-specific decisions — always as <em>proposed</em> ADRs you accept or reject. The schema makes a silent acceptance impossible.</p>
+        <div class="tablecard">
+          <table>
+            <thead><tr><th>Preset</th><th>Stack</th><th>Proposes</th></tr></thead>
+            <tbody>
+              <tr><td class="cmd"><span class="mono">laravel-react</span></td><td>Laravel + React</td><td class="muted-td">Inertia + React, Eloquent, Sanctum, Form Requests + Policies, queues, Pest</td></tr>
+              <tr><td class="cmd"><span class="mono">laravel-vue</span></td><td>Laravel + Vue</td><td class="muted-td">Inertia + Vue, Eloquent, Sanctum, Form Requests + Policies, queues, Pest</td></tr>
+              <tr><td class="cmd"><span class="mono">laravel-api</span></td><td>Laravel (API)</td><td class="muted-td">Versioned REST + API Resources, Eloquent, Sanctum, queues, Pest</td></tr>
+              <tr><td class="cmd"><span class="mono">nextjs</span></td><td>Next.js / TS</td><td class="muted-td">App Router, typed data layer, Tailwind, Vitest + Playwright</td></tr>
+              <tr><td class="cmd"><span class="mono">python-fastapi</span></td><td>Python / FastAPI</td><td class="muted-td">FastAPI, PostgreSQL + SQLAlchemy, Pydantic, pytest, Redis</td></tr>
+              <tr><td class="cmd"><span class="mono">kotlin-android</span></td><td>Kotlin / Android</td><td class="muted-td">Compose, Coroutines + Flow, Hilt, Room, MVVM</td></tr>
+              <tr><td class="cmd"><span class="mono">ios-swift</span></td><td>iOS / Swift</td><td class="muted-td">SwiftUI, async/await + Observation, SwiftData, MVVM</td></tr>
+              <tr><td class="cmd"><span class="mono">flutter</span></td><td>Flutter</td><td class="muted-td">Platform and state-management guidance</td></tr>
+              <tr><td class="cmd"><span class="mono">generic</span></td><td>none</td><td class="muted-td">Architecture-neutral memory</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="agents" class="alt">
+      <div class="wrap">
+        <h2>The memory loads itself, in every tool</h2>
+        <p class="lead">Writing memory only helps if the agent reads it, so <span class="mono">recall init</span> wires each tool with its own native mechanism.</p>
+        <div class="grid">
+          <div class="card">
+            <span class="ic">🟣</span>
+            <h3>Claude Code</h3>
+            <p><span class="mono">CLAUDE.md</span> auto-loads and imports <span class="mono">AGENTS.md</span>; a SessionStart hook injects a live map of accepted ADRs and modules every session.</p>
+          </div>
+          <div class="card">
+            <span class="ic">🟦</span>
+            <h3>Cursor</h3>
+            <p><span class="mono">.cursor/rules/recall-memory.mdc</span> is an always-apply rule that loads the memory rules into every request.</p>
+          </div>
+          <div class="card">
+            <span class="ic">⚫</span>
+            <h3>Codex &amp; others</h3>
+            <p><span class="mono">AGENTS.md</span> is auto-discovered — the portable floor that carries the same rules everywhere.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="trust" class="center">
+      <div class="wrap">
+        <h2>Deterministic on purpose</h2>
+        <p class="lead">
+          A memory layer and a quality gate have to be trustworthy. So Recall OS never calls a model to
+          judge your work — it checks structure and evidence with reproducible rules. Same input, same
+          answer, every time. The thinking stays with you and your agent; the proof-of-work stays with the gate.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/Karthick-Ramachandran/recall-os">★ Star on GitHub</a>
+          <a class="btn" href="https://www.npmjs.com/package/recall-os">npm install -g recall-os</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div>
+          Recall OS — local-first repository memory. MIT licensed.<br />
+          Deployed with <a href="https://github.com/Amal-David/pagecast">Pagecast</a> — thank you. 💜
+        </div>
+        <div>
+          <a href="https://github.com/Karthick-Ramachandran/recall-os">GitHub</a> ·
+          <a href="https://www.npmjs.com/package/recall-os">npm</a> ·
+          <a href="https://github.com/Karthick-Ramachandran/recall-os/blob/main/PHILOSOPHY.md">Philosophy</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

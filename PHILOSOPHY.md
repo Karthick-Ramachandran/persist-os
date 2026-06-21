@@ -42,9 +42,12 @@ The actual thinking still comes from the agent (Claude, Codex, Cursor). Recall O
 smart — it's to put the right memory in front of the agent and make the agent's work persist. So it
 wires each tool with its own native mechanism: a SessionStart hook that injects a live memory map in
 Claude Code, an always-apply rule for Cursor, and `AGENTS.md` (which both Codex and Cursor
-auto-load) as the portable floor. The dynamic per-session map is a Claude Code bonus, not a promise
-everywhere — I'd rather be honest about that than pretend one trick works in every tool. I can't
-force a model to be correct, but I _can_ stop re-explaining the project every single time.
+auto-load) as the portable floor. And it's a _map_, not a dump — just a short index of the accepted
+decisions and modules, so the agent grabs a pointer and reads the detail when it needs it, instead
+of me pasting the whole repo into context every session. The dynamic per-session map is a Claude
+Code bonus, not a promise everywhere — I'd rather be honest about that than pretend one trick works
+in every tool. I can't force a model to be correct, but I _can_ stop re-explaining the project every
+single time.
 
 ## It proposes, you decide
 

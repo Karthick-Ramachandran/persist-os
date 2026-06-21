@@ -1,0 +1,14 @@
+{
+  "pages": {
+    "projectName": "recall-os",
+    "accountId": "33361aca2dce258166a4459936e51ce3",
+    "accountName": "Karthiram165@gmail.com's Account",
+    "branch": "main",
+    "baseUrl": "https://recall-os.pages.dev"
+  },
+  "feedback": null,
+  "badge": true,
+  "goal": null,
+  "defaultExpiry": "30d",
+  "authCookieSecret": "c904c3b969b59b4a2aa4fe54bfc6d22b7a35846ad1c5beccd0ac1bacbbb9f005"
+}

@@ -1,6 +1,6 @@
 {
   "name": "recall-os",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Architecture-neutral repository memory for AI-assisted software teams.",
   "packageManager": "pnpm@10.12.3",
   "type": "module",
