@@ -35,10 +35,10 @@ What must not drift?    What evidence proves this work is complete?
 When these questions live in the repository instead of a chat window, the repository can answer
 them.
 
-> **Governance, not retrieval.** Recall OS is not a vector memory engine like supermemory or mem0 —
-> those _find_ the right information; Recall _defines and protects_ which decision is true, where it
-> was accepted, and whether it still holds. They're complementary. What Recall competes with is
-> tribal knowledge, forgotten decisions, and stale docs. → [Why I built this](PHILOSOPHY.md)
+> **Not a vector memory engine.** Tools like supermemory or mem0 _retrieve_ information with
+> embeddings; Recall OS writes the **decisions** themselves — reviewable files, not vectors — and
+> checks they stay consistent. They're complementary, not competitors. →
+> [Why I built this](PHILOSOPHY.md)
 
 ## Why Recall OS
 

@@ -53,62 +53,44 @@ Presets, `recall adopt`, and MCP capture all produce **proposed** memory that a 
 `recall adr accept`. Nothing becomes "truth" silently — a proposal you can review beats a guess the
 tool slipped in.
 
-## Retrieval finds information; Recall protects decisions
+## "Isn't this just a memory tool?"
 
-People lump "memory," "AI," "context," and "retrieval" into one bucket. They aren't the same thing.
+Is this the same as a vector memory engine — supermemory, mem0, a RAG store? It's a fair question,
+and those are genuinely useful: they remember information and pull the relevant pieces back into a
+prompt. But that wasn't the part that hurt for me.
 
-A vector memory engine — supermemory, mem0, a RAG store — does something genuinely useful: it
-remembers information, retrieves the relevant pieces, and injects them into a prompt. But its source
-of truth is embeddings, vectors, retrieval scores, and graph relationships. Tell it "all auth goes
-through Auth0" and it can surface that sentence beautifully.
+What I kept losing wasn't information I couldn't find. It was the **decision and why it was made** —
+and, later, whether it was still the decision. Retrieval gets you "we said Auth0 once." What I
+needed to know was where that was decided, whether it was reviewed, and whether it still holds. For
+me that turned out to be a files-and-review problem, not a search problem — so I reached for plain
+files I can read and a human can approve, not embeddings I have to trust.
 
-Recall's source of truth is different: files, ADRs, standards, reviews, accepted decisions. It asks
-a different question about that same statement — _where_ was it accepted, _which_ ADR owns it, is it
-still valid, does anything contradict it, was it reviewed? That is governance, not retrieval.
+So I don't really think of those tools as competitors; if anything they'd sit happily on top of this
+and index the files Recall writes. The thing this actually replaces, for me, is the decision that
+only ever lived in a chat — or in someone's head.
 
-So I don't think Recall competes with vector databases. The two are complementary: Recall produces
-the durable, reviewed truth, and a retrieval engine can index that truth for fast lookup. What
-Recall actually competes with is **tribal knowledge, forgotten decisions, stale documentation, and
-chat-history-only development** — a very different category.
+## What it catches — and what it doesn't
 
-That is the bet underneath the "plain files" choice: retrieval is useful, but authority has to stay
-human-readable. If an embedding store disappears, the memory disappears. If a vector ranking
-changes, the "truth" can shift. If an ADR lives in git, the decision still exists ten years later.
+I want to be straight about the limits, since this is exactly where a tool like this can oversell.
 
-## What it catches today, and what's next
+It catches the _structural_ problems well: a missing ADR or module, a broken `src/` reference,
+memory pointing at a decision that was never accepted, an empty template, a "done" with no evidence.
+Those are objective — Doctor can say "this is broken" because checking it doesn't need any
+understanding of the code.
 
-Memory decays in two ways, and they are not equally hard.
+What it doesn't catch is the subtler kind. An ADR says PostgreSQL after the team quietly moved to
+MySQL: the file's still there, the references still resolve, everything passes — and the memory is
+quietly wrong. I haven't solved that, and I'm not going to pretend a deterministic check can.
 
-**Structural decay** is objective, and Recall already catches it: a missing ADR or module, a broken
-`src/` reference, memory that points at a decision that was never accepted, an empty template, a
-"done" claim with no review or evidence. Doctor can say _this is broken_ with high confidence,
-because none of it requires understanding the code — only checking it.
+The tradeoff I chose is to keep that judgment out of the gate. The moment `recall doctor` needs a
+model to decide whether two docs agree, it stops being something I can trust blindly — so I leave
+the reading to the agent. The generated `architecture-drift-review` skill walks the docs and asks
+whether they still line up. The gate stays dumb and reliable; the model does the reading.
 
-**Semantic decay** is harder. An ADR says PostgreSQL; the team migrated to MySQL; the ADR still
-exists, its references still resolve, every file is still there. Structurally everything passes.
-Semantically, the memory is now lying. Recall does **not** fully catch that yet — and I'd rather say
-so than pretend otherwise. A lot of "AI memory" tools imply they maintain semantic truth
-automatically. They don't, because semantic truth is expensive.
-
-Here is the part I care about: semantic judgment must **not** move into the deterministic gate. The
-moment `recall doctor` needs a model to decide "do these two docs agree," it stops being trustworthy
-and free. So that work lives with the agent instead — the generated `architecture-drift-review`
-skill walks the memory graph (ADRs, modules, features, architecture) and asks whether they still
-agree. The gate stays dumb and reliable; the model does the reading.
-
-So the honest maturity, in order:
-
-```txt
-Create memory      → strong
-Protect memory     → strong
-Enforce evidence   → good
-Understand memory  → early (agent-assisted, not automatic)
-```
-
-That order is deliberate. The first thing teams lose is the decision that never got written down —
-not the subtle contradiction between two that did. You cannot detect a contradiction in memory that
-does not exist. Get _create, protect, enforce_ right first; semantic drift detection is the next
-frontier, and it belongs to the agent, not the gate.
+If I'm honest about where it stands: creating, protecting, and enforcing memory work well today;
+_understanding_ it — catching that quiet contradiction — is still early, and it leans on the agent
+more than the gate. That order felt right to me, because the first thing I ever lost wasn't the
+contradiction between two decisions. It was the decision I never wrote down at all.
 
 ## What it's honestly not
 
