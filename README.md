@@ -98,6 +98,9 @@ recall doctor
 
 Every command guides you — it names the file it created, where it is, and what to do next.
 
+Generate files only for the AI tools you use: `recall init --ai-tools claude,cursor` (default: all
+of `claude`, `codex`, `cursor`; `AGENTS.md` is always written).
+
 `recall init` also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
 `recall doctor` plus any gates you configure. Enable it once per clone — Recall OS proposes the
 command but never runs it for you:
@@ -108,21 +111,22 @@ git config core.hooksPath .recall/hooks
 
 ## Commands
 
-| Command                            | Purpose                                                                       |
-| ---------------------------------- | ----------------------------------------------------------------------------- |
-| `recall init`                      | Create neutral repository memory (and a pre-commit hook).                     |
-| `recall init --preset <id>`        | Add an opinion pack: rich guidance and proposed ADRs.                         |
-| `recall adopt`                     | Inspect an existing repo and propose reviewable memory.                       |
-| `recall preset list`               | List built-in presets.                                                        |
-| `recall feature create <name>`     | Scaffold feature memory (PRD, acceptance, tests, review).                     |
-| `recall adr create <title>`        | Create a proposed architecture decision record.                               |
-| `recall adr accept <name>`         | Promote a proposed ADR to accepted source-of-truth.                           |
-| `recall adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR. |
-| `recall module create <name>`      | Scaffold module memory (ownership, boundaries, tests).                        |
-| `recall skill create <name>`       | Generate a portable AI agent skill (Claude + Agent Skills).                   |
-| `recall skill list`                | List the built-in agent skill catalog.                                        |
-| `recall mcp add <server>`          | Generate offline, proposed memory for an MCP server.                          |
-| `recall doctor`                    | Validate memory health, evidence, and drift.                                  |
+| Command                            | Purpose                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------ |
+| `recall init`                      | Create neutral repository memory (and a pre-commit hook).                      |
+| `recall init --preset <id>`        | Add an opinion pack: rich guidance and proposed ADRs.                          |
+| `recall init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
+| `recall adopt`                     | Inspect an existing repo and propose reviewable memory.                        |
+| `recall preset list`               | List built-in presets.                                                         |
+| `recall feature create <name>`     | Scaffold feature memory (PRD, acceptance, tests, review).                      |
+| `recall adr create <title>`        | Create a proposed architecture decision record.                                |
+| `recall adr accept <name>`         | Promote a proposed ADR to accepted source-of-truth.                            |
+| `recall adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR.  |
+| `recall module create <name>`      | Scaffold module memory (ownership, boundaries, tests).                         |
+| `recall skill create <name>`       | Generate a portable AI agent skill (Claude + Agent Skills).                    |
+| `recall skill list`                | List the built-in agent skill catalog.                                         |
+| `recall mcp add <server>`          | Generate offline, proposed memory for an MCP server.                           |
+| `recall doctor`                    | Validate memory health, evidence, and drift.                                   |
 
 ## What Doctor Checks
 

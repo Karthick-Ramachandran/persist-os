@@ -372,6 +372,9 @@ Initialize neutral repository memory.
 Options:
 
 - \`--preset <id>\`: apply optional preset guidance and proposed decisions.
+- \`--ai-tools <list>\`: comma-separated AI tools to generate files for (\`claude\`, \`codex\`, \`cursor\`,
+  \`generic\`). Default: \`claude,codex,cursor\` (all). \`AGENTS.md\` is always generated. Stored in
+  \`.recall/config.json\` as \`aiTools\`.
 - \`--dry-run\`: show planned writes without writing files.
 - \`--force\`: overwrite existing files explicitly.
 - \`--reinit\`: required with \`--force\` to overwrite an existing Recall OS installation

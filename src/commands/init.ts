@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { aiToolTargetSchema } from "../core/config/config-schema.js";
 import { createDefaultConfig } from "../core/config/default-config.js";
 import { CONFIG_PATH } from "../core/config/load-config.js";
 import {
@@ -30,6 +31,7 @@ import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 export type InitOptions = {
   rootDir: string;
   preset?: string;
+  aiTools?: string[];
   dryRun?: boolean;
   force?: boolean;
   reinit?: boolean;
@@ -43,7 +45,11 @@ export type InitResult = {
   detected: RepoSignals;
 };
 
-export type InitErrorCode = "UNKNOWN_PRESET" | "WRITE_PLAN_ERROR" | "EXISTING_INSTALLATION";
+export type InitErrorCode =
+  | "UNKNOWN_PRESET"
+  | "INVALID_AI_TOOL"
+  | "WRITE_PLAN_ERROR"
+  | "EXISTING_INSTALLATION";
 
 export class InitError extends Error {
   readonly code: InitErrorCode;
@@ -74,12 +80,18 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     );
   }
 
+  validateAiTools(options.aiTools);
+
   const preset = resolvePreset(options.preset);
   // Read-only inspection of the existing repository so init can surface the detected stack (proposed,
   // never accepted) — run before writes so it reflects the user's repo, not our generated scaffold.
   const detected = await inspectRepo(options.rootDir);
   const preCommitGates = await detectPreCommitGates(options.rootDir);
-  const config = createDefaultConfig({ preset: preset?.id ?? null, preCommitGates });
+  const config = createDefaultConfig({
+    preset: preset?.id ?? null,
+    preCommitGates,
+    ...(options.aiTools !== undefined ? { aiTools: options.aiTools } : {}),
+  });
   const files = createInitWriteFiles(options.rootDir, config, preset);
   const plan = createWritePlan({
     rootDir: options.rootDir,
@@ -180,6 +192,29 @@ function appendDetectedStack(lines: string[], detected: RepoSignals): void {
   );
 }
 
+type AiToolTarget = (typeof aiToolTargetSchema.options)[number];
+
+function validateAiTools(
+  aiTools: string[] | undefined,
+): asserts aiTools is AiToolTarget[] | undefined {
+  if (aiTools === undefined) {
+    return;
+  }
+
+  const allowed = aiToolTargetSchema.options;
+  const invalid = aiTools.filter((tool) => !allowed.includes(tool as AiToolTarget));
+
+  if (aiTools.length === 0 || invalid.length > 0) {
+    throw new InitError(
+      "INVALID_AI_TOOL",
+      aiTools.length === 0
+        ? "No AI tools given to --ai-tools."
+        : `Unknown --ai-tools value(s): ${invalid.join(", ")}.`,
+      [`Allowed values: ${allowed.join(", ")}.`],
+    );
+  }
+}
+
 function resolvePreset(presetId: string | undefined): Preset | null {
   if (presetId === undefined) {
     return null;
@@ -199,7 +234,7 @@ function createInitWriteFiles(
   config: ReturnType<typeof createDefaultConfig>,
   preset: Preset | null,
 ): WriteFileInput[] {
-  return [
+  const files: WriteFileInput[] = [
     {
       path: CONFIG_PATH,
       content: `${JSON.stringify(config, null, 2)}\n`,
@@ -225,4 +260,24 @@ function createInitWriteFiles(
     // not just the docs. Written to both the Claude and portable Agent Skills targets.
     ...listCatalogSkillNames().flatMap((name) => generateSkillFiles(name).files),
   ];
+
+  return files.filter((file) => keepForTools(file.path, config.aiTools));
+}
+
+/**
+ * Keep only the tool-specific files the repository's selected `aiTools` actually use. Tool-agnostic
+ * files (config, docs, `.recall/`, `.github/`, the pre-commit hook) and `AGENTS.md` are always kept —
+ * `AGENTS.md` is the portable floor that Claude imports and that Codex and Cursor auto-load.
+ */
+function keepForTools(filePath: string, aiTools: readonly string[]): boolean {
+  if (filePath === "CLAUDE.md" || filePath.startsWith(".claude/")) {
+    return aiTools.includes("claude");
+  }
+  if (filePath.startsWith(".cursor/")) {
+    return aiTools.includes("cursor");
+  }
+  if (filePath.startsWith(".agents/")) {
+    return aiTools.includes("codex") || aiTools.includes("generic");
+  }
+  return true;
 }

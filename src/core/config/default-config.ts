@@ -6,7 +6,7 @@ const DEFAULT_CONFIG = {
   preset: null,
   memoryProfile: "standard",
   mode: "standard",
-  aiTools: ["claude", "codex"],
+  aiTools: ["claude", "codex", "cursor"],
   docsDir: "docs",
   featuresDir: "docs/40-features",
   modulesDir: "docs/30-modules",

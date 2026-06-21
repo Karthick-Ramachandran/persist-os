@@ -61,14 +61,37 @@ export function createCliProgram(
     .command("init")
     .description("Initialize Recall OS repository memory.")
     .option("--preset <id>", "Apply optional preset guidance and proposed decisions.")
+    .option(
+      "--ai-tools <list>",
+      "Comma-separated AI tools to generate files for: claude,codex,cursor,generic.",
+    )
     .option("--dry-run", "Show planned writes without writing files.")
     .option("--force", "Overwrite existing files explicitly.")
     .option("--reinit", "Allow --force to overwrite an existing Recall OS installation.")
     .action(
-      async (options: { preset?: string; dryRun?: boolean; force?: boolean; reinit?: boolean }) => {
+      async (options: {
+        preset?: string;
+        aiTools?: string;
+        dryRun?: boolean;
+        force?: boolean;
+        reinit?: boolean;
+      }) => {
+        const aiTools =
+          options.aiTools === undefined
+            ? undefined
+            : [
+                ...new Set(
+                  options.aiTools
+                    .split(",")
+                    .map((tool) => tool.trim().toLowerCase())
+                    .filter((tool) => tool.length > 0),
+                ),
+              ];
+
         const result = await initProject({
           rootDir: cwd,
           preset: options.preset,
+          aiTools,
           dryRun: options.dryRun,
           force: options.force,
           reinit: options.reinit,
