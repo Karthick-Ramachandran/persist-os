@@ -65,6 +65,19 @@ describe("init --ai-tools selection", () => {
     expect(files).toContain(".cursor/rules/recall-memory.mdc");
   });
 
+  it("--ai-tools cursor includes the portable Agent Skills so Cursor has skills", async () => {
+    rootDir = await createTempRoot("aitools-cursor");
+    await runInitCommand(rootDir, ["--ai-tools", "cursor"]);
+    const files = await listRelativeFiles(rootDir);
+
+    expect(files).toContain(".cursor/rules/recall-memory.mdc");
+    // Cursor has no skills format of its own; it consumes the portable Agent Skills.
+    expect(files.some((file) => file.startsWith(".agents/skills/"))).toBe(true);
+    // Still no Claude-specific files.
+    expect(files).not.toContain("CLAUDE.md");
+    expect(files.some((file) => file.startsWith(".claude/"))).toBe(false);
+  });
+
   it("rejects an unknown --ai-tools value", async () => {
     rootDir = await createTempRoot("aitools-invalid");
     const result = await runCommand(rootDir, ["init", "--ai-tools", "claude,notatool"]);
