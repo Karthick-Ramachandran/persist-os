@@ -381,9 +381,10 @@ Options:
   (a directory that already has \`.recall/config.json\`). Without it, \`--force\` refuses, protecting
   existing repository memory.
 
-Init also generates a tracked pre-commit hook at \`.recall/hooks/pre-commit\` that runs \`recall doctor\`
-plus any \`preCommitGates\` in \`.recall/config.json\`. Init proposes, but does not run, the activation
-command \`git config core.hooksPath .recall/hooks\`.
+Init also generates tracked pre-commit and pre-push hooks at \`.recall/hooks/\` that run \`recall doctor\`
+plus any \`preCommitGates\` in \`.recall/config.json\`. The pre-push hook is the final regression gate
+before code leaves the machine (it catches commits made with \`--no-verify\` or before the hook was
+active). Init proposes, but does not run, the activation command \`git config core.hooksPath .recall/hooks\`.
 
 ### \`recall adopt\`
 

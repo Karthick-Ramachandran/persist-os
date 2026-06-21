@@ -101,9 +101,10 @@ Every command guides you — it names the file it created, where it is, and what
 Generate files only for the AI tools you use: `recall init --ai-tools claude,cursor` (default: all
 of `claude`, `codex`, `cursor`; `AGENTS.md` is always written).
 
-`recall init` also generates a tracked pre-commit hook at `.recall/hooks/pre-commit` that runs
-`recall doctor` plus any gates you configure. Enable it once per clone — Recall OS proposes the
-command but never runs it for you:
+`recall init` also generates tracked **pre-commit and pre-push hooks** in `.recall/hooks/` that run
+`recall doctor` plus any gates you configure. The pre-push hook is the final regression gate before
+code leaves your machine (it catches commits made with `--no-verify` or before the hook was active).
+Enable them once per clone — Recall OS proposes the command but never runs it for you:
 
 ```bash
 git config core.hooksPath .recall/hooks

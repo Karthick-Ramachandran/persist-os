@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
+  PRE_PUSH_HOOK_PATH,
   SESSION_START_HOOK_PATH,
   renderClaudeSettings,
   renderPreCommitHook,
+  renderPrePushHook,
   renderSessionStartHook,
 } from "../../../src/core/hooks/generate-hook.js";
 
@@ -40,6 +42,28 @@ describe("renderPreCommitHook", () => {
 
   it("exposes the tracked hook path", () => {
     expect(PRE_COMMIT_HOOK_PATH).toBe(".recall/hooks/pre-commit");
+  });
+});
+
+describe("renderPrePushHook", () => {
+  it("starts with a POSIX sh shebang and runs recall doctor", () => {
+    const hook = renderPrePushHook([]);
+    expect(hook.startsWith("#!/bin/sh\n")).toBe(true);
+    expect(hook).toContain("\nrecall doctor\n");
+  });
+
+  it("appends each configured gate in order after recall doctor", () => {
+    const hook = renderPrePushHook(["pnpm run test", "pnpm run typecheck"]);
+    expect(hook.indexOf("recall doctor")).toBeLessThan(hook.indexOf("pnpm run test"));
+    expect(hook.indexOf("pnpm run test")).toBeLessThan(hook.indexOf("pnpm run typecheck"));
+  });
+
+  it("documents the activation command without running it", () => {
+    expect(renderPrePushHook([])).toContain(HOOKS_PATH_ACTIVATION_COMMAND);
+  });
+
+  it("exposes the tracked pre-push hook path", () => {
+    expect(PRE_PUSH_HOOK_PATH).toBe(".recall/hooks/pre-push");
   });
 
   it("renders a read-only SessionStart hook that emits valid additionalContext JSON", () => {

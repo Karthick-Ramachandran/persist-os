@@ -87,19 +87,21 @@ describe("init command", () => {
     expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toContain("Agent Instructions");
   });
 
-  it("generates an executable pre-commit hook and proposes activation", async () => {
+  it("generates executable pre-commit and pre-push hooks and proposes activation", async () => {
     const rootDir = await createRoot("init-hook");
     const result = await runInitCommand(rootDir);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Pre-commit hook written to .recall/hooks/pre-commit.");
+    expect(result.stdout).toContain("Pre-commit and pre-push hooks written to .recall/hooks/");
     expect(result.stdout).toContain("git config core.hooksPath .recall/hooks");
 
-    const hookPath = path.join(rootDir, ".recall/hooks/pre-commit");
-    const hook = await readFile(hookPath, "utf8");
-    expect(hook.startsWith("#!/bin/sh")).toBe(true);
-    expect(hook).toContain("recall doctor");
-    expect((await stat(hookPath)).mode & 0o100).toBe(0o100);
+    for (const name of ["pre-commit", "pre-push"]) {
+      const hookPath = path.join(rootDir, `.recall/hooks/${name}`);
+      const hook = await readFile(hookPath, "utf8");
+      expect(hook.startsWith("#!/bin/sh")).toBe(true);
+      expect(hook).toContain("recall doctor");
+      expect((await stat(hookPath)).mode & 0o100).toBe(0o100);
+    }
 
     const config = await readGeneratedJson<RecallConfig>(rootDir, ".recall/config.json");
     expect(config.preCommitGates).toEqual([]);

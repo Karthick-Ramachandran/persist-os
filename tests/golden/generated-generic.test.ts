@@ -54,6 +54,7 @@ describe("generic init golden output", () => {
       ".github/workflows/recall.yml",
       ".recall/config.json",
       ".recall/hooks/pre-commit",
+      ".recall/hooks/pre-push",
       "AGENTS.md",
       "CLAUDE.md",
       "docs/00-product/BRD.md",

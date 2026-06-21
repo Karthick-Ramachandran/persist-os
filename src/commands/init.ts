@@ -17,9 +17,11 @@ import {
   CLAUDE_SETTINGS_PATH,
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
+  PRE_PUSH_HOOK_PATH,
   SESSION_START_HOOK_PATH,
   renderClaudeSettings,
   renderPreCommitHook,
+  renderPrePushHook,
   renderSessionStartHook,
 } from "../core/hooks/generate-hook.js";
 import { getPreset } from "../core/presets/preset-registry.js";
@@ -128,7 +130,7 @@ export function formatInitResult(result: InitResult): string {
 
   if (!result.dryRun) {
     lines.push(
-      `Generated repository memory, ${listCatalogSkillNames().length} agent skills, a pre-commit hook, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.`,
+      `Generated repository memory, ${listCatalogSkillNames().length} agent skills, pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.`,
     );
   }
 
@@ -147,10 +149,10 @@ export function formatInitResult(result: InitResult): string {
     lines.push("");
     lines.push(
       result.dryRun
-        ? "Pre-commit hook will be written to .recall/hooks/pre-commit."
-        : "Pre-commit hook written to .recall/hooks/pre-commit.",
+        ? "Pre-commit and pre-push hooks will be written to .recall/hooks/."
+        : "Pre-commit and pre-push hooks written to .recall/hooks/ (pre-push is the final regression gate before you push).",
     );
-    lines.push(`Enable it once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`);
+    lines.push(`Enable them once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`);
   }
 
   if (!result.dryRun) {
@@ -243,6 +245,13 @@ function createInitWriteFiles(
     {
       path: PRE_COMMIT_HOOK_PATH,
       content: renderPreCommitHook(config.preCommitGates),
+      executable: true,
+    },
+    // The pre-push hook is the final regression gate before code leaves the machine — it reuses the
+    // same configured gates as pre-commit, run against everything being pushed.
+    {
+      path: PRE_PUSH_HOOK_PATH,
+      content: renderPrePushHook(config.preCommitGates),
       executable: true,
     },
     // A Claude Code SessionStart hook that injects a memory map every session, so a fresh agent
