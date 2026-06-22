@@ -184,7 +184,7 @@ Adding a preset is a small contribution — see [CONTRIBUTING.md](CONTRIBUTING.m
 
 ## How It Works
 
-![How Persist OS works: you capture intent, decisions, ownership, standards, and security with persist init / feature / adr / module; it writes durable, reviewable memory under docs/ and .persist/config.json that humans review in pull requests and agents re-read every session; persist doctor validates it deterministically, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate.](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/how-it-works.png)
+![How Persist OS works: you capture intent, decisions, ownership, standards, and security with persist init / feature / adr / module; it writes durable, reviewable memory under docs/ and .persist/config.json that humans review in pull requests and agents re-read every session; persist doctor validates it deterministically, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate.](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/how-it-works.svg)
 
 ## How agents load the memory
 
