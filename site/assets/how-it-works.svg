@@ -1,0 +1,76 @@
+<svg width="1240" height="470" viewBox="0 0 1240 470" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6488"/>
+    </marker>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .pill { fill: #161b2e; stroke: #2d3450; stroke-width: 1.5; }
+      .lbl { fill: #c9d1e8; }
+      .muted { fill: #8b949e; }
+      .arrow { stroke: #5b6488; stroke-width: 1.6; fill: none; }
+      .funnel { stroke: #3b456b; stroke-width: 1.2; fill: none; opacity: 0.85; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1238" height="468" rx="18" fill="#0b1021" stroke="#222a44" stroke-width="2"/>
+
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#e6edf3">How Persist OS works</text>
+  <text x="40" y="72" font-size="14" class="muted">Create and validate durable memory under <tspan class="mono" fill="#a6b0d4">docs/</tspan> and <tspan class="mono" fill="#a6b0d4">.persist/</tspan> — git tracks what changed, Persist tracks why.</text>
+
+  <!-- Inputs -->
+  <text x="40" y="116" font-size="12" letter-spacing="1" class="muted">WHAT YOU KNOW</text>
+  <g class="mono" font-size="13">
+    <rect class="pill" x="40" y="134" width="150" height="30" rx="8"/><text x="115" y="154" text-anchor="middle" class="lbl">intent</text>
+    <rect class="pill" x="40" y="172" width="150" height="30" rx="8"/><text x="115" y="192" text-anchor="middle" class="lbl">decisions</text>
+    <rect class="pill" x="40" y="210" width="150" height="30" rx="8"/><text x="115" y="230" text-anchor="middle" class="lbl">ownership</text>
+    <rect class="pill" x="40" y="248" width="150" height="30" rx="8"/><text x="115" y="268" text-anchor="middle" class="lbl">standards</text>
+    <rect class="pill" x="40" y="286" width="150" height="30" rx="8"/><text x="115" y="306" text-anchor="middle" class="lbl">security</text>
+  </g>
+
+  <!-- Funnel from inputs into capture -->
+  <path class="funnel" d="M190,149 L250,210"/>
+  <path class="funnel" d="M190,187 L250,210"/>
+  <path class="funnel" d="M190,225 L250,210"/>
+  <path class="funnel" d="M190,263 L250,210"/>
+  <path class="funnel" d="M190,301 L250,210"/>
+
+  <!-- Capture commands -->
+  <rect x="250" y="150" width="250" height="120" rx="12" fill="#121a30" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="375" y="186" text-anchor="middle" class="mono" font-size="16" font-weight="700" fill="#38bdf8">persist</text>
+  <text x="375" y="212" text-anchor="middle" class="mono" font-size="13" fill="#e6edf3">init · feature · adr · module</text>
+  <text x="375" y="238" text-anchor="middle" font-size="12" class="muted">capture intent &amp; decisions</text>
+
+  <path class="arrow" d="M500,210 L556,210" marker-end="url(#arrow)"/>
+
+  <!-- Memory store -->
+  <rect x="560" y="150" width="270" height="120" rx="12" fill="#121a30" stroke="#818cf8" stroke-width="1.5"/>
+  <text x="695" y="194" text-anchor="middle" class="mono" font-size="15" fill="#c7d2fe">docs/ + .persist/config.json</text>
+  <text x="695" y="220" text-anchor="middle" font-size="12" class="muted">durable, reviewable memory</text>
+  <text x="695" y="240" text-anchor="middle" font-size="12" class="muted">source of truth over chat history</text>
+
+  <!-- Consumers -->
+  <path class="arrow" d="M830,180 L884,168" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M830,240 L884,252" marker-end="url(#arrow)"/>
+  <rect class="pill" x="890" y="148" width="300" height="44" rx="10"/>
+  <text x="1040" y="175" text-anchor="middle" font-size="14" class="lbl">humans review in pull requests</text>
+  <rect class="pill" x="890" y="228" width="300" height="44" rx="10"/>
+  <text x="1040" y="255" text-anchor="middle" font-size="14" class="lbl">agents re-read every session</text>
+
+  <!-- Validate / gate row -->
+  <path class="arrow" d="M695,270 L695,318" marker-end="url(#arrow)"/>
+  <rect x="560" y="320" width="270" height="74" rx="12" fill="#121a30" stroke="#34d399" stroke-width="1.5"/>
+  <text x="695" y="354" text-anchor="middle" class="mono" font-size="16" font-weight="700" fill="#34d399">persist doctor</text>
+  <text x="695" y="377" text-anchor="middle" font-size="12" class="muted">deterministic, local, read-only</text>
+
+  <path class="arrow" d="M830,357 L876,357" marker-end="url(#arrow)"/>
+  <rect class="pill" x="884" y="335" width="128" height="44" rx="10"/>
+  <text x="948" y="364" text-anchor="middle" class="mono" font-size="18">
+    <tspan fill="#34d399">0</tspan><tspan fill="#6b7280"> / </tspan><tspan fill="#fbbf24">1</tspan><tspan fill="#6b7280"> / </tspan><tspan fill="#f87171">2</tspan>
+  </text>
+
+  <path class="arrow" d="M1012,357 L1052,357" marker-end="url(#arrow)"/>
+  <rect class="pill" x="1060" y="320" width="150" height="74" rx="12"/>
+  <text x="1135" y="352" text-anchor="middle" font-size="14" class="lbl">pre-commit hook</text>
+  <text x="1135" y="373" text-anchor="middle" font-size="13" class="muted">or CI gate</text>
+</svg>
