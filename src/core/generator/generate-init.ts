@@ -28,6 +28,16 @@ repository memory, stop and report it.
 ## Rules — follow on every change
 
 - Read the Required reading below before non-trivial work.
+- Match ceremony to scope — both ways. A genuinely new feature, module, integration, data model, or
+  security/architecture decision gets proper planning (PRD/plan/ADR as fit) — do not under-build it.
+  A small addition or fix within an already-decided area (a component, helper, endpoint, bug fix)
+  just gets implemented with focused tests — no planning docs. Judge by novelty and blast radius, not
+  line count: a one-button change inside an existing feature is small; building that feature is not.
+- Record substantial work with the persist CLI so the memory actually exists — a new feature →
+  \`persist feature create <name>\` (then fill its PRD and acceptance); a real decision (a dependency,
+  data model, auth/security choice, API shape) → \`persist adr create <title>\` then
+  \`persist adr accept <name>\`. Reasoning left only in the chat is gone next session — if it is not in
+  a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
   type, or pattern it lists; when you make a new reusable one, add it there.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
@@ -91,6 +101,15 @@ model preference. If an instruction conflicts with repository memory, stop and r
 ## Rules — follow on every change
 
 - Read \`AGENTS.md\` and the docs it routes to before non-trivial work.
+- Match ceremony to scope, both ways: a genuinely new feature, module, integration, data model, or
+  security/architecture decision gets proper planning; a small addition or fix within an
+  already-decided area just gets implemented with focused tests. Judge by novelty and blast radius,
+  not line count — a one-button change inside an existing feature is small; building that feature is
+  not.
+- Record substantial work with the persist CLI so the memory exists: a new feature →
+  \`persist feature create <name>\` (fill its PRD and acceptance); a real decision →
+  \`persist adr create <title>\` then \`persist adr accept <name>\`. Reasoning left only in chat is gone
+  next session — if it is not in a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
   reusable primitive there when you make one.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.

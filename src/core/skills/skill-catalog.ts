@@ -24,7 +24,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     name: "create-prd",
     title: "Create PRD",
     description:
-      "Create or update a feature PRD with user intent, scope, acceptance criteria, non-goals, security notes, test expectations, and source-of-truth links. Use when starting a feature, drafting or updating a PRD, or defining acceptance criteria.",
+      "Create or update a feature PRD with user intent, scope, acceptance criteria, non-goals, security notes, test expectations, and source-of-truth links. Use when starting a substantial new feature or defining its acceptance criteria. Skip it for a small or local change to existing code (a component, helper, endpoint, migration, or bug fix) — just implement that with focused tests.",
     purpose: [
       "Create a useful feature PRD that helps humans and AI agents understand what should be built and why.",
     ],
@@ -69,7 +69,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     name: "plan-feature",
     title: "Plan Feature",
     description:
-      "Plan a feature from approved requirements by producing implementation tasks, architecture impact, test plan, review expectations, and completion evidence. Use when turning an approved PRD into a plan, tasks, and a test plan.",
+      "Plan a substantial feature from approved requirements by producing implementation tasks, architecture impact, test plan, review expectations, and completion evidence. Use when turning an approved PRD for a sizable feature into a plan, tasks, and a test plan. Skip it for a small or local change — implement that directly with focused tests.",
     purpose: [
       "Turn product intent into a scoped engineering plan that an implementation agent can follow safely.",
     ],
@@ -122,7 +122,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     name: "plan-module",
     title: "Plan Module",
     description:
-      "Plan a module as a mini product by creating feature delivery docs, module memory, acceptance criteria, architecture impact, test plan, and ordered tasks before implementation. Use when asked to build, create, redesign, or materially change a module.",
+      "Plan a module as a mini product by creating feature delivery docs, module memory, acceptance criteria, architecture impact, test plan, and ordered tasks before implementation. Use when building a whole new module or materially redesigning an existing one — and only then; not for adding a small component, helper, endpoint, or fix to an existing area, which should just be implemented with focused tests.",
     purpose: [
       "Turn a module request into a complete delivery workflow before implementation starts.",
     ],
@@ -239,7 +239,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     ],
     process: [
       "Confirm the task has clear acceptance criteria.",
-      "Confirm the task comes after PRD, acceptance, architecture impact, and test plan.",
+      "Match effort to the change: a substantial feature should come after its PRD, acceptance, architecture impact, and test plan; a small or local change (a component, helper, endpoint, migration, or bug fix) needs none of those — implement it directly with focused tests.",
       "Identify affected modules and tests.",
       "Implement the smallest safe change.",
       "Add or update tests based on risk.",
