@@ -243,6 +243,8 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Identify affected modules and tests.",
       "Implement the smallest safe change.",
       "Add or update tests based on risk.",
+      "Reuse the primitives `docs/60-engineering/CONVENTIONS.md` already names; record a new reusable primitive there when you create one, instead of leaving it undocumented.",
+      "Add a short entry to `docs/60-engineering/LESSONS.md` when something broke non-obviously or a tempting approach turned out wrong, so it is not rediscovered next session.",
       "Update docs when behavior, architecture, or module ownership changes.",
       "Prepare completion evidence with commands and results.",
     ],
@@ -334,6 +336,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Security docs, if the accepted behavior changes.",
     ],
     process: [
+      "Review with fresh, independent context — a separate pass, or a dedicated sub-agent if your tool supports one — rather than continuing in the same chat that wrote the change, so the review is not biased by the work it checks.",
       "Identify changed trust boundaries.",
       "Check path validation, overwrite policy, symlink policy, and dry-run behavior.",
       "Check dependency, package, template, and preset risk.",
@@ -378,6 +381,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Updated docs only when the human accepts documented evolution.",
     ],
     process: [
+      "Review with fresh, independent context — a separate pass, or a dedicated sub-agent if your tool supports one — rather than continuing in the same chat that wrote the change, so the review is not biased by the work it checks.",
       "Review the change and identify changed modules and generated outputs.",
       "Compare changes against accepted ADRs and repository decisions.",
       "Compare changes against module boundaries.",
@@ -512,6 +516,50 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "It does not hide skipped checks.",
       "It separates completed work from remaining risk.",
       "A reviewer can decide what to do next from the report alone.",
+    ],
+  },
+  {
+    name: "conventions-adherence",
+    title: "Conventions Adherence",
+    description:
+      "Review a change for reuse of the repository's canonical vocabulary instead of reinventing components, helpers, or patterns. Use when reviewing a change, or before finishing one, to check it follows the repository conventions.",
+    purpose: [
+      "Keep AI output consistent by reusing the named primitives and rules the repository already defined, instead of inventing new ones.",
+      "Adherence is measured against this repository's own CONVENTIONS.md, not against any Persist OS preference. Persist OS is architecture-neutral.",
+    ],
+    inputs: [
+      "Change summary or diff.",
+      "The repository conventions.",
+      "Relevant feature, module, and architecture docs.",
+    ],
+    requiredReading: [
+      "`docs/60-engineering/CONVENTIONS.md`",
+      "`docs/60-engineering/ENGINEERING_STANDARDS.md`",
+      "`docs/60-engineering/LESSONS.md`",
+      "Relevant `docs/30-modules/<module>/MODULE.md`",
+    ],
+    outputFiles: [
+      "Relevant feature `REVIEW.md`",
+      "A proposed `docs/60-engineering/CONVENTIONS.md` update when a new canonical primitive or rule is genuinely established (human accepts it).",
+    ],
+    process: [
+      "Review with fresh, independent context — a separate pass, or a dedicated sub-agent if your tool supports one — rather than continuing in the same chat that wrote the change, so the review is not biased by the work it checks.",
+      "Read CONVENTIONS.md so you know the canonical primitives, naming, rules, and anti-patterns.",
+      "For each new component, helper, client, type, or pattern in the change, check whether a canonical primitive already exists that should have been reused.",
+      "Check naming against the documented conventions.",
+      "Check the change against the falsifiable rules and anti-patterns.",
+      "Flag reinvention of an existing primitive, divergent naming, and anti-pattern use as findings, each naming the primitive or rule that applies.",
+      "If the change establishes a genuinely new shared primitive or rule, propose adding it to CONVENTIONS.md rather than leaving it undocumented.",
+    ],
+    stopConditions: [
+      "CONVENTIONS.md is missing or still an unfilled template, so there is nothing to review against — report that the conventions need to be filled first.",
+      "Following a convention would conflict with an accepted ADR or engineering standards.",
+    ],
+    qualityBar: [
+      "Findings cite a specific primitive, naming rule, or anti-pattern from CONVENTIONS.md.",
+      "Reinvention of an existing primitive is caught.",
+      "New shared primitives are proposed for documentation, not silently accepted.",
+      "Findings reflect this repository's conventions, not Persist OS preferences.",
     ],
   },
   {

@@ -1,6 +1,6 @@
 {
   "name": "persist-os",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Architecture-neutral repository memory for AI-assisted software teams.",
   "packageManager": "pnpm@10.12.3",
   "type": "module",

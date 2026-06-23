@@ -53,6 +53,11 @@ them.
 - **Fights context rot.** Doctor warns when the always-loaded memory bloats into a wall of text, or
   when it still points at `src/` code that changed long after the memory did — so memory stays a
   lean, current map, not a stale dump.
+- **Reuse over reinvent.** Generated `CONVENTIONS.md` (your canonical, reusable vocabulary) and
+  `LESSONS.md` (durable pitfalls) load into every agent session, and the agent is told to keep them
+  current itself — so it reuses your components and patterns instead of reinventing them, and stops
+  repeating mistakes you already solved. It works even on vibe-coded projects, because the agent
+  maintains the memory, not you.
 - **Architecture-neutral by design.** Persist OS records and protects _your_ decisions. It never
   silently picks a framework, database, or pattern for you.
 - **Local-first and private.** No network calls, no telemetry, no AI API calls, no remote templates.
@@ -149,6 +154,7 @@ deterministic, local, and read-only.
 | Staleness           | Memory citing `src/` code that changed long after the memory did (git-based; off-git skips) | warning      |
 | Context budget      | The always-loaded agent files (CLAUDE.md + AGENTS.md + Cursor rule) grown past a budget     | warning      |
 | Content             | A feature PRD, module, or (once work exists) the threat / security model left as a stub     | warning      |
+| Conventions         | The canonical-vocabulary doc left as a stub once the repository has real work               | warning      |
 
 ```txt
 Exit codes:  0 = healthy   1 = warnings only   2 = errors
@@ -200,6 +206,12 @@ native mechanism:
 The portable guarantee across every tool is `AGENTS.md` plus the generated Agent Skills
 (`.agents/skills/`). The dynamic per-session ADR/module map is a Claude Code bonus; the Cursor rule
 and `AGENTS.md` carry the same rules everywhere else.
+
+`AGENTS.md` leads with a short, imperative **Rules** block (read memory first, reuse the
+conventions, record lessons, don't contradict accepted ADRs, run `persist doctor` before "done") —
+and instructs the agent to keep `CONVENTIONS.md` and `LESSONS.md` current itself, so that memory
+stays useful without anyone hand-writing it. The human just reviews the agent's edits in the pull
+request.
 
 ## Repository Memory
 

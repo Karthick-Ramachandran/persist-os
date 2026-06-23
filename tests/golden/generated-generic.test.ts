@@ -29,6 +29,7 @@ describe("generic init golden output", () => {
       ".agents/skills/architecture-drift-review/SKILL.md",
       ".agents/skills/capture-mcp-context/SKILL.md",
       ".agents/skills/completion-report/SKILL.md",
+      ".agents/skills/conventions-adherence/SKILL.md",
       ".agents/skills/create-adr/SKILL.md",
       ".agents/skills/create-prd/SKILL.md",
       ".agents/skills/implement-task/SKILL.md",
@@ -42,6 +43,7 @@ describe("generic init golden output", () => {
       ".claude/skills/architecture-drift-review/SKILL.md",
       ".claude/skills/capture-mcp-context/SKILL.md",
       ".claude/skills/completion-report/SKILL.md",
+      ".claude/skills/conventions-adherence/SKILL.md",
       ".claude/skills/create-adr/SKILL.md",
       ".claude/skills/create-prd/SKILL.md",
       ".claude/skills/implement-task/SKILL.md",
@@ -69,7 +71,9 @@ describe("generic init golden output", () => {
       "docs/50-quality/QUALITY_GATES.md",
       "docs/50-quality/TESTING_STRATEGY.md",
       "docs/60-engineering/AI_AGENT_RULES.md",
+      "docs/60-engineering/CONVENTIONS.md",
       "docs/60-engineering/ENGINEERING_STANDARDS.md",
+      "docs/60-engineering/LESSONS.md",
       "docs/adrs/README.md",
       "docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md",
       "docs/ai/MCP_STRATEGY.md",
@@ -82,5 +86,14 @@ describe("generic init golden output", () => {
     expect(await readGeneratedFile(rootDir, "docs/ai/presets/generic-guidance.md")).toContain(
       "neutral repository memory",
     );
+
+    const agents = await readGeneratedFile(rootDir, "AGENTS.md");
+    expect(agents).toContain("docs/60-engineering/CONVENTIONS.md");
+    expect(agents).toContain("docs/60-engineering/LESSONS.md");
+
+    expect(await readGeneratedFile(rootDir, "docs/60-engineering/CONVENTIONS.md")).toContain(
+      "Canonical Primitives",
+    );
+    expect(await readGeneratedFile(rootDir, "docs/60-engineering/LESSONS.md")).toContain("Lessons");
   });
 });

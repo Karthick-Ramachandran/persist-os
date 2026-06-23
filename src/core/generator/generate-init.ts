@@ -21,45 +21,42 @@ const neutralTemplates: InitTemplate[] = [
     path: "AGENTS.md",
     content: `# {{repositoryName}} Agent Instructions
 
-This repository uses Persist OS repository memory.
+This repository uses Persist OS repository memory. Durable memory under \`docs/\` is the source of
+truth over chat history; repository rules override model preference. If an instruction conflicts with
+repository memory, stop and report it.
 
-Start with durable source-of-truth docs under \`docs/\`.
+## Rules — follow on every change
 
-Required reading:
+- Read the Required reading below before non-trivial work.
+- Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
+  type, or pattern it lists; when you make a new reusable one, add it there.
+- When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
+- Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
+  \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
+- Before claiming work complete, run \`persist doctor\` and fix every error. Never claim "done" without
+  test evidence.
+- Run the \`persist\` CLI yourself; never ask the human to run it or web-search this project-local tool.
+
+## Required reading
 
 - \`docs/00-product/PRD.md\`
 - \`docs/10-architecture/ARCHITECTURE.md\`
 - \`docs/20-security/SECURITY_MODEL.md\`
 - \`docs/50-quality/QUALITY_GATES.md\`
 - \`docs/60-engineering/ENGINEERING_STANDARDS.md\`
+- \`docs/60-engineering/CONVENTIONS.md\`
+- \`docs/60-engineering/LESSONS.md\`
 
-Repository rules override model preferences. If instructions conflict, stop and report the conflict.
+## Persist commands
 
-## Persist OS commands
-
-This repository is maintained with the Persist OS CLI. Use these commands yourself as you work — do not
-ask the human to run them, and do not search the web for them (this is a project-local tool):
-
-- \`persist doctor\` — validate repository memory; run it before claiming any work is complete.
+- \`persist doctor\` — validate repository memory; run before claiming work complete.
 - \`persist feature create <name>\` — scaffold feature memory before non-trivial feature work.
-- \`persist adr create <title>\` — propose a decision; \`persist adr accept <name>\` accepts it.
+- \`persist adr create <title>\` then \`persist adr accept <name>\` — propose, then accept, a decision.
 - \`persist adr supersede <old> <new-title>\` — record a changed decision (never overwrite an accepted ADR).
 - \`persist module create <name>\` — scaffold module memory for a new responsibility boundary.
 - \`persist mcp add <server>\` — capture an MCP tool's context into memory, offline.
 
-Full command reference: \`docs/ai/PERSIST_COMMANDS.md\`.
-
-## Changing an accepted decision
-
-Before changing anything an accepted ADR governs (framework, database, auth, API shape, and similar):
-
-1. Check \`docs/adrs/\` for an accepted ADR that covers it.
-2. If your change contradicts one, stop and confirm with a human first — do not silently change the
-   code and leave the ADR saying the opposite.
-3. Record the change as a new decision with \`persist adr supersede <old> <new-title>\`. That supersedes
-   the old ADR instead of overwriting history, so the reasoning stays auditable.
-
-Repository memory is only trustworthy if decisions change through this trail, not silently.
+Full reference: \`docs/ai/PERSIST_COMMANDS.md\`.
 `,
   },
   {
@@ -88,26 +85,21 @@ alwaysApply: true
 
 # {{repositoryName}} repository memory
 
-This repository uses Persist OS. Durable memory lives in \`docs/\` and is the source of truth over chat
-history. Do not treat chat history as truth, and repository rules override model preference.
+Durable memory under \`docs/\` is the source of truth over chat history; repository rules override
+model preference. If an instruction conflicts with repository memory, stop and report it.
 
-Before non-trivial work:
+## Rules — follow on every change
 
-- Read \`AGENTS.md\` and the docs it routes to.
-- Accepted decisions live in \`docs/adrs/\`; module memory lives in \`docs/30-modules/\`.
-- If an instruction conflicts with accepted repository memory, stop and report the conflict.
-- Before changing what an accepted ADR governs, confirm with a human and record it with
-  \`persist adr supersede <old> <new-title>\` — never silently contradict an accepted decision.
-
-Source-of-truth order: accepted ADRs and repository decisions, then architecture docs, engineering
-standards, the current PRD, security and testing docs, module docs, feature plans, then chat history.
-
-Persist OS commands — use these yourself (do not web-search this project-local CLI): \`persist doctor\`,
-\`persist feature create <name>\`, \`persist adr create <title>\` then \`persist adr accept <name>\`,
-\`persist adr supersede <old> <new-title>\`, \`persist module create <name>\`, \`persist mcp add <server>\`.
-Full reference: \`docs/ai/PERSIST_COMMANDS.md\`.
-
-Before claiming work is complete, run \`persist doctor\` and fix reported errors.
+- Read \`AGENTS.md\` and the docs it routes to before non-trivial work.
+- Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
+  reusable primitive there when you make one.
+- When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
+- Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
+  \`persist adr supersede <old> <new-title>\`.
+- Before claiming work complete, run \`persist doctor\` and fix every error; never claim "done" without
+  test evidence.
+- Run the \`persist\` CLI yourself (do not web-search this project-local tool); full command reference
+  is in \`AGENTS.md\` and \`docs/ai/PERSIST_COMMANDS.md\`.
 `,
   },
   {
@@ -302,6 +294,48 @@ Baseline rules:
 - Update docs when behavior or architecture changes.
 - Add tests or document why tests were skipped.
 - Do not claim completion without evidence.
+`,
+  },
+  {
+    path: "docs/60-engineering/CONVENTIONS.md",
+    content: `# Conventions
+
+The canonical, reusable vocabulary for this repository. Agents reference these by name and reuse them
+instead of inventing new components, helpers, or patterns. Repository rules override model
+preferences.
+
+## Canonical Primitives
+
+Describe the named building blocks this codebase reuses — shared components, utilities, helpers,
+clients, types, endpoints — and where each lives, so agents reuse them instead of reinventing.
+
+## Naming Conventions
+
+Describe how things are named here, so generated code matches the existing codebase.
+
+## Rules
+
+List falsifiable do/do-not rules an agent can check itself against. For example: do not hardcode a
+value that already has a named primitive; reuse the shared client instead of creating a new one; do
+not duplicate a pattern that already exists.
+
+## Anti-Patterns
+
+Describe patterns that look reasonable but are wrong here, and what to do instead.
+`,
+  },
+  {
+    path: "docs/60-engineering/LESSONS.md",
+    content: `# Lessons
+
+Durable, hard-won lessons for this repository, so agents and humans do not repeat the same mistakes.
+Add a lesson when something broke in a non-obvious way, or when a tempting approach turned out to be
+wrong. Keep each entry short: what happened, why, and what to do instead. Repository rules override
+model preferences.
+
+## Lessons
+
+- (none yet) Record the first lesson when one is learned.
 `,
   },
   {
