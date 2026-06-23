@@ -65,16 +65,6 @@ them.
 - **Safe by default.** Non-destructive writes, path-traversal and symlink protection, and a refusal
   to overwrite an existing installation without explicit intent.
 
-## When to use it (and when not to)
-
-Use Persist OS for software that's meant to **last** — anything a teammate, a real team, a fresh
-agent, or future you will inherit and keep building on. That's when losing the _why_ costs you, and
-when durable memory pays back the small discipline it asks for.
-
-**Skip it for throwaway work** — a one-day prototype, a spike, something you'll delete next week.
-There's no next session to hand off to, so the memory never gets read back; it's just overhead. The
-name is the test: use it for what should _persist_. → [Why I built this](PHILOSOPHY.md)
-
 ## Install
 
 Run it without installing — the quickest way to try it:
