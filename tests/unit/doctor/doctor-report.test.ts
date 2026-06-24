@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { createDoctorReport, type DoctorFinding } from "../../../src/core/doctor/doctor-check.js";
-import { formatDoctorReport, getDoctorExitCode } from "../../../src/core/doctor/doctor-report.js";
+import {
+  formatDoctorJsonReport,
+  formatDoctorReport,
+  getDoctorExitCode,
+} from "../../../src/core/doctor/doctor-report.js";
 
 describe("doctor report", () => {
   it("returns zero for healthy reports", () => {
@@ -50,5 +54,33 @@ describe("doctor report", () => {
     expect(output.indexOf("ERROR")).toBeLessThan(output.indexOf("WARNING"));
     expect(output.indexOf("WARNING")).toBeLessThan(output.indexOf("INFO"));
     expect(output).toContain("- Error. (A.md)");
+  });
+  it("formats machine-readable doctor JSON", () => {
+    const report = createDoctorReport([
+      {
+        severity: "warning",
+        check: "example",
+        message: "Non-blocking issue.",
+        path: "docs/example.md",
+      },
+    ]);
+
+    const parsed = JSON.parse(formatDoctorJsonReport(report)) as {
+      schemaVersion: string;
+      status: string;
+      exitCode: number;
+      summary: { warnings: number };
+      findings: DoctorFinding[];
+    };
+
+    expect(parsed.schemaVersion).toBe("persist.doctor.v1");
+    expect(parsed.status).toBe("warnings");
+    expect(parsed.exitCode).toBe(1);
+    expect(parsed.summary.warnings).toBe(1);
+    expect(parsed.findings[0]).toMatchObject({
+      severity: "warning",
+      check: "example",
+      path: "docs/example.md",
+    });
   });
 });

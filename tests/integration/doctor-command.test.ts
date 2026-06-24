@@ -290,4 +290,25 @@ Example consequence text.
     expect(commandReference).toContain("persist module create <name>");
     expect(commandReference).toContain("persist doctor");
   });
+  it("emits JSON for CI and agent handoff", async () => {
+    const rootDir = await createRoot("doctor-json");
+    await runInitCommand(rootDir);
+
+    const result = await runCommand(rootDir, ["doctor", "--json"]);
+    const parsed = JSON.parse(result.stdout) as {
+      schemaVersion: string;
+      status: string;
+      exitCode: number;
+      summary: { errors: number; warnings: number; info: number };
+      findings: unknown[];
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(parsed.schemaVersion).toBe("persist.doctor.v1");
+    expect(parsed.status).toBe("passed");
+    expect(parsed.exitCode).toBe(0);
+    expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0, info: 4 });
+    expect(parsed.findings).toHaveLength(4);
+  });
 });

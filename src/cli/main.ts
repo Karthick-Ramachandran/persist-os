@@ -219,10 +219,11 @@ export function createCliProgram(
   program
     .command("doctor")
     .description("Check whether Persist OS repository memory is healthy.")
-    .action(async () => {
+    .option("--json", "Emit a machine-readable doctor report.")
+    .action(async (options: { json?: boolean }) => {
       const result = await doctorProject({ rootDir: cwd });
 
-      stdout.write(formatDoctorResult(result));
+      stdout.write(formatDoctorResult(result, { json: options.json }));
       state.exitCode = result.exitCode;
     });
 

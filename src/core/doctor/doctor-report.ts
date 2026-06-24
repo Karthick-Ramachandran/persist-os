@@ -14,6 +14,22 @@ export function getDoctorExitCode(report: DoctorReport): 0 | 1 | 2 {
   return 0;
 }
 
+export function formatDoctorJsonReport(report: DoctorReport): string {
+  const status = getDoctorStatus(report);
+
+  return `${JSON.stringify(
+    {
+      schemaVersion: "persist.doctor.v1",
+      status,
+      exitCode: getDoctorExitCode(report),
+      summary: report.summary,
+      findings: report.findings,
+    },
+    null,
+    2,
+  )}\n`;
+}
+
 export function formatDoctorReport(report: DoctorReport): string {
   const lines = ["Doctor Report", ""];
 
@@ -50,14 +66,18 @@ function formatFinding(finding: DoctorFinding): string {
   return `${finding.message} (${finding.path})`;
 }
 
-function formatResult(report: DoctorReport): string {
+export function getDoctorStatus(report: DoctorReport): "passed" | "warnings" | "failed" {
   if (report.summary.errors > 0) {
-    return "FAILED";
+    return "failed";
   }
 
   if (report.summary.warnings > 0) {
-    return "WARNINGS";
+    return "warnings";
   }
 
-  return "PASSED";
+  return "passed";
+}
+
+function formatResult(report: DoctorReport): string {
+  return getDoctorStatus(report).toUpperCase();
 }

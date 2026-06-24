@@ -1,5 +1,9 @@
 import { runDoctor, type DoctorReport } from "../core/doctor/doctor-check.js";
-import { formatDoctorReport, getDoctorExitCode } from "../core/doctor/doctor-report.js";
+import {
+  formatDoctorJsonReport,
+  formatDoctorReport,
+  getDoctorExitCode,
+} from "../core/doctor/doctor-report.js";
 
 export type DoctorOptions = {
   rootDir: string;
@@ -19,6 +23,10 @@ export async function doctorProject(options: DoctorOptions): Promise<DoctorResul
   };
 }
 
-export function formatDoctorResult(result: DoctorResult): string {
+export function formatDoctorResult(result: DoctorResult, options: { json?: boolean } = {}): string {
+  if (options.json === true) {
+    return formatDoctorJsonReport(result.report);
+  }
+
   return formatDoctorReport(result.report);
 }
