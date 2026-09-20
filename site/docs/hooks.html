@@ -137,8 +137,8 @@ NOT EVALUATED
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 
 Result: PASSED
-[main (root-commit) d84bda4] Add repository memory
- 40 files changed, 1700 insertions(+)
+[main (root-commit) 04dfe77] Add repository memory
+ 24 files changed, 650 insertions(+)
 <span class="m">  …</span></code></pre>
           <p>A commit that deletes a required document is refused with an error:</p>
           <pre><code><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
@@ -172,7 +172,7 @@ Doctor Report
 Result: <span class="warn">WARNINGS</span>
 <span class="warn">[exit 1]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-d84bda4 Add repository memory</code></pre>
+04dfe77 Add repository memory</code></pre>
           <p>
             Pre-push runs the test gate. With a failing suite the push is refused, and git says so
             after the gate's output:
@@ -184,7 +184,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="err">✖</span> totals a cart (0.845625ms)
+<span class="err">✖</span> totals a cart (0.875542ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
@@ -193,7 +193,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 <span class="err">✖</span> failing tests:
 
 test at tests/cart.test.js:5:1
-<span class="err">✖</span> totals a cart (0.845625ms)
+<span class="err">✖</span> totals a cart (0.875542ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
 
   24 !== 29
@@ -208,7 +208,7 @@ Persist OS test gate <span class="ok">passed</span>: npm run test:run
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="ok">✔</span> totals a cart (0.49875ms)
+<span class="ok">✔</span> totals a cart (0.423041ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -286,7 +286,7 @@ Persist OS test gate <span class="ok">passed</span>: npm run test:run
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="ok">✔</span> totals a cart (0.44075ms)
+<span class="ok">✔</span> totals a cart (0.42975ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -300,7 +300,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="err">✖</span> totals a cart (0.839417ms)
+<span class="err">✖</span> totals a cart (0.924125ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
