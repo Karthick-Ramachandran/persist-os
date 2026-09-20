@@ -20,21 +20,7 @@ code generation.
 [Chesterton's Fence](#chestertons-fence) · [Why I built this](PHILOSOPHY.md) ·
 [Contributing](CONTRIBUTING.md)
 
-```console
-$ npx persist-os@latest init
-
-persist  repository memory for AI-assisted software work
-────────────────────────────────────────
-Persist OS init complete.
-Test gate: not configured — no one-shot test script detected.
-Chesterton fence: enabled — record why code is shaped this way in docs/60-engineering/FENCES.md
-
-Generated repository memory, 4 agent skills, pre-commit and pre-push hooks,
-a CI workflow, a Claude SessionStart hook, and a Cursor rule.
-
-$ persist doctor
-Result: PASSED
-```
+![Persist OS 1.0 — creating repository memory, the Chesterton fence catching an unexplained change, and a decision going proposed to accepted](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.0.gif)
 
 What it writes — plain files, tracked in Git, reviewed in pull requests like any other change:
 
@@ -317,13 +303,6 @@ was already there and why, what might break — and a human confirms the answer,
 premise is that the constraint lives in someone's memory rather than in the code.
 
 It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config.json`.
-
-## How It Works
-
-![Persist OS 1.0 — creating repository memory, the Chesterton fence catching an unexplained change, and a decision going proposed to accepted](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.0.gif)
-
-Recorded against the published package, not a local build. Re-render it with
-`vhs docs/media/persist-1.0.tape`.
 
 ## How agents load the memory
 
