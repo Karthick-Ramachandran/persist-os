@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.1
+
+**Fences no longer rot silently.** A fence records why a path is shaped the way it is. Rename or
+delete that path and the entry pointed at nothing — inert, but still loaded into every session by
+the SessionStart hook, which is exactly the stale context the index exists to avoid.
+`code-reference` now reads `FENCES.md` and warns when a fenced path no longer exists.
+
+Fence headings are read directly rather than through the shared backticked-path pattern, because a
+fence may carry a `:symbol` suffix the pattern does not admit — so a suffixed fence is checked too.
+
 ## 1.1.0
 
 ### `persist fence add`

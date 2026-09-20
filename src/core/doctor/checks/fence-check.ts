@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { fenceFileKey } from "../../fence/generate-fence.js";
 import { isTestFile } from "../../naming/test-files.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
@@ -172,16 +173,6 @@ async function stagedFiles(rootDir: string): Promise<string[] | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * The file part of a fence key. A fence may name a symbol — `src/billing.ts:writeLedger` — but a
- * diff is per-file, so the symbol is there to tell a reader which part of the file the reason is
- * about. Matching has to happen on the file, or a suffixed fence records fine and never fires.
- */
-function fenceFileKey(fencePath: string): string {
-  const separator = fencePath.indexOf(":");
-  return separator === -1 ? fencePath : fencePath.slice(0, separator);
 }
 
 /** Map of fenced path to its standing `Why:` reason. A missing FENCES.md means no crossings yet. */
