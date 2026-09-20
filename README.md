@@ -20,7 +20,7 @@ code generation.
 [Chesterton's Fence](#chestertons-fence) · [Why I built this](PHILOSOPHY.md) ·
 [Contributing](CONTRIBUTING.md)
 
-![Persist OS 1.0 — creating repository memory, the Chesterton fence catching an unexplained change, and a decision going proposed to accepted](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.0.gif)
+![Persist OS — creating repository memory, the Chesterton fence catching an unexplained change, recording the reason, and that reason coming back on the next run](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.1.gif)
 
 What it writes — plain files, tracked in Git, reviewed in pull requests like any other change:
 

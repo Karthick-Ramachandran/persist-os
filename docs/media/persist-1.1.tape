@@ -1,10 +1,10 @@
-# Persist OS 1.0 demo — render with: vhs docs/media/persist-1.0.tape
+# Persist OS 1.1 demo — render with: vhs docs/media/persist-1.0.tape
 #
 # Records the published package, not a local build: the tape installs
-# persist-os@1.0.1 into a temp prefix and puts it first on PATH, so what you see
+# persist-os@1.1.1 into a temp prefix and puts it first on PATH, so what you see
 # is what `npm i -g persist-os` gives you. Requires figlet for the title card.
 
-Output docs/media/persist-1.0.gif
+Output docs/media/persist-1.1.gif
 
 Require figlet
 
@@ -18,7 +18,7 @@ Set TypingSpeed 32ms
 
 # --- Setup, off screen: published package into a temp prefix, empty git repo ---
 Hide
-Type "cd $(mktemp -d) && npm i -g --prefix ./.p persist-os@1.0.1 >/dev/null 2>&1 && export PATH=$PWD/.p/bin:$PATH"
+Type "cd $(mktemp -d) && npm i -g --prefix ./.p persist-os@1.1.1 >/dev/null && export PATH=$PWD/.p/bin:$PATH && persist fence add --help >/dev/null || { echo INSTALL-FAILED; exit 1; }"
 Enter
 Sleep 30s
 Type "mkdir checkout-api && cd checkout-api && git init -q . && git config user.email demo@example.com && git config user.name Demo"
@@ -86,7 +86,20 @@ Sleep 600ms
 Type "persist doctor"
 Sleep 400ms
 Enter
-Sleep 4500ms
+Sleep 4s
+
+Type "# Answer it once. A human says why; the command records it."
+Sleep 500ms
+Enter
+Sleep 300ms
+Type "persist fence add src/billing.ts --why 'Four collections in one transaction: ledger and audit must not diverge.'"
+Sleep 400ms
+Enter
+Sleep 2500ms
+Type "persist doctor"
+Sleep 400ms
+Enter
+Sleep 5s
 
 Hide
 Type "clear"
