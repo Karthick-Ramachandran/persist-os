@@ -11,8 +11,8 @@ It initializes repository memory, not application code.
 - Empty-folder init semantics.
 - Neutral init expectations.
 - Init command product behavior.
-- Init-generated command-reference memory.
-- Relationship between init, presets, and detected guidance.
+- Opt-in scaffolding flags (`--features`, `--modules`).
+- Relationship between init and detected guidance.
 
 ## Does Not Own
 
@@ -28,7 +28,7 @@ CLI behavior:
 
 ```bash
 persist init
-persist init --preset <name>
+persist init --features --modules
 ```
 
 `persist init` should be valid in an empty folder and should not require existing app code or a

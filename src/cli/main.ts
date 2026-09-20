@@ -22,7 +22,6 @@ import {
   formatModuleCreateResult,
   ModuleCreateError,
 } from "../commands/module/create.js";
-import { formatPresetListResult, listPresetEntries } from "../commands/preset/list.js";
 import {
   createSkill,
   formatSkillCreateResult,
@@ -61,18 +60,20 @@ export function createCliProgram(
   program
     .command("init")
     .description("Initialize Persist OS repository memory.")
-    .option("--preset <id>", "Apply optional preset guidance and proposed decisions.")
     .option(
       "--ai-tools <list>",
       "Comma-separated AI tools to generate files for: claude,codex,cursor,generic.",
     )
+    .option("--features", "Generate opt-in feature workflow scaffolding.")
+    .option("--modules", "Generate opt-in module workflow scaffolding.")
     .option("--dry-run", "Show planned writes without writing files.")
     .option("--force", "Overwrite existing files explicitly.")
     .option("--reinit", "Allow --force to overwrite an existing Persist OS installation.")
     .action(
       async (options: {
-        preset?: string;
         aiTools?: string;
+        features?: boolean;
+        modules?: boolean;
         dryRun?: boolean;
         force?: boolean;
         reinit?: boolean;
@@ -91,8 +92,9 @@ export function createCliProgram(
 
         const result = await initProject({
           rootDir: cwd,
-          preset: options.preset,
           aiTools,
+          features: options.features,
+          modules: options.modules,
           dryRun: options.dryRun,
           force: options.force,
           reinit: options.reinit,
@@ -280,15 +282,6 @@ export function createCliProgram(
     .description("List built-in catalog skills.")
     .action(() => {
       stdout.write(formatSkillListResult());
-    });
-
-  const presetCommand = program.command("preset").description("Inspect Persist OS presets.");
-
-  presetCommand
-    .command("list")
-    .description("List built-in presets.")
-    .action(() => {
-      stdout.write(formatPresetListResult(listPresetEntries()));
     });
 
   return program;

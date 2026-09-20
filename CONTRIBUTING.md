@@ -48,26 +48,8 @@ with accepted repository memory, stop and report the conflict.
 
 ## Adding a Preset
 
-Presets are opinion packs. They may propose choices, never silently accept them. The preset schema
-enforces this: every preset decision must use `status: "proposed"`.
-
-Read `docs/10-architecture/OPINION_PACKS.md` for the full content standard, then:
-
-1. Create `src/presets/<id>/preset.ts` exporting a `Preset`.
-2. Follow the opinionated-preset content standard:
-   - a rich guidance template at `docs/ai/presets/<id>-guidance.md`, framed as proposed, naming the
-     stack's real decision forks (UI, concurrency, persistence, data layer or DI, testing);
-   - at least four proposed ADRs at `docs/adrs/proposed/ADR-PROPOSED-<id>-<topic>.md`, each with
-     Status, Context, Decision, Alternatives, and Consequences, all `Proposed`.
-3. Register the preset in `src/core/presets/preset-registry.ts`.
-4. Add a unit test (see `tests/unit/presets/opinionated-presets.test.ts`) and a golden test (see
-   `tests/golden/generated-*.test.ts`).
-5. Add an example under `examples/generated-<id>/` by running `persist init --preset <id>` inside
-   that folder, plus a short `README.md`. To regenerate an existing example folder, use
-   `persist init --preset <id> --force --reinit`.
-6. Run the completion gate.
-
-Use the existing `kotlin-android` and `python-fastapi` presets as references.
+Presets were retired in 1.0 (see `docs/00-product/MIGRATION.md`): do not add new ones. Stack
+guidance now lives in hand-written ADRs proposed with `persist adr create`.
 
 > Run `persist init` only inside an empty target folder or an existing example folder. Running it in
 > the repository root will overwrite this repository's own memory.

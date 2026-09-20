@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const acceptedAdrPattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
@@ -16,9 +16,14 @@ const THREAT_MODEL_PATH = "docs/20-security/THREAT_MODEL.md";
  * generated scaffolds become an enforced workflow rather than silent empty docs. Findings are
  * warnings: they surface gaps without hard-failing structurally healthy repositories.
  */
-export async function checkContent(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export type ContentCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
+
+export async function checkContent(context: DoctorCheckContext): Promise<ContentCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated("Content checks require Persist OS config.");
   }
 
   const findings: DoctorFinding[] = [];
@@ -67,6 +72,12 @@ export async function checkContent(context: DoctorCheckContext): Promise<DoctorF
   // not leave its threat model and security model as untouched stubs.
   const hasWork = featureFolders.length > 0 || moduleFolders.length > 0 || acceptedAdrs.length > 0;
 
+  if (!hasWork) {
+    return notEvaluated(
+      "no feature folders, module folders, or ADRs exist, so there is no memory content to check",
+    );
+  }
+
   if (hasWork) {
     findings.push(...(await checkSecurityDoc(context.rootDir)));
   }
@@ -98,7 +109,14 @@ export async function checkContent(context: DoctorCheckContext): Promise<DoctorF
     }
   }
 
-  return findings;
+  return { findings, outcome: { id: "content", status: "evaluated" } };
+}
+
+function notEvaluated(reason: string): ContentCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "content", status: "not-evaluated", reason },
+  };
 }
 
 async function checkSecurityDoc(rootDir: string): Promise<DoctorFinding[]> {

@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { ConflictPolicy } from "../filesystem/conflict-policy.js";
 import { normalizeOutputPath } from "../filesystem/safe-path.js";
 
-const PRESET_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/u;
 // Reject empty strings and any ASCII control characters (including newlines and tabs).
 const PRE_COMMIT_GATE_PATTERN = /^[^\u0000-\u001f\u007f]+$/u;
@@ -30,15 +29,6 @@ export class ConfigValidationError extends Error {
 const versionSchema = z
   .string()
   .regex(VERSION_PATTERN, "Version must use MAJOR.MINOR.PATCH format.");
-
-const presetSchema = z.union([
-  z.null(),
-  z
-    .string()
-    .min(1, "Preset cannot be empty.")
-    .max(80, "Preset cannot exceed 80 characters.")
-    .regex(PRESET_ID_PATTERN, "Preset must use lowercase letters, numbers, and single hyphens."),
-]);
 
 const preCommitGateSchema = z
   .string()
@@ -71,7 +61,6 @@ export const persistConfigSchema = z
   .object({
     version: versionSchema,
     templateVersion: versionSchema,
-    preset: presetSchema,
     aiTools: z.array(aiToolTargetSchema).min(1, "At least one AI tool is required."),
     docsDir: safeRelativePathSchema,
     featuresDir: safeRelativePathSchema,
@@ -107,6 +96,14 @@ export const persistConfigSchema = z
 export type PersistConfig = z.infer<typeof persistConfigSchema>;
 
 export function parseConfig(value: unknown): PersistConfig {
+  // Presets were retired in 1.0 (ADR-0007): fail with the fix, not zod's generic
+  // unrecognized-key error and not silent acceptance.
+  if (typeof value === "object" && value !== null && "preset" in value) {
+    throw new ConfigValidationError([
+      'preset: presets were retired in 1.0 — delete the "preset" line from .persist/config.json',
+    ]);
+  }
+
   const result = persistConfigSchema.safeParse(value);
 
   if (!result.success) {

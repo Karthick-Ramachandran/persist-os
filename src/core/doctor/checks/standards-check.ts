@@ -1,7 +1,7 @@
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
@@ -9,17 +9,43 @@ const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 const securitySensitivePattern =
   /\b(auth|authentication|authorization|secrets?|storage|networking?|telemetry|file writes?|write policy|dependencies?|mcp|ai api|cloud|runtime)\b/iu;
 
-export async function checkStandards(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export type StandardsCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
+
+export async function checkStandards(context: DoctorCheckContext): Promise<StandardsCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated("Standards checks require Persist OS config.");
+  }
+
+  const { rootDir, config } = context;
+  const featureEntries = await readDirIfExists(rootDir, config.featuresDir);
+  const hasFeatures = featureEntries.some(
+    (entry) => entry.isDirectory() && featureFolderPattern.test(entry.name),
+  );
+  const adrEntries = await readDirIfExists(rootDir, config.adrDir);
+  const hasAdrs = adrEntries.some((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+
+  if (!hasFeatures && !hasAdrs) {
+    return notEvaluated(
+      "no feature folders or ADRs exist, so there are no completion claims or decisions to check",
+    );
   }
 
   const findings: DoctorFinding[] = [];
 
-  findings.push(...(await checkFeatureStandards(context.rootDir, context.config.featuresDir)));
-  findings.push(...(await checkAdrStandards(context.rootDir, context.config.adrDir)));
+  findings.push(...(await checkFeatureStandards(rootDir, config.featuresDir)));
+  findings.push(...(await checkAdrStandards(rootDir, config.adrDir)));
 
-  return findings;
+  return { findings, outcome: { id: "standards", status: "evaluated" } };
+}
+
+function notEvaluated(reason: string): StandardsCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "standards", status: "not-evaluated", reason },
+  };
 }
 
 async function checkFeatureStandards(

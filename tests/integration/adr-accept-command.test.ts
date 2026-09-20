@@ -24,24 +24,21 @@ describe("adr accept command", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("promotes a proposed preset ADR and removes the proposal", async () => {
+  it("promotes a proposed MCP ADR and removes the proposal", async () => {
     const rootDir = await createRoot("adr-accept-promote");
-    await runInitCommand(rootDir, ["--preset", "kotlin-android"]);
+    await runInitCommand(rootDir);
+    await runCommand(rootDir, ["mcp", "add", "figma"]);
 
-    const result = await runCommand(rootDir, ["adr", "accept", "kotlin-android-ui-compose"]);
+    const result = await runCommand(rootDir, ["adr", "accept", "mcp-figma"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("Accepted: docs/adrs/ADR-0001-kotlin-android-ui-compose.md");
+    expect(result.stdout).toContain("Accepted: docs/adrs/ADR-0001-mcp-figma.md");
 
-    const accepted = await readFile(
-      path.join(rootDir, "docs/adrs/ADR-0001-kotlin-android-ui-compose.md"),
-      "utf8",
-    );
-    expect(accepted).toContain("# ADR-0001: Use Jetpack Compose");
+    const accepted = await readFile(path.join(rootDir, "docs/adrs/ADR-0001-mcp-figma.md"), "utf8");
     expect(accepted).toContain("## Status\n\nAccepted");
 
     const files = await listRelativeFiles(rootDir);
-    expect(files).not.toContain("docs/adrs/proposed/ADR-PROPOSED-kotlin-android-ui-compose.md");
+    expect(files).not.toContain("docs/adrs/proposed/ADR-PROPOSED-mcp-figma.md");
   });
 
   it("accepts an in-place numbered Proposed ADR", async () => {
@@ -81,12 +78,13 @@ describe("adr accept command", () => {
 
   it("writes nothing on a dry run", async () => {
     const rootDir = await createRoot("adr-accept-dry-run");
-    await runInitCommand(rootDir, ["--preset", "kotlin-android"]);
+    await runInitCommand(rootDir);
+    await runCommand(rootDir, ["mcp", "add", "figma"]);
 
-    await runCommand(rootDir, ["adr", "accept", "kotlin-android-ui-compose", "--dry-run"]);
+    await runCommand(rootDir, ["adr", "accept", "mcp-figma", "--dry-run"]);
 
     const files = await listRelativeFiles(rootDir);
-    expect(files).toContain("docs/adrs/proposed/ADR-PROPOSED-kotlin-android-ui-compose.md");
-    expect(files).not.toContain("docs/adrs/ADR-0001-kotlin-android-ui-compose.md");
+    expect(files).toContain("docs/adrs/proposed/ADR-PROPOSED-mcp-figma.md");
+    expect(files).not.toContain("docs/adrs/ADR-0001-mcp-figma.md");
   });
 });

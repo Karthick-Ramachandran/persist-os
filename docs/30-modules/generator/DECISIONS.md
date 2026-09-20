@@ -58,3 +58,9 @@ network in MVP.
 P10 renames generated command memory to `docs/ai/PERSIST_COMMANDS.md`.
 
 The command reference includes `persist preset list` and remains local generated memory.
+
+## Minimal Templates (ADR-0007)
+
+`persist init` generates six documents plus the ADR index; `PRODUCT.md` replaces PRD/BRD as a
+fill-in template. Feature/module READMEs are flag-gated opt-in scaffolding. The feature scaffold is
+PLAN.md + TASKS.md (+ TEST_PLAN.md only with the test gate on).

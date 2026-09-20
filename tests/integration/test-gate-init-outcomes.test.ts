@@ -87,6 +87,36 @@ describe("init test-gate seeding", () => {
   });
 });
 
+async function fillScaffoldDocs(rootDir: string): Promise<void> {
+  const conventionsPath = path.join(rootDir, "docs/60-engineering/CONVENTIONS.md");
+  const conventions = await readFile(conventionsPath, "utf8");
+  await writeFile(
+    conventionsPath,
+    conventions.replace(
+      "Describe the named building blocks this codebase reuses",
+      "Shared primitives: the ledger writer in src/ledger and the receipt renderer in src/receipts. Replaces the template sentence:",
+    ),
+    "utf8",
+  );
+  const securityPath = path.join(rootDir, "docs/20-security/SECURITY_MODEL.md");
+  const security = await readFile(securityPath, "utf8");
+  await writeFile(
+    securityPath,
+    security.replace(
+      "Describe how this repository authenticates users or clients",
+      "Clients authenticate with API keys and the gateway authorizes every action. Replaces the template sentence:",
+    ),
+    "utf8",
+  );
+}
+
+async function fillModuleDoc(rootDir: string, name: string): Promise<void> {
+  await writeFile(
+    path.join(rootDir, "docs/30-modules", name, "MODULE.md"),
+    "# Module: billing\n\n## Purpose\n\nOwns invoicing and receipts.\n\n## Owns\n\nThe ledger writer and the receipt renderer.\n",
+    "utf8",
+  );
+}
 describe("doctor check outcomes", () => {
   const roots: string[] = [];
 
@@ -100,12 +130,12 @@ describe("doctor check outcomes", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("records ten not-evaluated checks when config is missing", async () => {
+  it("records eleven not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("outcomes-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(12);
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(10);
+    expect(report.checks).toHaveLength(13);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(11);
     expect(report.checks).toContainEqual({
       id: "hook-drift",
       status: "not-evaluated",
@@ -136,6 +166,12 @@ describe("doctor check outcomes", () => {
   it("evaluates every check with no NOT EVALUATED section on a healthy repo", async () => {
     const rootDir = await createRoot("outcomes-healthy");
     await runInitCommand(rootDir);
+    await runCommand(rootDir, ["feature", "create", "auth-provider"]);
+    await runCommand(rootDir, ["module", "create", "billing"]);
+    await runCommand(rootDir, ["adr", "create", "use-postgres"]);
+    await runCommand(rootDir, ["adr", "accept", "use-postgres"]);
+    await fillModuleDoc(rootDir, "billing");
+    await fillScaffoldDocs(rootDir);
     // staleness needs real commit history, so a "healthy" repo is a git repo with
     // full history — otherwise it correctly reports not-evaluated.
     execFileSync("git", ["init"], { cwd: rootDir, stdio: "ignore" });
@@ -149,7 +185,7 @@ describe("doctor check outcomes", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(12);
+    expect(report.checks).toHaveLength(13);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -175,7 +211,7 @@ describe("doctor check outcomes", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(12);
+    expect(parsed.checks).toHaveLength(13);
   });
 
   it("has no guard command left", async () => {

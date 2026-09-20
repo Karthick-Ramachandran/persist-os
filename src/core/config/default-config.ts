@@ -4,7 +4,6 @@ import { parseConfig, type PersistConfig } from "./config-schema.js";
 const DEFAULT_CONFIG = {
   version: PERSIST_VERSION,
   templateVersion: PERSIST_VERSION,
-  preset: null,
   aiTools: ["claude", "codex", "cursor"],
   docsDir: "docs",
   featuresDir: "docs/40-features",

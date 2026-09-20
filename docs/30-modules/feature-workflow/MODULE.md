@@ -8,8 +8,8 @@ Feature workflow owns the repository-memory process for planning and completing 
 
 - Feature folder shape.
 - Required feature docs.
-- Relationship between PRD, acceptance, architecture impact, test plan, tasks, review, and
-  completion evidence.
+- Relationship between plan (with acceptance criteria), tasks (with completion evidence), and the
+  conditional test plan.
 - Rerun semantics for feature memory creation.
 
 ## Does Not Own

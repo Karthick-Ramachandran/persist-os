@@ -12,7 +12,6 @@ describe("config schema", () => {
     expect(createDefaultConfig()).toEqual({
       version: PERSIST_VERSION,
       templateVersion: PERSIST_VERSION,
-      preset: null,
       aiTools: ["claude", "codex", "cursor"],
       docsDir: "docs",
       featuresDir: "docs/40-features",
@@ -28,7 +27,6 @@ describe("config schema", () => {
     const legacy = {
       version: "0.6.2",
       templateVersion: "0.6.2",
-      preset: null,
       aiTools: ["claude", "codex", "cursor"],
       docsDir: "docs",
       featuresDir: "docs/40-features",
@@ -66,7 +64,13 @@ describe("config schema", () => {
   it("validates the dogfooded root config", () => {
     const rawConfig = readFileSync(path.join(process.cwd(), ".persist", "config.json"), "utf8");
 
-    expect(parseConfig(JSON.parse(rawConfig))).toEqual(createDefaultConfig());
+    const config = parseConfig(JSON.parse(rawConfig));
+
+    expect(config.version).toBe(createDefaultConfig().version);
+    expect(Array.isArray(config.preCommitGates)).toBe(true);
+    expect(config.prePushGates).toContain("pnpm run typecheck");
+    expect(config.prePushGates).toContain("pnpm run lint");
+    expect(typeof config.testCommand).toBe("string");
   });
 
   it("rejects invalid enum values", () => {
@@ -100,14 +104,29 @@ describe("config schema", () => {
     );
   });
 
-  it("rejects invalid preset values", () => {
-    const baseConfig = createDefaultConfig();
-
-    expect(() => parseConfig({ ...baseConfig, preset: 42 })).toThrow(ConfigValidationError);
-    expect(() => parseConfig({ ...baseConfig, preset: "Next JS" })).toThrow(ConfigValidationError);
-    expect(() => parseConfig({ ...baseConfig, preset: "../../evil" })).toThrow(
-      ConfigValidationError,
+  it("rejects a retired preset field with the fix, not a generic error", () => {
+    expect(() => parseConfig({ ...createDefaultConfig(), preset: "nextjs" })).toThrow(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          'preset: presets were retired in 1.0 — delete the "preset" line from .persist/config.json',
+        ),
+      }),
     );
+  });
+
+  it("loads a 0.6.x config without preset", () => {
+    const legacy = {
+      version: "0.6.2",
+      templateVersion: "0.6.2",
+      aiTools: ["claude", "codex", "cursor"],
+      docsDir: "docs",
+      featuresDir: "docs/40-features",
+      modulesDir: "docs/30-modules",
+      adrDir: "docs/adrs",
+      preCommitGates: [],
+    };
+
+    expect(parseConfig(legacy)).toMatchObject({ preCommitGates: [] });
   });
 
   it("accepts valid pre-commit gates and defaults them to empty", () => {

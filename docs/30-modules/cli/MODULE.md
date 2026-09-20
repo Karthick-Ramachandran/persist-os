@@ -49,5 +49,7 @@ modules.
 
 P9 routes `doctor` to Doctor orchestration while keeping repository memory checks in `core/doctor`.
 
-P10 exposes the same command surface through the packaged `persist` binary and adds read-only
-`preset list` command dispatch.
+P10 exposes the same command surface through the packaged `persist` binary.
+
+P11 removes `preset list` dispatch (presets retired in 1.0) and routes `test-gate`, mirroring the
+test command's exit code.

@@ -40,21 +40,17 @@ export function advisoryToolFiles(aiTools: readonly string[] | undefined): strin
   return aiTools.includes("cursor") ? [CURSOR_RULE_PATH] : [];
 }
 
+/**
+ * The minimal required set (ADR-0007): six documents plus the ADR index. Everything else is
+ * opt-in — not generated unless asked for, and never an error when absent.
+ */
 const requiredDocs = [
-  "00-product/PRD.md",
-  "00-product/BRD.md",
-  "10-architecture/ARCHITECTURE.md",
-  "10-architecture/MEMORY_ENGINE.md",
-  "10-architecture/FILE_WRITE_POLICY.md",
+  "00-product/PRODUCT.md",
   "20-security/SECURITY_MODEL.md",
-  "20-security/THREAT_MODEL.md",
-  "50-quality/TESTING_STRATEGY.md",
   "50-quality/QUALITY_GATES.md",
   "60-engineering/ENGINEERING_STANDARDS.md",
-  "60-engineering/AI_AGENT_RULES.md",
-  "ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md",
-  "ai/MCP_STRATEGY.md",
-  "ai/PERSIST_COMMANDS.md",
+  "60-engineering/CONVENTIONS.md",
+  "60-engineering/LESSONS.md",
 ];
 
 export async function checkRequiredFiles(context: DoctorCheckContext): Promise<DoctorFinding[]> {
@@ -92,12 +88,9 @@ export async function checkRequiredFiles(context: DoctorCheckContext): Promise<D
   }
 
   if (context.config !== undefined) {
-    const requiredDirectories = [
-      context.config.docsDir,
-      context.config.featuresDir,
-      context.config.modulesDir,
-      context.config.adrDir,
-    ];
+    // Features and modules are opt-in: their directories are created on demand by
+    // `feature create` / `module create`, so absence is never an error.
+    const requiredDirectories = [context.config.docsDir, context.config.adrDir];
 
     for (const directoryPath of requiredDirectories) {
       if (!(await isDirectory(context.rootDir, directoryPath))) {

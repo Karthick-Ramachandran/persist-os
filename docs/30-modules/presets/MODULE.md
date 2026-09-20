@@ -1,8 +1,11 @@
 # Module: Presets
 
+> Retired in 1.0 (ADR-0007): presets were removed from the CLI, config, and source. This memory is a
+> historical record, not a live contract. See `docs/00-product/MIGRATION.md`.
+
 ## Purpose
 
-The presets module owns the runtime contract for optional opinion packs.
+The presets module owned the runtime contract for optional opinion packs.
 
 It validates preset definitions and exposes built-in preset registry access for future commands.
 

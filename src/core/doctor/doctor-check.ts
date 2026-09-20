@@ -7,6 +7,7 @@ import { checkDrift } from "./checks/drift-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
+import { checkRetiredSkills } from "./checks/retired-skills-check.js";
 import { checkStaleness } from "./checks/staleness-check.js";
 import { checkStandards } from "./checks/standards-check.js";
 import { checkSuperseded } from "./checks/superseded-check.js";
@@ -73,6 +74,7 @@ const CONFIG_GATED_CHECKS = [
   "context-budget",
   "staleness",
   "hook-drift",
+  "retired-skills",
 ] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
@@ -112,18 +114,22 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
     return createDoctorReport(findings, checks);
   }
 
-  findings.push(...(await checkMemoryIntegrity(context)));
-  checks.push({ id: "memory-integrity", status: "evaluated" });
-  findings.push(...(await checkStandards(context)));
-  checks.push({ id: "standards", status: "evaluated" });
+  const memoryIntegrity = await checkMemoryIntegrity(context);
+  findings.push(...memoryIntegrity.findings);
+  checks.push(memoryIntegrity.outcome);
+  const standards = await checkStandards(context);
+  findings.push(...standards.findings);
+  checks.push(standards.outcome);
   findings.push(...(await checkDrift(context)));
   checks.push({ id: "drift", status: "evaluated" });
-  findings.push(...(await checkContent(context)));
-  checks.push({ id: "content", status: "evaluated" });
+  const content = await checkContent(context);
+  findings.push(...content.findings);
+  checks.push(content.outcome);
   findings.push(...(await checkConventions(context)));
   checks.push({ id: "conventions", status: "evaluated" });
-  findings.push(...(await checkCodeReferences(context)));
-  checks.push({ id: "code-references", status: "evaluated" });
+  const codeReferences = await checkCodeReferences(context);
+  findings.push(...codeReferences.findings);
+  checks.push(codeReferences.outcome);
   findings.push(...(await checkSuperseded(context)));
   checks.push({ id: "superseded", status: "evaluated" });
   findings.push(...(await checkContextBudget(context)));
@@ -136,6 +142,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const hookDrift = await checkHookDrift(context);
   findings.push(...hookDrift.findings);
   checks.push(hookDrift.outcome);
+
+  const retiredSkills = await checkRetiredSkills(context);
+  findings.push(...retiredSkills.findings);
+  checks.push(retiredSkills.outcome);
 
   return createDoctorReport(findings, checks);
 }

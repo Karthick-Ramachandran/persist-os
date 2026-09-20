@@ -32,7 +32,7 @@ describe("doctor code-reference checks", () => {
     await writeFile(path.join(rootDir, "src/lib/store.ts"), "export {};\n", "utf8");
     await writeModule(rootDir, "Owns `src/lib/store.ts` and `src/lib/missing.ts`.");
 
-    const findings = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toContainEqual(
       expect.objectContaining({
@@ -57,8 +57,25 @@ describe("doctor code-reference checks", () => {
       "Owns `src/core/store.ts`. Generated at `src/presets/<id>/preset.ts`.",
     );
 
-    const findings = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
+  });
+
+  it("reports not-evaluated when no feature or module folders exist", async () => {
+    const rootDir = await createRoot("coderef-empty");
+
+    const { findings, outcome } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "code-references",
+      status: "not-evaluated",
+      reason:
+        "no feature or module folders exist, so there is no memory to scan for code references",
+    });
   });
 });

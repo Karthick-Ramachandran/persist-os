@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
@@ -23,14 +23,33 @@ const placeholderMarkers = /[<>*]|\.\.\./u;
  * Flags current-state memory that cites a `src/` or `tests/` path which no longer exists, so stale
  * documentation that references renamed or deleted code is surfaced rather than silently trusted.
  */
-export async function checkCodeReferences(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export type CodeReferenceCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
+
+export async function checkCodeReferences(
+  context: DoctorCheckContext,
+): Promise<CodeReferenceCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated("Code reference checks require Persist OS config.");
+  }
+
+  const featureEntries = await readDirIfExists(context.rootDir, context.config.featuresDir);
+  const hasFeatures = featureEntries.some(
+    (folder) => folder.isDirectory() && featureFolderPattern.test(folder.name),
+  );
+  const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
+  const hasModules = moduleEntries.some((folder) => folder.isDirectory());
+
+  if (!hasFeatures && !hasModules) {
+    return notEvaluated(
+      "no feature or module folders exist, so there is no memory to scan for code references",
+    );
   }
 
   const findings: DoctorFinding[] = [];
 
-  const featureEntries = await readDirIfExists(context.rootDir, context.config.featuresDir);
   for (const folder of featureEntries) {
     if (!folder.isDirectory() || !featureFolderPattern.test(folder.name)) {
       continue;
@@ -41,7 +60,6 @@ export async function checkCodeReferences(context: DoctorCheckContext): Promise<
     }
   }
 
-  const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
   for (const folder of moduleEntries) {
     if (!folder.isDirectory()) {
       continue;
@@ -52,7 +70,14 @@ export async function checkCodeReferences(context: DoctorCheckContext): Promise<
     }
   }
 
-  return findings;
+  return { findings, outcome: { id: "code-references", status: "evaluated" } };
+}
+
+function notEvaluated(reason: string): CodeReferenceCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "code-references", status: "not-evaluated", reason },
+  };
 }
 
 async function checkDoc(rootDir: string, relativePath: string): Promise<DoctorFinding[]> {

@@ -125,11 +125,10 @@ git config core.hooksPath .persist/hooks
 | Command                             | Purpose                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------ |
 | `persist init`                      | Create neutral repository memory (and a pre-commit hook).                      |
-| `persist init --preset <id>`        | Add an opinion pack: rich guidance and proposed ADRs.                          |
 | `persist init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
+| `persist init --features --modules` | Also generate the opt-in feature/module workflow scaffolding.                  |
 | `persist adopt`                     | Inspect an existing repo and propose reviewable memory.                        |
-| `persist preset list`               | List built-in presets.                                                         |
-| `persist feature create <name>`     | Scaffold feature memory (PRD, acceptance, tests, review).                      |
+| `persist feature create <name>`     | Scaffold feature memory (plan, tasks, test evidence).                          |
 | `persist adr create <title>`        | Create a proposed architecture decision record.                                |
 | `persist adr accept <name>`         | Promote a proposed ADR to accepted source-of-truth.                            |
 | `persist adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR.  |
@@ -172,25 +171,12 @@ Use it locally via the generated pre-commit hook, or add `persist doctor` as a s
 `--json` (`persist doctor --json`) for a stable, machine-readable report — handy for CI artifacts,
 hooks, and agent handoffs.
 
-## Presets
+## Opt-In Memory
 
-Presets are opinion packs. They ship **proposed** guidance and proposed ADRs for a stack's real
-decision forks — and they can never silently accept a choice for you (the schema enforces `Proposed`
-status on every preset decision).
-
-| Preset           | Stack            | Proposes (always as proposed ADRs)                                                  |
-| ---------------- | ---------------- | ----------------------------------------------------------------------------------- |
-| `laravel-react`  | Laravel + React  | Laravel, Inertia + React, Eloquent, Sanctum, Form Requests + Policies, queues, Pest |
-| `laravel-vue`    | Laravel + Vue    | Laravel, Inertia + Vue, Eloquent, Sanctum, Form Requests + Policies, queues, Pest   |
-| `laravel-api`    | Laravel (API)    | Laravel, versioned REST + API Resources, Eloquent, Sanctum, queues, Pest            |
-| `kotlin-android` | Kotlin / Android | Compose, Coroutines + Flow, Hilt, Room, MVVM                                        |
-| `python-fastapi` | Python / FastAPI | FastAPI, PostgreSQL + SQLAlchemy, Pydantic, pytest, Redis                           |
-| `ios-swift`      | iOS / Swift      | SwiftUI, async/await + Observation, SwiftData, MVVM                                 |
-| `nextjs`         | Next.js / TS     | App Router, typed data layer, Tailwind, Vitest + Playwright                         |
-| `flutter`        | Flutter          | Platform and state-management guidance                                              |
-| `generic`        | none             | Architecture-neutral memory                                                         |
-
-Adding a preset is a small contribution — see [CONTRIBUTING.md](CONTRIBUTING.md).
+`persist init` generates the minimal set by default: six documents plus the ADR directory. Feature
+and module workflow memory is opt-in — pass `persist init --features --modules`, or run
+`persist feature create` / `persist module create` whenever you need them. Doctor treats absent
+opt-in memory as not-evaluated (with a reason), never as an error.
 
 ## How It Works
 
@@ -223,11 +209,11 @@ Persist OS creates a memory structure under `docs/` and `.persist/config.json`, 
 source-of-truth order:
 
 ```txt
-1. Accepted ADRs and repository decisions     6. Module docs
-2. Architecture docs                          7. Feature plans
-3. Engineering standards                      8. Task files
-4. Current PRD and accepted changes           9. External context
-5. Security and testing docs                 10. Chat history
+1. Accepted ADRs and repository decisions     5. Module docs
+2. Product memory (PRODUCT.md)                6. Feature plans
+3. Engineering standards                      7. Task files
+4. Security and testing docs                  8. External context
+                                              9. Chat history
 ```
 
 If external context or chat history conflicts with repository memory, **repository memory wins**.
@@ -245,7 +231,8 @@ Persist OS does not:
 
 ## Examples
 
-Committed sample outputs show the exact memory each preset generates:
+Committed sample outputs show generated memory from the preset era (historical — the current shape
+is goldened in `tests/golden/generated-minimal.test.ts`):
 
 ```txt
 examples/generated-generic/         examples/generated-kotlin-android/

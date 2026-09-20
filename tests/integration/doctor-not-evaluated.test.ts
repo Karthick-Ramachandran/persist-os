@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -21,7 +23,39 @@ const GATED_CHECKS = [
   "context-budget",
   "staleness",
   "hook-drift",
+  "retired-skills",
 ];
+
+async function fillScaffoldDocs(rootDir: string): Promise<void> {
+  const conventionsPath = path.join(rootDir, "docs/60-engineering/CONVENTIONS.md");
+  const conventions = await readFile(conventionsPath, "utf8");
+  await writeFile(
+    conventionsPath,
+    conventions.replace(
+      "Describe the named building blocks this codebase reuses",
+      "Shared primitives: the ledger writer in src/ledger and the receipt renderer in src/receipts. Replaces the template sentence:",
+    ),
+    "utf8",
+  );
+  const securityPath = path.join(rootDir, "docs/20-security/SECURITY_MODEL.md");
+  const security = await readFile(securityPath, "utf8");
+  await writeFile(
+    securityPath,
+    security.replace(
+      "Describe how this repository authenticates users or clients",
+      "Clients authenticate with API keys and the gateway authorizes every action. Replaces the template sentence:",
+    ),
+    "utf8",
+  );
+}
+
+async function fillModuleDoc(rootDir: string, name: string): Promise<void> {
+  await writeFile(
+    path.join(rootDir, "docs/30-modules", name, "MODULE.md"),
+    "# Module: billing\n\n## Purpose\n\nOwns invoicing and receipts.\n\n## Owns\n\nThe ledger writer and the receipt renderer.\n",
+    "utf8",
+  );
+}
 
 function git(rootDir: string, ...args: string[]): void {
   execFileSync("git", args, { cwd: rootDir, stdio: "ignore" });
@@ -40,11 +74,11 @@ describe("doctor not-evaluated reporting", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("reports ten not-evaluated checks when config is missing", async () => {
+  it("reports eleven not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("noteval-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(12);
+    expect(report.checks).toHaveLength(13);
     for (const check of GATED_CHECKS) {
       expect(report.checks).toContainEqual({
         id: check,
@@ -52,7 +86,7 @@ describe("doctor not-evaluated reporting", () => {
         reason: "no .persist/config.json, so configured paths are unknown",
       });
     }
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(10);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(11);
   });
 
   it("shows the NOT EVALUATED section without moving the exit code by itself", async () => {
@@ -105,9 +139,15 @@ describe("doctor not-evaluated reporting", () => {
     expect(result.stdout).toContain("NOT EVALUATED");
   });
 
-  it("evaluates all twelve checks with no NOT EVALUATED section in full history", async () => {
+  it("evaluates all thirteen checks with no NOT EVALUATED section in full history", async () => {
     const rootDir = await createRoot("noteval-healthy");
     await runInitCommand(rootDir);
+    await runCommand(rootDir, ["feature", "create", "auth-provider"]);
+    await runCommand(rootDir, ["module", "create", "billing"]);
+    await runCommand(rootDir, ["adr", "create", "use-postgres"]);
+    await runCommand(rootDir, ["adr", "accept", "use-postgres"]);
+    await fillModuleDoc(rootDir, "billing");
+    await fillScaffoldDocs(rootDir);
     git(rootDir, "init");
     git(rootDir, "config", "user.email", "test@example.com");
     git(rootDir, "config", "user.name", "Test");
@@ -116,7 +156,7 @@ describe("doctor not-evaluated reporting", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(12);
+    expect(report.checks).toHaveLength(13);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -145,7 +185,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(12);
+    expect(parsed.checks).toHaveLength(13);
     expect(parsed.checks.find((check) => check.id === "staleness")).toMatchObject({
       status: "not-evaluated",
     });

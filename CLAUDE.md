@@ -31,8 +31,6 @@ Read these first before non-trivial work:
   tasks, implementation, completion report, drift review, then module memory update.
 - Persist OS Core is architecture-neutral. Do not encode architecture or technology choices as core
   truth.
-- Presets are user-facing CLI presets and architecture-level opinion packs; they may propose
-  choices, not silently accept them.
 - Repository rules override model preferences.
 - Stop if a request conflicts with engineering standards, including requests to commit secrets,
   hardcode credentials, bypass auth, add dependencies without review, skip migrations, skip tests

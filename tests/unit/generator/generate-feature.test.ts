@@ -4,40 +4,49 @@ import { generateFeatureFiles } from "../../../src/core/generator/generate-featu
 import { SlugifyError } from "../../../src/core/naming/slugify.js";
 
 describe("generateFeatureFiles", () => {
-  it("generates all required feature docs with deterministic paths", () => {
+  it("writes two files when the test gate is off", () => {
     const files = generateFeatureFiles({
       featuresDir: "docs/40-features",
       featureId: "F-001",
       featureName: "Auth Provider",
+      testGate: false,
     });
 
     expect(files.map((file) => file.path)).toEqual([
-      "docs/40-features/F-001-auth-provider/PRD.md",
-      "docs/40-features/F-001-auth-provider/ACCEPTANCE.md",
-      "docs/40-features/F-001-auth-provider/ARCHITECTURE_IMPACT.md",
-      "docs/40-features/F-001-auth-provider/CHANGE_REQUESTS.md",
       "docs/40-features/F-001-auth-provider/PLAN.md",
       "docs/40-features/F-001-auth-provider/TASKS.md",
-      "docs/40-features/F-001-auth-provider/TEST_PLAN.md",
-      "docs/40-features/F-001-auth-provider/REVIEW.md",
-      "docs/40-features/F-001-auth-provider/COMPLETION_REPORT.md",
     ]);
   });
 
-  it("creates concise starter memory content", () => {
+  it("adds TEST_PLAN.md when the test gate is on", () => {
+    const files = generateFeatureFiles({
+      featuresDir: "docs/40-features",
+      featureId: "F-001",
+      featureName: "Auth Provider",
+      testGate: true,
+    });
+
+    expect(files.map((file) => file.path)).toEqual([
+      "docs/40-features/F-001-auth-provider/PLAN.md",
+      "docs/40-features/F-001-auth-provider/TASKS.md",
+      "docs/40-features/F-001-auth-provider/TEST_PLAN.md",
+    ]);
+  });
+
+  it("folds acceptance into PLAN and evidence into TASKS", () => {
     const files = generateFeatureFiles({
       featuresDir: "docs/40-features",
       featureId: "F-002",
       featureName: "auth-provider",
+      testGate: false,
     });
-    const prd = files.find((file) => file.path.endsWith("/PRD.md"));
+    const plan = files.find((file) => file.path.endsWith("/PLAN.md"));
     const tasks = files.find((file) => file.path.endsWith("/TASKS.md"));
 
-    expect(prd?.content).toContain("# PRD: Auth Provider");
-    expect(tasks?.content).toContain("Do Not:");
-    expect(tasks?.content).toContain(
-      "Start implementation before PRD, acceptance, architecture impact, and test plan are clear.",
-    );
+    expect(plan?.content).toContain("# Plan: Auth Provider");
+    expect(plan?.content).toContain("## Acceptance Criteria");
+    expect(tasks?.content).toContain("## Completion Evidence");
+    expect(tasks?.content).toContain("Tests Run:");
   });
 
   it("rejects unsafe feature names", () => {
@@ -46,6 +55,7 @@ describe("generateFeatureFiles", () => {
         featuresDir: "docs/40-features",
         featureId: "F-001",
         featureName: "../../evil",
+        testGate: false,
       }),
     ).toThrow(SlugifyError);
   });

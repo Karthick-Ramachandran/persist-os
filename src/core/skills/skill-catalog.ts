@@ -338,7 +338,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Review with fresh, independent context — a separate pass, or a dedicated sub-agent if your tool supports one — rather than continuing in the same chat that wrote the change, so the review is not biased by the work it checks.",
       "Identify changed trust boundaries.",
       "Check path validation, overwrite policy, symlink policy, and dry-run behavior.",
-      "Check dependency, package, template, and preset risk.",
+      "Check dependency, package, and template risk.",
       "Check for network, telemetry, secrets, `.env`, cloud, AI API, or runtime MCP behavior.",
       "Check tests for security-sensitive behavior.",
       "Classify findings as blockers, risks, or documented acceptable tradeoffs.",

@@ -17,6 +17,9 @@ It validates whether repository memory is structurally healthy enough for AI-ass
   notes.
 - Deterministic drift checks for ADR reference integrity in feature and module memory.
 - Persist command memory health checks.
+- Per-check evaluated / not-evaluated outcomes with reasons (a check whose inputs are absent reports
+  so instead of passing silently).
+- Hook-drift comparison of generated hooks against config, and retired-skill detection.
 
 ## Does Not Own
 
@@ -35,6 +38,7 @@ It validates whether repository memory is structurally healthy enough for AI-ass
 - `DoctorFinding`
 - `DoctorReport`
 - `DoctorCheck`
+- `DoctorCheckOutcome`
 - `runDoctor`
 - `formatDoctorReport`
 - `getDoctorExitCode`

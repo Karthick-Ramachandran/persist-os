@@ -46,20 +46,10 @@ describe("feature create command", () => {
     expect(result.stdout).toContain("Feature: docs/40-features/F-001-auth-provider");
     expect(
       await listRelativeFiles(path.join(rootDir, "docs/40-features/F-001-auth-provider")),
-    ).toEqual([
-      "ACCEPTANCE.md",
-      "ARCHITECTURE_IMPACT.md",
-      "CHANGE_REQUESTS.md",
-      "COMPLETION_REPORT.md",
-      "PLAN.md",
-      "PRD.md",
-      "REVIEW.md",
-      "TASKS.md",
-      "TEST_PLAN.md",
-    ]);
+    ).toEqual(["PLAN.md", "TASKS.md"]);
     expect(
-      await readGeneratedFile(rootDir, "docs/40-features/F-001-auth-provider/PRD.md"),
-    ).toContain("# PRD: Auth Provider");
+      await readGeneratedFile(rootDir, "docs/40-features/F-001-auth-provider/PLAN.md"),
+    ).toContain("# Plan: Auth Provider");
   });
 
   it("increments feature numbers and ignores malformed folders", async () => {
@@ -84,7 +74,7 @@ describe("feature create command", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("Name cannot contain path separators.");
-    expect(await listRelativeFiles(rootDir)).not.toContain("docs/40-features/F-001-evil/PRD.md");
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/40-features/F-001-evil/PLAN.md");
   });
 
   it("skips existing files by default", async () => {
@@ -92,7 +82,7 @@ describe("feature create command", () => {
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
 
-    const prdPath = path.join(rootDir, "docs/40-features/F-001-auth-provider/PRD.md");
+    const prdPath = path.join(rootDir, "docs/40-features/F-001-auth-provider/PLAN.md");
     await writeFile(prdPath, "custom prd\n", "utf8");
 
     const result = await runCommand(rootDir, ["feature", "create", "auth-provider"]);
@@ -112,7 +102,7 @@ describe("feature create command", () => {
     expect(result.stdout).toContain("Persist OS feature create dry run complete.");
     expect(result.stdout).toContain("Planned creates:");
     expect(await listRelativeFiles(rootDir)).not.toContain(
-      "docs/40-features/F-001-auth-provider/PRD.md",
+      "docs/40-features/F-001-auth-provider/PLAN.md",
     );
   });
 
@@ -121,14 +111,14 @@ describe("feature create command", () => {
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
 
-    const prdPath = path.join(rootDir, "docs/40-features/F-001-auth-provider/PRD.md");
+    const prdPath = path.join(rootDir, "docs/40-features/F-001-auth-provider/PLAN.md");
     await writeFile(prdPath, "custom prd\n", "utf8");
 
     const result = await runCommand(rootDir, ["feature", "create", "auth-provider", "--force"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Overwritten:");
-    expect(await readFile(prdPath, "utf8")).toContain("# PRD: Auth Provider");
+    expect(await readFile(prdPath, "utf8")).toContain("# Plan: Auth Provider");
   });
 
   it("uses configured featuresDir", async () => {
@@ -143,8 +133,8 @@ describe("feature create command", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Feature: memory/features/F-001-checkout");
-    expect(await readGeneratedFile(rootDir, "memory/features/F-001-checkout/PRD.md")).toContain(
-      "# PRD: Checkout",
+    expect(await readGeneratedFile(rootDir, "memory/features/F-001-checkout/PLAN.md")).toContain(
+      "# Plan: Checkout",
     );
   });
 });

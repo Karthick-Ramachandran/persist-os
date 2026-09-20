@@ -7,6 +7,3 @@
 set -e
 
 persist doctor
-pnpm run test
-pnpm run typecheck
-pnpm run lint

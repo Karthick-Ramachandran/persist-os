@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   createTempRoot,
+  listRelativeFiles,
   readGeneratedFile,
   readGeneratedJson,
   removeTempRoot,
@@ -59,30 +60,45 @@ describe("doctor command", () => {
     expect(result.stdout).toContain("Config file is not valid JSON.");
   });
 
-  it("returns two when required root or AI docs are missing", async () => {
-    const rootDir = await createRoot("doctor-missing-root-ai");
+  it("returns two when a required doc is missing", async () => {
+    const rootDir = await createRoot("doctor-missing-required-doc");
     await runInitCommand(rootDir);
-    await rm(path.join(rootDir, "docs/ai/PERSIST_COMMANDS.md"));
+    await rm(path.join(rootDir, "docs/00-product/PRODUCT.md"));
 
     const result = await runCommand(rootDir, ["doctor"]);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stdout).toContain("docs/ai/PERSIST_COMMANDS.md");
+    expect(result.stdout).toContain("docs/00-product/PRODUCT.md");
   });
 
-  it("returns two when configured directories are missing", async () => {
+  it("returns two when a required directory is missing", async () => {
     const rootDir = await createRoot("doctor-missing-configured-dir");
     await runInitCommand(rootDir);
     const configPath = path.join(rootDir, ".persist/config.json");
     const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
-    config.featuresDir = "missing/features";
+    config.docsDir = "missing/docs";
     await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 
     const result = await runCommand(rootDir, ["doctor"]);
 
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toContain("Configured directory is missing.");
-    expect(result.stdout).toContain("missing/features");
+    expect(result.stdout).toContain("missing/docs");
+  });
+
+  it("stays green when opt-in feature and module directories are absent", async () => {
+    const rootDir = await createRoot("doctor-absent-optin-dirs");
+    await runInitCommand(rootDir);
+    const configPath = path.join(rootDir, ".persist/config.json");
+    const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
+    config.featuresDir = "missing/features";
+    config.modulesDir = "missing/modules";
+    await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+
+    const result = await runCommand(rootDir, ["doctor"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Result: PASSED");
   });
 
   it("returns two when feature folders are missing required docs", async () => {
@@ -277,18 +293,18 @@ Example consequence text.
     expect(result.stdout).toContain("Result: WARNINGS");
   });
 
-  it("generates command reference memory during init", async () => {
+  it("leaves optional strategy docs ungenerated during init", async () => {
     const rootDir = await createRoot("doctor-command-reference");
     await runInitCommand(rootDir);
 
-    const commandReference = await readGeneratedFile(rootDir, "docs/ai/PERSIST_COMMANDS.md");
+    const files = await listRelativeFiles(rootDir);
 
-    expect(commandReference).toContain("persist init");
-    expect(commandReference).toContain("persist preset list");
-    expect(commandReference).toContain("persist feature create <name>");
-    expect(commandReference).toContain("persist adr create <title>");
-    expect(commandReference).toContain("persist module create <name>");
-    expect(commandReference).toContain("persist doctor");
+    expect(files).not.toContain("docs/ai/PERSIST_COMMANDS.md");
+    expect(files).not.toContain("docs/00-product/PRD.md");
+    expect(files).toContain("docs/00-product/PRODUCT.md");
+
+    const agents = await readGeneratedFile(rootDir, "AGENTS.md");
+    expect(agents).toContain("persist doctor");
   });
   it("emits JSON for CI and agent handoff", async () => {
     const rootDir = await createRoot("doctor-json");
@@ -308,7 +324,7 @@ Example consequence text.
     expect(parsed.schemaVersion).toBe("persist.doctor.v1");
     expect(parsed.status).toBe("passed");
     expect(parsed.exitCode).toBe(0);
-    expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0, info: 4 });
-    expect(parsed.findings).toHaveLength(4);
+    expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0, info: 1 });
+    expect(parsed.findings).toHaveLength(1);
   });
 });

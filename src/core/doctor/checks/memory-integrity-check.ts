@@ -2,42 +2,85 @@ import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { REQUIRED_ADR_SECTIONS } from "../../adr/adr-sections.js";
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
-
-const requiredFeatureDocs = [
-  "PRD.md",
-  "ACCEPTANCE.md",
-  "ARCHITECTURE_IMPACT.md",
-  "CHANGE_REQUESTS.md",
-  "PLAN.md",
-  "TASKS.md",
-  "TEST_PLAN.md",
-  "REVIEW.md",
-  "COMPLETION_REPORT.md",
-];
 
 const requiredModuleDocs = ["MODULE.md", "TASKS.md", "TEST_PLAN.md", "DECISIONS.md"];
 
 const requiredAdrSections = REQUIRED_ADR_SECTIONS;
 
-export async function checkMemoryIntegrity(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export type MemoryIntegrityCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
+
+export async function checkMemoryIntegrity(
+  context: DoctorCheckContext,
+): Promise<MemoryIntegrityCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated("Memory integrity checks require Persist OS config.");
+  }
+
+  const { rootDir, config } = context;
+  const featureFolders = await listFeatureFolders(rootDir, config.featuresDir);
+  const moduleFolders = await listModuleFolders(rootDir, config.modulesDir);
+  const adrFiles = await listAdrFiles(rootDir, config.adrDir);
+
+  if (featureFolders.length === 0 && moduleFolders.length === 0 && adrFiles.length === 0) {
+    return notEvaluated(
+      "no feature folders, module folders, or ADRs exist, so there is no memory to validate",
+    );
   }
 
   const findings: DoctorFinding[] = [];
 
-  findings.push(...(await checkFeatureFolders(context.rootDir, context.config.featuresDir)));
-  findings.push(...(await checkModuleFolders(context.rootDir, context.config.modulesDir)));
-  findings.push(...(await checkAdrFiles(context.rootDir, context.config.adrDir)));
+  // Minimal scaffold (ADR-0007): PLAN.md and TASKS.md always; TEST_PLAN.md only while the
+  // test gate enforces it. Older nine-document folders contain all three, so they keep passing.
+  const requiredFeatureDocs =
+    config.testCommand === undefined || config.testCommand === null
+      ? ["PLAN.md", "TASKS.md"]
+      : ["PLAN.md", "TASKS.md", "TEST_PLAN.md"];
 
-  return findings;
+  findings.push(...(await checkFeatureFolders(rootDir, config.featuresDir, requiredFeatureDocs)));
+  findings.push(...(await checkModuleFolders(rootDir, config.modulesDir)));
+  findings.push(...(await checkAdrFiles(rootDir, config.adrDir)));
+
+  return { findings, outcome: { id: "memory-integrity", status: "evaluated" } };
 }
 
-async function checkFeatureFolders(rootDir: string, featuresDir: string): Promise<DoctorFinding[]> {
+function notEvaluated(reason: string): MemoryIntegrityCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "memory-integrity", status: "not-evaluated", reason },
+  };
+}
+
+async function listFeatureFolders(rootDir: string, featuresDir: string): Promise<string[]> {
+  const entries = await readDirIfExists(rootDir, featuresDir);
+  return entries
+    .filter((entry) => entry.isDirectory() && featureFolderPattern.test(entry.name))
+    .map((entry) => entry.name);
+}
+
+async function listModuleFolders(rootDir: string, modulesDir: string): Promise<string[]> {
+  const entries = await readDirIfExists(rootDir, modulesDir);
+  return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+}
+
+async function listAdrFiles(rootDir: string, adrDir: string): Promise<string[]> {
+  const entries = await readDirIfExists(rootDir, adrDir);
+  return entries
+    .filter((entry) => entry.isFile() && adrFilePattern.test(entry.name))
+    .map((entry) => entry.name);
+}
+
+async function checkFeatureFolders(
+  rootDir: string,
+  featuresDir: string,
+  requiredFeatureDocs: string[],
+): Promise<DoctorFinding[]> {
   const findings: DoctorFinding[] = [];
   const entries = await readDirIfExists(rootDir, featuresDir);
   const featureFolders = entries.filter(

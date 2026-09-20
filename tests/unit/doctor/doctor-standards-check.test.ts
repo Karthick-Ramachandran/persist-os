@@ -29,7 +29,7 @@ describe("doctor standards checks", () => {
       results: "Passed.",
     });
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -53,7 +53,7 @@ describe("doctor standards checks", () => {
       results: "Not available yet.",
     });
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -76,7 +76,7 @@ describe("doctor standards checks", () => {
     const rootDir = await createRoot("doctor-standards-proposed-adr");
     await writeAdr(rootDir, "Proposed", "TBD");
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -94,7 +94,7 @@ describe("doctor standards checks", () => {
     const rootDir = await createRoot("doctor-standards-accepted-adr");
     await writeAdr(rootDir, "Accepted", "TBD");
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -127,7 +127,7 @@ describe("doctor standards checks", () => {
 `,
     });
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -160,7 +160,7 @@ describe("doctor standards checks", () => {
 `,
     });
 
-    const findings = await checkStandards({
+    const { findings } = await checkStandards({
       rootDir,
       config: createDefaultConfig(),
     });
@@ -172,6 +172,23 @@ describe("doctor standards checks", () => {
         message: "Security-sensitive feature planning is missing security impact evidence.",
       }),
     );
+  });
+
+  it("reports not-evaluated when no features or ADRs exist", async () => {
+    const rootDir = await createRoot("standards-empty");
+
+    const { findings, outcome } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "standards",
+      status: "not-evaluated",
+      reason:
+        "no feature folders or ADRs exist, so there are no completion claims or decisions to check",
+    });
   });
 });
 

@@ -49,9 +49,6 @@ Tasks come after PRD, acceptance criteria, architecture impact, and test plan.
 Persist OS Core records, distributes, validates, and protects decisions. It does not make
 architecture or technology choices for users.
 
-Presets are CLI-level presets and architecture-level opinion packs. Preset suggestions must be
-proposed or optional until accepted by a human.
-
 ## Engineering Standards
 
 Repository rules override model preferences.
