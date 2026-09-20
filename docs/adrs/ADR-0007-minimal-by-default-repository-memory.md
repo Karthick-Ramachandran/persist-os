@@ -10,8 +10,9 @@ Persist OS generates more memory than most repositories will ever maintain.
 
 Measured on this repository today:
 
-- Doctor errors unless **11 documents** exist, totalling roughly 60KB. Two of them — `PRD.md`
-  (24.5KB) and `BRD.md` (15KB) — are two thirds of that weight on their own.
+- Doctor errors unless **14 documents** exist (plus `docs/adrs/README.md` and the tool entry files).
+  The eleven largest total roughly 60KB. Two of them — `PRD.md` (24.5KB) and `BRD.md` (15KB) — are
+  two thirds of that weight on their own.
 - `persist feature create` writes **9 files** per feature: PRD, ACCEPTANCE, ARCHITECTURE_IMPACT,
   CHANGE_REQUESTS, PLAN, TASKS, TEST_PLAN, REVIEW, COMPLETION_REPORT.
 - Every generated skill carries a `## Required Reading` list. `ENGINEERING_STANDARDS.md` appears in
@@ -43,7 +44,7 @@ opt-in.
 - `docs/20-security/SECURITY_MODEL.md`
 - `docs/50-quality/QUALITY_GATES.md`
 
-Required document count drops from 11 to 6 plus the ADR directory.
+Required document count drops from 14 to 6 plus the ADR directory.
 
 **Optional, chosen at init:** features, modules, `ARCHITECTURE.md`, `AI_AGENT_RULES.md`,
 `MEMORY_ENGINE.md`, `FILE_WRITE_POLICY.md`, `THREAT_MODEL.md`, `TESTING_STRATEGY.md`, and the
