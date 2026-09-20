@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Getting started — Persist OS docs</title>
+    <meta name="description" content="Install Persist OS, initialize repository memory, enable the generated hooks, record a first decision, and run the doctor." />
+    <link rel="canonical" href="https://persist-os.pages.dev/docs/index.html" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header is-sticky">
+      <div class="wrap">
+        <a class="brand" href="../index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)" /><path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="index.html" aria-current="page">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg></a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <aside class="docs-side">
+        <nav aria-label="Documentation">
+          <ul class="docs-nav">
+            <li class="group">Start</li>
+            <li><a href="index.html" aria-current="page">Getting started</a></li>
+            <li class="group">Reference</li>
+            <li><a href="commands.html">Commands</a></li>
+            <li class="group">Concepts</li>
+            <li><a href="memory.html">Repository memory</a></li>
+            <li><a href="decisions.html">Decisions and ADRs</a></li>
+            <li><a href="doctor.html">Doctor</a></li>
+            <li><a href="hooks.html">Hooks, test gate, CI</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="main" class="docs-main">
+        <header>
+          <span class="eyebrow">Start</span>
+          <h1>Getting started</h1>
+          <p class="lede">From an empty folder or an existing repository to checked memory in a few minutes. Every step shows the real command output.</p>
+        </header>
+
+        <div class="prose">
+          <h2 id="requirements">Requirements</h2>
+          <p>
+            Node.js 20 or newer. Git is optional: everything works without it, except the doctor's
+            staleness check, which compares commit times and reports itself as not evaluated
+            outside a git repository.
+          </p>
+          <p class="note">
+            These pages follow the <code>main</code> branch. The quickest way to tell whether your
+            installed version matches is <code>persist init --help</code>: if it does not list
+            <code>--features</code>, you have an earlier release, and <code>init</code> writes a
+            larger set of files than shown here.
+          </p>
+
+          <h2 id="install">Install</h2>
+          <p>Run it without installing:</p>
+          <pre><code><span class="p">$</span> <span class="c">npx persist-os@latest init</span></code></pre>
+          <p>
+            Every command works the same way through <code>npx persist-os &lt;command&gt;</code>.
+            Or install the <code>persist</code> binary globally:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">npm install -g persist-os</span>
+<span class="p">$</span> <span class="c">persist --help</span></code></pre>
+
+          <h2 id="init">Initialize repository memory</h2>
+          <p>
+            <code>persist init</code> writes six memory documents, a decision directory, the agent
+            entry points, the git hooks, and a CI workflow. It never overwrites a file that already
+            exists, and it never touches your git configuration. Preview the writes first if you
+            like:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist init --dry-run</span></code></pre>
+          <p>Then run it for real:</p>
+          <pre><code><span class="p">$</span> <span class="c">persist init</span>
+Persist OS init complete.
+Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Generated repository memory, 12 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Created:
+- .persist/config.json
+- AGENTS.md
+- CLAUDE.md
+- .cursor/rules/persist-memory.mdc
+- docs/00-product/PRODUCT.md
+- docs/20-security/SECURITY_MODEL.md
+- docs/50-quality/QUALITY_GATES.md
+- docs/60-engineering/ENGINEERING_STANDARDS.md
+- docs/60-engineering/CONVENTIONS.md
+- docs/60-engineering/LESSONS.md
+- docs/adrs/README.md
+- .github/workflows/persist.yml
+- .persist/hooks/pre-commit
+- .persist/hooks/pre-push
+- .claude/hooks/session-start.sh
+- .claude/settings.json
+- .claude/skills/create-prd/SKILL.md
+- .agents/skills/create-prd/SKILL.md
+<span class="m">  … (12 skills, each written to both locations)</span>
+
+Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
+Enable them once per clone: git config core.hooksPath .persist/hooks
+
+Next steps:
+- Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.
+- AI agent skills are in .claude/skills/ and .agents/skills/ — restart your AI tool to load them.
+- Memory loads automatically per tool: a Claude SessionStart hook (.claude/hooks/session-start.sh), a Cursor rule (.cursor/rules/persist-memory.mdc), and AGENTS.md for Codex.
+- CI is wired in .github/workflows/persist.yml; the pre-commit hook is in .persist/hooks/.
+- Plan your first feature: `persist feature create &lt;name&gt;`.
+- Record a decision: `persist adr create &lt;title&gt;`, then accept it with `persist adr accept`.
+- Check repository memory health anytime: `persist doctor`.</code></pre>
+          <p>
+            The "Test gate" line depends on your <code>package.json</code>. When init finds a
+            one-shot test script (<code>test:run</code>, or a <code>test</code> script that is not a
+            watch runner) it records that command as <code>testCommand</code> in
+            <code>.persist/config.json</code>, and records <code>typecheck</code> and
+            <code>lint</code> scripts as pre-push gates. These are values in a config file you own,
+            and the hooks are rendered from it.
+          </p>
+          <p>
+            Two options shape what gets written. <code>--ai-tools claude,cursor</code> limits the
+            entry points to the tools you use (the choices are <code>claude</code>,
+            <code>codex</code>, <code>cursor</code>, and <code>generic</code>; the default is
+            claude, codex, and cursor, and <code>AGENTS.md</code> is always written).
+            <code>--features</code> and <code>--modules</code> add the opt-in feature and module
+            memory indexes; you can also skip them and run <code>persist feature create</code> or
+            <code>persist module create</code> the first time you need one.
+          </p>
+
+          <h2 id="hooks">Enable the hooks</h2>
+          <p>
+            The hooks are tracked files under <code>.persist/hooks/</code>, so they travel with the
+            repository. Git does not run them until you point it at that directory. Persist OS
+            prints the command and leaves running it to you:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span></code></pre>
+          <p>
+            From then on, every commit runs <code>persist doctor</code> plus your pre-commit gates,
+            and every push runs <code>persist test-gate</code> plus your pre-push gates. Details in
+            <a href="hooks.html">Hooks, test gate, CI</a>.
+          </p>
+
+          <h2 id="load">Let your AI tool load it</h2>
+          <p>
+            Restart your AI tool so it picks up the new files. Claude Code reads
+            <code>CLAUDE.md</code>, which imports <code>AGENTS.md</code>, and runs the SessionStart
+            hook. Cursor applies <code>.cursor/rules/persist-memory.mdc</code> to every request.
+            Codex reads <code>AGENTS.md</code>. The twelve generated skills appear in
+            <code>.claude/skills/</code> and <code>.agents/skills/</code>.
+          </p>
+
+          <h2 id="first-decision">Record a first decision</h2>
+          <p>
+            A decision that affects architecture, a dependency, storage, auth, or a module boundary
+            deserves an ADR. Create one as Proposed:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist adr create "Use PostgreSQL for primary storage"</span>
+Persist OS ADR create complete.
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Created:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Open docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md and fill: Context, Decision, Alternatives, Consequences.
+- It is Proposed — set Status to Accepted once the team agrees.</code></pre>
+          <p>Fill in the sections, then accept it when the team agrees:</p>
+          <pre><code><span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.</code></pre>
+          <p>
+            The full lifecycle, including how a decision is changed later, is in
+            <a href="decisions.html">Decisions and ADRs</a>.
+          </p>
+
+          <h2 id="doctor">Run the doctor</h2>
+          <p>
+            <code>persist doctor</code> reads the memory and exits 0 (healthy), 1 (warnings only),
+            or 2 (errors). Right after <code>init</code> in an empty repository it passes, and it
+            lists the checks that had nothing to look at rather than counting them as passed:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+NOT EVALUATED
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+
+Result: PASSED</code></pre>
+          <p>
+            Once the repository has real work (an ADR, a feature, or a module), the doctor starts
+            warning about template sections that were never filled in:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 1 ADRs detected.
+
+Result: <span class="warn">WARNINGS</span>
+<span class="p">$</span> <span class="c">echo $?</span>
+1</code></pre>
+          <p>
+            Everything the doctor checks, and what each severity means, is in
+            <a href="doctor.html">Doctor</a>.
+          </p>
+
+          <h2 id="completion">Use it as the completion gate</h2>
+          <p>
+            The generated <code>AGENTS.md</code> tells the agent to run <code>persist doctor</code>
+            and fix every error before claiming work is complete. The same loop works for humans:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">pnpm test:run &amp;&amp; pnpm typecheck &amp;&amp; persist doctor</span></code></pre>
+
+          <h2 id="when">When to use it, and when not to</h2>
+          <p>
+            Persist OS pays off when the code is meant to last and someone will inherit it: a
+            teammate, a team, a fresh agent next week, or you next month. If you are spiking an idea
+            you will throw away, skip it. There is no second session to hand off to, so the memory
+            never gets read back. Even in a project that keeps it, keep the discipline proportional:
+            a small fix gets built; a real feature or decision gets written down.
+          </p>
+
+          <h2 id="help">Found a problem?</h2>
+          <p>
+            Open an issue at
+            <a href="https://github.com/Karthick-Ramachandran/persist-os/issues" target="_blank" rel="noopener noreferrer">github.com/Karthick-Ramachandran/persist-os/issues</a>.
+            Include the output of <code>persist doctor --json</code> if it is relevant; it names
+            every check and why any of them did not run.
+          </p>
+        </div>
+
+        <nav class="docs-pager" aria-label="Previous and next pages">
+          <a class="next" href="commands.html"><span>Next</span>Commands</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub repo</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg> npm package</a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub profile</a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> X</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../assets/site.js" defer></script>
+  </body>
+</html>

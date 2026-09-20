@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hooks, test gate, CI — Persist OS docs</title>
+    <meta name="description" content="The git hooks persist init generates, how gates are detected and configured, what persist test-gate does, and the generated GitHub Actions workflow." />
+    <link rel="canonical" href="https://persist-os.pages.dev/docs/hooks.html" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header is-sticky">
+      <div class="wrap">
+        <a class="brand" href="../index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)" /><path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="index.html" aria-current="page">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg></a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <aside class="docs-side">
+        <nav aria-label="Documentation">
+          <ul class="docs-nav">
+            <li class="group">Start</li>
+            <li><a href="index.html">Getting started</a></li>
+            <li class="group">Reference</li>
+            <li><a href="commands.html">Commands</a></li>
+            <li class="group">Concepts</li>
+            <li><a href="memory.html">Repository memory</a></li>
+            <li><a href="decisions.html">Decisions and ADRs</a></li>
+            <li><a href="doctor.html">Doctor</a></li>
+            <li><a href="hooks.html" aria-current="page">Hooks, test gate, CI</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="main" class="docs-main">
+        <header>
+          <span class="eyebrow">Concepts</span>
+          <h1>Hooks, test gate, CI</h1>
+          <p class="lede">The gates are generated files, tracked in the repository and rendered from <code>.persist/config.json</code>. Cheap checks on commit, expensive ones on push, doctor again in CI.</p>
+        </header>
+
+        <div class="prose">
+          <h2 id="files">The generated hooks</h2>
+          <p>
+            <code>persist init</code> writes two POSIX <code>sh</code> hooks under
+            <code>.persist/hooks/</code>. They are ordinary tracked files, so they travel with the
+            clone and show up in code review like anything else. The pre-commit hook runs the
+            doctor and then each <code>preCommitGates</code> entry in order:
+          </p>
+          <pre><code>#!/bin/sh
+# Persist OS pre-commit hook.
+# Generated by `persist init`. Edit gates in .persist/config.json (preCommitGates),
+# then re-run `persist init --force` to regenerate this hook.
+# Enable once per clone with:
+#   git config core.hooksPath .persist/hooks
+set -e
+
+persist doctor</code></pre>
+          <p>
+            The pre-push hook is the expensive gate. It runs <code>persist test-gate</code>, then
+            each <code>prePushGates</code> entry. The doctor is not repeated here; it already ran on
+            commit. This is what init generated in a repository whose <code>package.json</code>
+            has <code>test:run</code>, <code>typecheck</code>, and <code>lint</code> scripts and a
+            <code>pnpm-lock.yaml</code>:
+          </p>
+          <pre><code>#!/bin/sh
+# Persist OS pre-push hook.
+# Generated by `persist init`. The expensive gate before code leaves your machine: it runs
+# `persist test-gate` (your configured testCommand, skipped loudly when unset) and your
+# push-only gates against everything being pushed (catching commits made with --no-verify
+# or before the pre-commit hook was active).
+# Edit the test command (testCommand) and gates (prePushGates) in .persist/config.json,
+# then re-run `persist init --force` to regenerate this hook.
+# Enable once per clone with:
+#   git config core.hooksPath .persist/hooks
+set -e
+
+persist test-gate
+# testCommand: pnpm run test:run
+pnpm run typecheck
+pnpm run lint</code></pre>
+          <p>
+            Pre-push catches what pre-commit could not: commits made with <code>--no-verify</code>,
+            commits from a machine where the hook was never enabled, or commits made before it was.
+          </p>
+
+          <h2 id="enable">Enabling them</h2>
+          <p>
+            Git only runs hooks from its hooks path, and Persist OS never changes your git
+            configuration. Enable the hooks once per clone:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span></code></pre>
+
+          <h2 id="detection">How the gates are detected</h2>
+          <p>
+            Init reads <code>package.json</code> and the lockfile (<code>pnpm-lock.yaml</code>,
+            <code>yarn.lock</code>, or npm by default) and records what it finds in
+            <code>.persist/config.json</code>:
+          </p>
+          <ul>
+            <li>
+              <code>testCommand</code>: <code>&lt;pm&gt; run test:run</code> if that script exists,
+              otherwise <code>&lt;pm&gt; run test</code> when the <code>test</code> script is not a
+              watch runner. Bare <code>vitest</code> or anything with <code>--watch</code> is never
+              chosen, because a hook that hangs is worse than no hook. With nothing usable,
+              <code>testCommand</code> is <code>null</code> and init says so.
+            </li>
+            <li>
+              <code>prePushGates</code>: <code>&lt;pm&gt; run typecheck</code> and
+              <code>&lt;pm&gt; run lint</code>, in that order, when those scripts exist.
+            </li>
+            <li>
+              <code>preCommitGates</code>: empty by default. Add whatever you want to run on every
+              commit after the doctor.
+            </li>
+          </ul>
+          <p>The config init wrote for the example repository above:</p>
+          <pre><code>"preCommitGates": [],
+"prePushGates": [
+  "pnpm run typecheck",
+  "pnpm run lint"
+],
+"testCommand": "pnpm run test:run"</code></pre>
+          <p>
+            Gate entries are single lines without control characters, up to 200 characters, and
+            there can be at most 50 of each. Without a JavaScript toolchain nothing is detected and
+            the lists stay empty.
+          </p>
+
+          <h2 id="regenerate">Editing and regenerating</h2>
+          <p>
+            The config is the source of truth and the hooks are rendered from it. After changing
+            the config, regenerate the hooks by re-running init with <code>--force --reinit</code>
+            (both flags are needed once <code>.persist/config.json</code> exists), and review the
+            diff before committing. If you hand-edit a hook instead, that is allowed, and the
+            doctor's <code>hook-drift</code> check will keep reporting the difference as a warning so
+            it stays visible.
+          </p>
+
+          <h2 id="test-gate">persist test-gate</h2>
+          <p>
+            The test gate runs the configured <code>testCommand</code> and mirrors its exit code.
+            The command is split on whitespace and executed directly, not through a shell, so a
+            hostile config value cannot inject shell syntax. When <code>testCommand</code> is
+            <code>null</code>, the gate refuses to pass silently. It prints that it was skipped, and
+            how to turn it on, and exits 0 so an unconfigured repository is not blocked:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate skipped: the gate is off — set testCommand in .persist/config.json to a one-shot test command (e.g. "pnpm run test:run") or re-run `persist init` to detect one.</code></pre>
+
+          <h2 id="ci">The CI workflow</h2>
+          <p>
+            Init also writes a GitHub Actions workflow that runs the doctor on pull requests and on
+            pushes to <code>main</code>. It checks out full history so the staleness check can
+            compare commit times.
+          </p>
+          <pre><code>name: Persist OS
+
+# Run once per change: on pull requests, and on pushes to the default branch.
+# This avoids Doctor running twice for the same PR (branch push + pull_request event).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: doctor's staleness check compares doc vs code commit times,
+          # which is unmeasurable in a shallow clone.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate repository memory
+        run: npx --yes persist-os@latest doctor</code></pre>
+          <p>
+            The doctor exits 2 on errors and 1 on warnings, so this job fails on both. If you only
+            want errors to block, wrap the step and treat exit code 1 as a pass.
+          </p>
+        </div>
+
+        <nav class="docs-pager" aria-label="Previous and next pages">
+          <a href="doctor.html"><span>Previous</span>Doctor</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub repo</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg> npm package</a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub profile</a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> X</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../assets/site.js" defer></script>
+  </body>
+</html>
