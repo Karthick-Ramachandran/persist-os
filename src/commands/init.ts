@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import { aiToolTargetSchema } from "../core/config/config-schema.js";
+import { aiToolTargetSchema, type AiToolTarget } from "../core/config/config-schema.js";
 import { createDefaultConfig } from "../core/config/default-config.js";
 import { CONFIG_PATH } from "../core/config/load-config.js";
 import {
@@ -27,6 +27,7 @@ import {
 import { getPreset } from "../core/presets/preset-registry.js";
 import type { Preset } from "../core/presets/preset-schema.js";
 import { generateSkillFiles } from "../core/skills/generate-skill.js";
+import { keepPathForTools } from "../core/aitools/tool-paths.js";
 import { listCatalogSkillNames } from "../core/skills/skill-catalog.js";
 import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
@@ -45,6 +46,8 @@ export type InitResult = {
   plan: WritePlan;
   writeResult: WriteResult;
   detected: RepoSignals;
+  // The resolved tool selection, so the closing output can describe only the tools the user picked.
+  aiTools: AiToolTarget[];
 };
 
 export type InitErrorCode =
@@ -119,6 +122,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     plan,
     writeResult,
     detected,
+    aiTools: [...config.aiTools],
   };
 }
 
@@ -129,9 +133,7 @@ export function formatInitResult(result: InitResult): string {
   ];
 
   if (!result.dryRun) {
-    lines.push(
-      `Generated repository memory, ${listCatalogSkillNames().length} agent skills, pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.`,
-    );
+    lines.push(buildInitSummary(result));
   }
 
   appendWriteSummary(lines, {
@@ -156,18 +158,158 @@ export function formatInitResult(result: InitResult): string {
   }
 
   if (!result.dryRun) {
-    appendNextSteps(lines, [
-      "Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.",
-      "AI agent skills are in .claude/skills/ and .agents/skills/ — restart your AI tool to load them.",
-      "Memory loads automatically per tool: a Claude SessionStart hook (.claude/hooks/session-start.sh), a Cursor rule (.cursor/rules/persist-memory.mdc), and AGENTS.md for Codex.",
-      "CI is wired in .github/workflows/persist.yml; the pre-commit hook is in .persist/hooks/.",
-      "Plan your first feature: `persist feature create <name>`.",
-      "Record a decision: `persist adr create <title>`, then accept it with `persist adr accept`.",
-      "Check repository memory health anytime: `persist doctor`.",
-    ]);
+    appendNextSteps(lines, buildInitNextSteps(result));
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+function presentPaths(result: InitResult): Set<string> {
+  return new Set([
+    ...result.writeResult.created,
+    ...result.writeResult.overwritten,
+    ...result.writeResult.skipped,
+  ]);
+}
+
+function generatedPaths(result: InitResult): Set<string> {
+  return new Set([...result.writeResult.created, ...result.writeResult.overwritten]);
+}
+
+function hasPrefix(paths: Set<string>, prefix: string): boolean {
+  for (const filePath of paths) {
+    if (filePath === prefix || filePath.startsWith(prefix)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function buildInitSummary(result: InitResult): string {
+  const generated = generatedPaths(result);
+
+  if (generated.size === 0) {
+    return "Repository memory already exists — no files were generated.";
+  }
+
+  const parts: string[] = ["repository memory"];
+
+  if (hasPrefix(generated, ".claude/skills/") || hasPrefix(generated, ".agents/skills/")) {
+    const targets: string[] = [];
+    if (hasPrefix(generated, ".claude/skills/")) {
+      targets.push(".claude/skills/");
+    }
+    if (hasPrefix(generated, ".agents/skills/")) {
+      targets.push(".agents/skills/");
+    }
+    parts.push(`${listCatalogSkillNames().length} agent skills (${targets.join(" and ")})`);
+  }
+
+  const hasPreCommit = generated.has(PRE_COMMIT_HOOK_PATH);
+  const hasPrePush = generated.has(PRE_PUSH_HOOK_PATH);
+  if (hasPreCommit && hasPrePush) {
+    parts.push("pre-commit and pre-push hooks");
+  } else if (hasPreCommit) {
+    parts.push("a pre-commit hook");
+  } else if (hasPrePush) {
+    parts.push("a pre-push hook");
+  }
+
+  if (generated.has(".github/workflows/persist.yml")) {
+    parts.push("a CI workflow");
+  }
+
+  if (generated.has(SESSION_START_HOOK_PATH)) {
+    parts.push("a Claude SessionStart hook");
+  }
+
+  if (generated.has(".cursor/rules/persist-memory.mdc")) {
+    parts.push("a Cursor rule");
+  }
+
+  if (parts.length === 1) {
+    return "Generated repository memory.";
+  }
+
+  return `Generated ${joinList(parts)} that load memory automatically.`;
+}
+
+function buildInitNextSteps(result: InitResult): string[] {
+  const present = presentPaths(result);
+  const steps: string[] = [];
+
+  const hasAgents = present.has("AGENTS.md");
+  const hasClaude = present.has("CLAUDE.md");
+  if (hasAgents && hasClaude) {
+    steps.push("Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.");
+  } else if (hasAgents) {
+    steps.push("Read AGENTS.md, then the docs/ memory it points to.");
+  } else if (hasClaude) {
+    steps.push("Read CLAUDE.md, then the docs/ memory it points to.");
+  }
+
+  const hasClaudeSkills = hasPrefix(present, ".claude/skills/");
+  const hasAgentSkills = hasPrefix(present, ".agents/skills/");
+  if (hasClaudeSkills && hasAgentSkills) {
+    steps.push(
+      "AI agent skills are in .claude/skills/ and .agents/skills/ — restart your AI tool to load them.",
+    );
+  } else if (hasClaudeSkills) {
+    steps.push("AI agent skills are in .claude/skills/ — restart your AI tool to load them.");
+  } else if (hasAgentSkills) {
+    steps.push("AI agent skills are in .agents/skills/ — restart your AI tool to load them.");
+  }
+
+  const autoLoad: string[] = [];
+  if (present.has(SESSION_START_HOOK_PATH)) {
+    autoLoad.push("a Claude SessionStart hook (.claude/hooks/session-start.sh)");
+  }
+  if (present.has(".cursor/rules/persist-memory.mdc")) {
+    autoLoad.push("a Cursor rule (.cursor/rules/persist-memory.mdc)");
+  }
+  if (hasAgents) {
+    // AGENTS.md is always generated, so name Codex only when the user actually selected it.
+    autoLoad.push(
+      result.aiTools.includes("codex")
+        ? "AGENTS.md for Codex"
+        : "AGENTS.md as the portable fallback",
+    );
+  }
+  if (autoLoad.length > 0) {
+    steps.push(`Memory loads automatically per tool: ${joinList(autoLoad)}.`);
+  }
+
+  const hasCi = present.has(".github/workflows/persist.yml");
+  const hasHook = present.has(PRE_COMMIT_HOOK_PATH) || present.has(PRE_PUSH_HOOK_PATH);
+  if (hasCi && hasHook) {
+    steps.push(
+      "CI is wired in .github/workflows/persist.yml; the pre-commit hook is in .persist/hooks/.",
+    );
+  } else if (hasCi) {
+    steps.push("CI is wired in .github/workflows/persist.yml.");
+  } else if (hasHook) {
+    steps.push("The pre-commit hook is in .persist/hooks/.");
+  }
+
+  steps.push("Plan your first feature: `persist feature create <name>`.");
+  steps.push(
+    "Record a decision: `persist adr create <title>`, then accept it with `persist adr accept`.",
+  );
+  steps.push("Check repository memory health anytime: `persist doctor`.");
+
+  return steps;
+}
+
+function joinList(parts: string[]): string {
+  if (parts.length === 1) {
+    return parts[0] ?? "";
+  }
+
+  if (parts.length === 2) {
+    return `${parts[0]} and ${parts[1]}`;
+  }
+
+  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 }
 
 function appendDetectedStack(lines: string[], detected: RepoSignals): void {
@@ -193,8 +335,6 @@ function appendDetectedStack(lines: string[], detected: RepoSignals): void {
     "If any signal is wrong, correct the source file noted. Run `persist adopt` to record this as proposed memory.",
   );
 }
-
-type AiToolTarget = (typeof aiToolTargetSchema.options)[number];
 
 function validateAiTools(
   aiTools: string[] | undefined,
@@ -270,25 +410,5 @@ function createInitWriteFiles(
     ...listCatalogSkillNames().flatMap((name) => generateSkillFiles(name).files),
   ];
 
-  return files.filter((file) => keepForTools(file.path, config.aiTools));
-}
-
-/**
- * Keep only the tool-specific files the repository's selected `aiTools` actually use. Tool-agnostic
- * files (config, docs, `.persist/`, `.github/`, the pre-commit hook) and `AGENTS.md` are always kept —
- * `AGENTS.md` is the portable floor that Claude imports and that Codex and Cursor auto-load.
- */
-function keepForTools(filePath: string, aiTools: readonly string[]): boolean {
-  if (filePath === "CLAUDE.md" || filePath.startsWith(".claude/")) {
-    return aiTools.includes("claude");
-  }
-  if (filePath.startsWith(".cursor/")) {
-    return aiTools.includes("cursor");
-  }
-  if (filePath.startsWith(".agents/")) {
-    // The portable Agent Skills are how Codex, Cursor, and other AGENTS.md-aware tools consume the
-    // generated workflow skills — Cursor has no skills format of its own, so it relies on these.
-    return aiTools.includes("codex") || aiTools.includes("generic") || aiTools.includes("cursor");
-  }
-  return true;
+  return files.filter((file) => keepPathForTools(file.path, config.aiTools));
 }

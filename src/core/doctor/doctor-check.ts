@@ -35,6 +35,7 @@ export type DoctorCheckContext = {
     featuresDir: string;
     modulesDir: string;
     adrDir: string;
+    aiTools?: string[];
   };
 };
 
@@ -50,7 +51,16 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
 
   const context: DoctorCheckContext = {
     rootDir,
-    config: configResult.config,
+    config:
+      configResult.config === undefined
+        ? undefined
+        : {
+            docsDir: configResult.config.docsDir,
+            featuresDir: configResult.config.featuresDir,
+            modulesDir: configResult.config.modulesDir,
+            adrDir: configResult.config.adrDir,
+            aiTools: [...configResult.config.aiTools],
+          },
   };
 
   findings.push(...(await checkRequiredFiles(context)));

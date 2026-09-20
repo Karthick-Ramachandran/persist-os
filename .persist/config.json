@@ -1,13 +1,11 @@
 {
-  "version": "0.1.0",
-  "templateVersion": "0.1.0",
+  "version": "0.6.2",
+  "templateVersion": "0.6.2",
   "preset": null,
-  "memoryProfile": "standard",
-  "mode": "standard",
   "aiTools": ["claude", "codex", "cursor"],
   "docsDir": "docs",
   "featuresDir": "docs/40-features",
   "modulesDir": "docs/30-modules",
   "adrDir": "docs/adrs",
-  "writePolicy": "skip-existing"
+  "preCommitGates": []
 }

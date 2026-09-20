@@ -5,23 +5,32 @@ import { describe, expect, it } from "vitest";
 
 import { ConfigValidationError, parseConfig } from "../../../src/core/config/config-schema.js";
 import { createDefaultConfig } from "../../../src/core/config/default-config.js";
+import { PERSIST_VERSION } from "../../../src/core/version.js";
 
 describe("config schema", () => {
-  it("validates the default config", () => {
+  it("validates the default config without dead knobs", () => {
     expect(createDefaultConfig()).toEqual({
-      version: "0.1.0",
-      templateVersion: "0.1.0",
+      version: PERSIST_VERSION,
+      templateVersion: PERSIST_VERSION,
       preset: null,
-      memoryProfile: "standard",
-      mode: "standard",
       aiTools: ["claude", "codex", "cursor"],
       docsDir: "docs",
       featuresDir: "docs/40-features",
       modulesDir: "docs/30-modules",
       adrDir: "docs/adrs",
-      writePolicy: "skip-existing",
       preCommitGates: [],
     });
+  });
+
+  it("keeps version and templateVersion in sync with the package", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const pkg = JSON.parse(
+      await readFile(new URL("../../../package.json", import.meta.url), "utf8"),
+    ) as { version: string };
+
+    expect(PERSIST_VERSION).toBe(pkg.version);
+    expect(createDefaultConfig().version).toBe(pkg.version);
+    expect(createDefaultConfig().templateVersion).toBe(pkg.version);
   });
 
   it("validates the dogfooded root config", () => {
@@ -33,11 +42,27 @@ describe("config schema", () => {
   it("rejects invalid enum values", () => {
     const baseConfig = createDefaultConfig();
 
-    expect(() => parseConfig({ ...baseConfig, memoryProfile: "full" })).toThrow(
+    expect(() => parseConfig({ ...baseConfig, aiTools: ["claude", "unknown"] })).toThrow(
       ConfigValidationError,
     );
-    expect(() => parseConfig({ ...baseConfig, mode: "full" })).toThrow(ConfigValidationError);
-    expect(() => parseConfig({ ...baseConfig, aiTools: ["claude", "unknown"] })).toThrow(
+  });
+
+  it("accepts deprecated knobs on read for backward compat but never writes them", () => {
+    const baseConfig = createDefaultConfig();
+
+    expect(baseConfig).not.toHaveProperty("memoryProfile");
+    expect(baseConfig).not.toHaveProperty("mode");
+    expect(baseConfig).not.toHaveProperty("writePolicy");
+
+    const legacy = parseConfig({
+      ...baseConfig,
+      memoryProfile: "standard",
+      mode: "standard",
+      writePolicy: "skip-existing",
+    });
+    expect(legacy.memoryProfile).toBe("standard");
+
+    expect(() => parseConfig({ ...baseConfig, memoryProfile: "full" })).toThrow(
       ConfigValidationError,
     );
     expect(() => parseConfig({ ...baseConfig, writePolicy: "backup-and-write" })).toThrow(
@@ -70,12 +95,6 @@ describe("config schema", () => {
     expect(() => parseConfig({ ...createDefaultConfig(), preCommitGates: [""] })).toThrow(
       ConfigValidationError,
     );
-  });
-
-  it("requires memoryProfile and mode to match", () => {
-    expect(() =>
-      parseConfig({ ...createDefaultConfig(), memoryProfile: "lite", mode: "standard" }),
-    ).toThrow(ConfigValidationError);
   });
 
   it("rejects duplicate AI tools", () => {

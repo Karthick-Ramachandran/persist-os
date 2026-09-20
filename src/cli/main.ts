@@ -230,7 +230,10 @@ export function createCliProgram(
   program
     .command("guard")
     .description("Fail when staged source changes have no accompanying test changes.")
-    .option("--source <list>", "Comma-separated source directories to guard, e.g. src,app.")
+    .option(
+      "--source <list>",
+      "Comma-separated source directories to guard, e.g. src,app. When omitted, src, app, lib, and packages/*/src are auto-detected.",
+    )
     .option("--base <ref>", "Compare against a git ref instead of the staged index.")
     .action(async (options: { source?: string; base?: string }) => {
       const source =

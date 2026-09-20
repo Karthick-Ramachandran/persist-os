@@ -1,17 +1,15 @@
+import { PERSIST_VERSION } from "../version.js";
 import { parseConfig, type PersistConfig } from "./config-schema.js";
 
 const DEFAULT_CONFIG = {
-  version: "0.1.0",
-  templateVersion: "0.1.0",
+  version: PERSIST_VERSION,
+  templateVersion: PERSIST_VERSION,
   preset: null,
-  memoryProfile: "standard",
-  mode: "standard",
   aiTools: ["claude", "codex", "cursor"],
   docsDir: "docs",
   featuresDir: "docs/40-features",
   modulesDir: "docs/30-modules",
   adrDir: "docs/adrs",
-  writePolicy: "skip-existing",
   preCommitGates: [],
 } satisfies PersistConfig;
 

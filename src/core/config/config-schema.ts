@@ -12,6 +12,7 @@ export const memoryProfileSchema = z.enum(["lite", "standard", "strict"]);
 export const aiToolTargetSchema = z.enum(["claude", "codex", "cursor", "generic"]);
 export const configWritePolicySchema = z.enum(["skip-existing", "overwrite"]);
 
+/** @deprecated Reserved for F5 (lite/standard/strict wiring). Accepted on read, never written or read. */
 export type MemoryProfile = z.infer<typeof memoryProfileSchema>;
 export type AiToolTarget = z.infer<typeof aiToolTargetSchema>;
 export type ConfigWritePolicy = Extract<ConflictPolicy, "skip-existing" | "overwrite">;
@@ -65,26 +66,21 @@ export const persistConfigSchema = z
     version: versionSchema,
     templateVersion: versionSchema,
     preset: presetSchema,
-    memoryProfile: memoryProfileSchema,
-    mode: memoryProfileSchema,
     aiTools: z.array(aiToolTargetSchema).min(1, "At least one AI tool is required."),
     docsDir: safeRelativePathSchema,
     featuresDir: safeRelativePathSchema,
     modulesDir: safeRelativePathSchema,
     adrDir: safeRelativePathSchema,
-    writePolicy: configWritePolicySchema,
     preCommitGates: z.array(preCommitGateSchema).max(50, "Too many pre-commit gates.").default([]),
+    // Deprecated B5 knobs: accepted on read for backward compat with pre-0.7 configs,
+    // never written by new inits and never read. `mode` duplicated `memoryProfile`;
+    // `writePolicy` was superseded by --force/--dry-run.
+    memoryProfile: memoryProfileSchema.optional(),
+    mode: memoryProfileSchema.optional(),
+    writePolicy: configWritePolicySchema.optional(),
   })
   .strict()
   .superRefine((config, context) => {
-    if (config.memoryProfile !== config.mode) {
-      context.addIssue({
-        code: "custom",
-        path: ["mode"],
-        message: "Mode must match memoryProfile.",
-      });
-    }
-
     const seenAiTools = new Set<AiToolTarget>();
     for (const aiTool of config.aiTools) {
       if (seenAiTools.has(aiTool)) {

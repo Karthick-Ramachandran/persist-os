@@ -3,7 +3,42 @@ import path from "node:path";
 
 import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
 
-const rootFiles = ["AGENTS.md", "CLAUDE.md"];
+export const CURSOR_RULE_PATH = ".cursor/rules/persist-memory.mdc";
+
+/**
+ * Memory entry files derived from config.aiTools. These are load-bearing: without them the
+ * agent starts with no memory at all, so a missing one is an error.
+ * AGENTS.md is always required. CLAUDE.md only when claude is selected. Codex and generic
+ * rely on AGENTS.md, so they add no extra required root file.
+ * When aiTools is unknown (no config), require the legacy set so a misconfigured repo fails
+ * loudly instead of silently passing.
+ */
+export function requiredRootFiles(aiTools: readonly string[] | undefined): string[] {
+  if (aiTools === undefined) {
+    return ["AGENTS.md", "CLAUDE.md"];
+  }
+
+  const files = ["AGENTS.md"];
+
+  if (aiTools.includes("claude")) {
+    files.push("CLAUDE.md");
+  }
+
+  return files;
+}
+
+/**
+ * Tool files that make memory load automatically but are not load-bearing, so a missing one is
+ * a warning rather than an error. Cursor still reads AGENTS.md without its rule file, and teams
+ * commonly gitignore `.cursor/` — requiring it would break those repos on upgrade for no gain.
+ */
+export function advisoryToolFiles(aiTools: readonly string[] | undefined): string[] {
+  if (aiTools === undefined) {
+    return [];
+  }
+
+  return aiTools.includes("cursor") ? [CURSOR_RULE_PATH] : [];
+}
 
 const requiredDocs = [
   "00-product/PRD.md",
@@ -26,9 +61,21 @@ export async function checkRequiredFiles(context: DoctorCheckContext): Promise<D
   const findings: DoctorFinding[] = [];
   const docsDir = context.config?.docsDir ?? "docs";
 
-  for (const filePath of rootFiles) {
+  for (const filePath of requiredRootFiles(context.config?.aiTools)) {
     if (!(await isFile(context.rootDir, filePath))) {
       findings.push(missingFile(filePath, "required-files"));
+    }
+  }
+
+  for (const filePath of advisoryToolFiles(context.config?.aiTools)) {
+    if (!(await isFile(context.rootDir, filePath))) {
+      findings.push({
+        severity: "warning",
+        check: "tool-files",
+        message:
+          'Cursor rule is missing, so memory will not auto-load in Cursor. Regenerate it with `persist init --force --reinit`, or drop "cursor" from aiTools.',
+        path: filePath,
+      });
     }
   }
 
