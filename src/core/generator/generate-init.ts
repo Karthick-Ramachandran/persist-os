@@ -434,10 +434,12 @@ Options:
   (a directory that already has \`.persist/config.json\`). Without it, \`--force\` refuses, protecting
   existing repository memory.
 
-Init also generates tracked pre-commit and pre-push hooks at \`.persist/hooks/\` that run \`persist doctor\`
-plus any \`preCommitGates\` in \`.persist/config.json\`. The pre-push hook is the final regression gate
-before code leaves the machine (it catches commits made with \`--no-verify\` or before the hook was
-active). Init proposes, but does not run, the activation command \`git config core.hooksPath .persist/hooks\`.
+Init also generates tracked pre-commit and pre-push hooks at \`.persist/hooks/\`. The pre-commit
+hook runs \`persist doctor\` plus any \`preCommitGates\` in \`.persist/config.json\`; the pre-push hook
+runs \`persist test-gate\` (the configured \`testCommand\`) plus \`prePushGates\`. The pre-push hook is
+the final regression gate before code leaves the machine (it catches commits made with
+\`--no-verify\` or before the hook was active). Init proposes, but does not run, the activation
+command \`git config core.hooksPath .persist/hooks\`.
 
 ### \`persist adopt\`
 
@@ -547,22 +549,16 @@ Exit codes:
 - \`1\`: warnings only
 - \`2\`: errors
 
-### \`persist guard\`
+### \`persist test-gate\`
 
-Fail when staged source changes have no accompanying test changes, so "tests are mandatory for every
-change" is enforced rather than hoped for. Deterministic and read-only (a \`git diff\`); when
-\`--source\` is omitted, conventional source directories (\`src\`, \`app\`, \`lib\`, \`packages/*/src\`)
-are auto-detected, and it skips gracefully outside a git repository.
+Run the configured one-shot test command (\`testCommand\` in \`.persist/config.json\`) and require it
+to pass, so "tests pass" is enforced rather than hoped for. The command runs directly, without a
+shell. The exit code mirrors the test command's; a failing suite blocks the push. When
+\`testCommand\` is null the gate skips loudly (exit \`0\`) and explains how to configure it — set it
+to a one-shot script such as \`pnpm run test:run\`, or re-run \`persist init\` to detect one.
 
-Options:
-
-- \`--source <list>\`: comma-separated source directories to guard, e.g. \`src,app\`. When omitted,
-  conventional source directories are auto-detected.
-- \`--base <ref>\`: compare against a git ref instead of the staged index.
-
-Add it to your gates to enforce it in the generated hooks, for example set \`preCommitGates\` in
-\`.persist/config.json\` to include \`persist guard --source src\`. Exit code \`1\` blocks the commit/push
-when source changed without tests; \`0\` otherwise.
+The generated pre-push hook runs \`persist test-gate\` followed by \`prePushGates\`
+(\`typecheck\`, \`lint\`); the pre-commit hook runs \`persist doctor\`, which stays cheap.
 `,
   },
   {

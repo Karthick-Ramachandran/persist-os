@@ -49,3 +49,17 @@ to existing accepted ADRs produce no finding.
 These checks remain read-only, local, and deterministic. They reuse the existing `DoctorFinding`
 model and exit-code mapping. Semantic contradiction detection, module-ownership comparison, and
 code-to-doc drift remain future work.
+
+## Hook Drift (ADR-0009)
+
+Doctor regenerates both git hooks from the validated config in memory and diffs them against the
+tracked files. A mismatch is a warning with the regeneration command — a hand-edited hook is
+legitimate but must be visible, since regenerating from drifted config would silently drop the edit.
+Absent hooks report the check as not-evaluated rather than passing.
+
+## Check Outcomes
+
+Every doctor run records a per-check outcome (`evaluated` / `not-evaluated` with a reason) for all
+checks, rendered as a NOT EVALUATED text section and a JSON `checks` array. Not-evaluated is a
+property of a check, not a fourth severity; it never moves the exit code. Added because the
+config-gated checks were silently dropped without a config, reading as a full pass.

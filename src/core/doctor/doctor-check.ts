@@ -4,6 +4,7 @@ import { checkContent } from "./checks/content-check.js";
 import { checkContextBudget } from "./checks/context-budget-check.js";
 import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
+import { checkHookDrift } from "./checks/hook-drift-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
 import { checkStaleness } from "./checks/staleness-check.js";
@@ -50,6 +51,9 @@ export type DoctorCheckContext = {
     modulesDir: string;
     adrDir: string;
     aiTools?: string[];
+    testCommand?: string | null;
+    preCommitGates?: string[];
+    prePushGates?: string[];
   };
 };
 
@@ -68,6 +72,7 @@ const CONFIG_GATED_CHECKS = [
   "superseded",
   "context-budget",
   "staleness",
+  "hook-drift",
 ] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
@@ -89,6 +94,9 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
             modulesDir: configResult.config.modulesDir,
             adrDir: configResult.config.adrDir,
             aiTools: [...configResult.config.aiTools],
+            testCommand: configResult.config.testCommand,
+            preCommitGates: [...configResult.config.preCommitGates],
+            prePushGates: [...configResult.config.prePushGates],
           },
   };
 
@@ -124,6 +132,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const staleness = await checkStaleness(context);
   findings.push(...staleness.findings);
   checks.push(staleness.outcome);
+
+  const hookDrift = await checkHookDrift(context);
+  findings.push(...hookDrift.findings);
+  checks.push(hookDrift.outcome);
 
   return createDoctorReport(findings, checks);
 }

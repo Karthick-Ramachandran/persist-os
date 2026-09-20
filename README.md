@@ -109,10 +109,12 @@ Every command guides you — it names the file it created, where it is, and what
 Generate files only for the AI tools you use: `persist init --ai-tools claude,cursor` (default: all
 of `claude`, `codex`, `cursor`; `AGENTS.md` is always written).
 
-`persist init` also generates tracked **pre-commit and pre-push hooks** in `.persist/hooks/` that
-run `persist doctor` plus any gates you configure. The pre-push hook is the final regression gate
-before code leaves your machine (it catches commits made with `--no-verify` or before the hook was
-active). Enable them once per clone — Persist OS proposes the command but never runs it for you:
+`persist init` also generates tracked **pre-commit and pre-push hooks** in `.persist/hooks/`. The
+pre-commit hook runs `persist doctor` plus any `preCommitGates` you configure; the pre-push hook
+runs `persist test-gate` (your configured `testCommand`) plus `prePushGates`. The pre-push hook is
+the final regression gate before code leaves your machine (it catches commits made with
+`--no-verify` or before the hook was active). Enable them once per clone — Persist OS proposes the
+command but never runs it for you:
 
 ```bash
 git config core.hooksPath .persist/hooks
@@ -136,7 +138,7 @@ git config core.hooksPath .persist/hooks
 | `persist skill list`                | List the built-in agent skill catalog.                                         |
 | `persist mcp add <server>`          | Generate offline, proposed memory for an MCP server.                           |
 | `persist doctor`                    | Validate memory health, evidence, and drift.                                   |
-| `persist guard --source <dirs>`     | Fail when staged source changed without tests (add to your gates to enforce).  |
+| `persist test-gate`                 | Run the configured test command and require it to pass.                        |
 
 ## What Doctor Checks
 

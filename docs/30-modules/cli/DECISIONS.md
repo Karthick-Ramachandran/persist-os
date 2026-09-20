@@ -59,3 +59,9 @@ The binary delegates to the same `main(argv, io)` entrypoint used by integration
 `preset list` reads from the built-in preset registry and formats deterministic output.
 
 It does not apply presets, generate files, or write repository memory.
+
+## Test Gate Replaces Guard (ADR-0009)
+
+`persist guard` is removed; `persist test-gate` runs config `testCommand` and mirrors its exit code
+through the existing `state.exitCode` pattern (codes other than 0/1 pass through, so a suite that
+exits 3 fails the gate with 3). No new error class: only unexpected failures throw.

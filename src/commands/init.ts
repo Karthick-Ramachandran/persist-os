@@ -12,7 +12,7 @@ import {
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
 import { inspectRepo, summarizeSignals, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { generateInitFiles } from "../core/generator/generate-init.js";
-import { detectPreCommitGates } from "../core/hooks/detect-gates.js";
+import { detectPrePushGates, detectTestCommand } from "../core/hooks/detect-gates.js";
 import {
   CLAUDE_SETTINGS_PATH,
   HOOKS_PATH_ACTIVATION_COMMAND,
@@ -48,6 +48,8 @@ export type InitResult = {
   detected: RepoSignals;
   // The resolved tool selection, so the closing output can describe only the tools the user picked.
   aiTools: AiToolTarget[];
+  // The detected one-shot test command saved as testCommand (null when none was safe to pick).
+  testCommand: string | null;
 };
 
 export type InitErrorCode =
@@ -91,10 +93,15 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   // Read-only inspection of the existing repository so init can surface the detected stack (proposed,
   // never accepted) — run before writes so it reflects the user's repo, not our generated scaffold.
   const detected = await inspectRepo(options.rootDir);
-  const preCommitGates = await detectPreCommitGates(options.rootDir);
+  // Doctor already runs in the pre-commit hook body, so no commit-time gates are seeded.
+  // The expensive gates (tests, typecheck, lint) are detected for the pre-push hook instead.
+  const testCommand = await detectTestCommand(options.rootDir);
+  const prePushGates = await detectPrePushGates(options.rootDir);
   const config = createDefaultConfig({
     preset: preset?.id ?? null,
-    preCommitGates,
+    preCommitGates: [],
+    prePushGates,
+    testCommand,
     ...(options.aiTools !== undefined ? { aiTools: options.aiTools } : {}),
   });
   const files = createInitWriteFiles(options.rootDir, config, preset);
@@ -123,6 +130,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     writeResult,
     detected,
     aiTools: [...config.aiTools],
+    testCommand: config.testCommand,
   };
 }
 
@@ -130,6 +138,9 @@ export function formatInitResult(result: InitResult): string {
   const lines = [
     result.dryRun ? "Persist OS init dry run complete." : "Persist OS init complete.",
     `Preset: ${result.preset ?? "none"}`,
+    result.testCommand === null
+      ? "Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`)."
+      : `Test gate: ${result.testCommand} (saved as testCommand in .persist/config.json).`,
   ];
 
   if (!result.dryRun) {
@@ -387,11 +398,11 @@ function createInitWriteFiles(
       content: renderPreCommitHook(config.preCommitGates),
       executable: true,
     },
-    // The pre-push hook is the final regression gate before code leaves the machine — it reuses the
-    // same configured gates as pre-commit, run against everything being pushed.
+    // The pre-push hook runs the expensive gates once per push: the test gate first, then the
+    // push-only gates. Doctor stays on pre-commit.
     {
       path: PRE_PUSH_HOOK_PATH,
-      content: renderPrePushHook(config.preCommitGates),
+      content: renderPrePushHook(config.testCommand, config.prePushGates),
       executable: true,
     },
     // A Claude Code SessionStart hook that injects a memory map every session, so a fresh agent
