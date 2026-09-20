@@ -88,9 +88,10 @@ persist --help
 ## Quickstart
 
 ```bash
-# 1. Create repository memory (architecture-neutral, or pick an opinion pack)
+# 1. Create repository memory — init asks four questions, then writes the minimum
 persist init
-persist init --preset kotlin-android   # optional, proposes stack decisions
+persist init --yes                     # take every default without prompting
+persist init --ai-tools claude,cursor  # flags are a complete instruction: no prompting
 
 # 2. Capture intent and decisions as you work
 persist feature create checkout
@@ -196,6 +197,12 @@ native mechanism:
 The portable guarantee across every tool is `AGENTS.md` plus the generated Agent Skills
 (`.agents/skills/`). The dynamic per-session ADR/module map is a Claude Code bonus; the Cursor rule
 and `AGENTS.md` carry the same rules everywhere else.
+
+Three workflow skills ship in the catalog (`plan-feature`, `security-review`,
+`conventions-adherence`); each states when it activates and what it returns. One skill ships an
+executable helper (`security-review/scripts/scan-secrets.sh`): it is read-only and local,
+`persist init` names every executable file it writes, and deleting it degrades to the documented
+prose path.
 
 `AGENTS.md` leads with a short, imperative **Rules** block (read memory first, reuse the
 conventions, record lessons, don't contradict accepted ADRs, run `persist doctor` before "done") —

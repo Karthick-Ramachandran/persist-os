@@ -38,3 +38,11 @@ This file helps agents and humans understand available Persist OS commands witho
 Init output uses Persist OS naming and `.persist/config.json`.
 
 No compatibility output is generated for the pre-public name.
+
+## F-036: Init Asks Four Questions, Never Hangs
+
+Bare `persist init` on a TTY asks AI tools, features, modules, and test gate (the detected command
+printed before asking, defaulting to no when nothing was detected); any flag or `--yes` is a
+complete non-interactive instruction. Non-TTY stdin behaves as `--yes` and says so, so CI can never
+block on a prompt. Prompts live in `src/cli/prompt.ts` on `node:readline/promises` with injectable
+streams; no new dependencies, no TUI.

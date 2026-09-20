@@ -65,3 +65,10 @@ It does not apply presets, generate files, or write repository memory.
 `persist guard` is removed; `persist test-gate` runs config `testCommand` and mirrors its exit code
 through the existing `state.exitCode` pattern (codes other than 0/1 pass through, so a suite that
 exits 3 fails the gate with 3). No new error class: only unexpected failures throw.
+
+## F-036: One Style Module Owns Every Escape Code
+
+CLI color lives in `src/cli/style.ts` and nowhere else: palette, depth detection (truecolor → 256 →
+16), and the `NO_COLOR` / `FORCE_COLOR` / non-TTY / `TERM=dumb` switch-off rules. Formatters style
+through its helpers; words carry every meaning with or without color. Tests capture non-TTY output,
+which is plain, so styling changes no assertion.

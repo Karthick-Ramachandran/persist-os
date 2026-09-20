@@ -35,14 +35,9 @@ For a module request, create a feature folder:
 
 ```txt
 docs/40-features/F-###-<module>-module/
-  PRD.md
-  ACCEPTANCE.md
-  ARCHITECTURE_IMPACT.md
-  PLAN.md
-  TASKS.md
-  TEST_PLAN.md
-  REVIEW.md
-  COMPLETION_REPORT.md
+  PLAN.md            (approach, boundaries, acceptance criteria)
+  TASKS.md           (tasks, completion evidence)
+  TEST_PLAN.md       (only when the test gate is enabled)
 ```
 
 Use the feature docs to define why the module exists, how it behaves, how it is tested, and how work
@@ -63,6 +58,12 @@ docs/30-modules/<module>/
 Use module memory to preserve ownership, public interfaces, boundaries, tests, and durable decisions
 for future agents.
 
+## Module Memory Updates
+
+When module behavior, ownership, boundaries, tests, risks, or decisions change, update the module
+docs: purpose, responsibilities, public interfaces, test expectations, and linked ADRs. Update task
+status only when completion evidence supports it. Do not copy full feature docs into module docs.
+
 ## Planning Questions
 
 Before implementation, answer:
@@ -73,7 +74,7 @@ Before implementation, answer:
 - What should users or CLI commands be able to do?
 - What edge cases matter?
 - What security boundaries apply?
-- Does this affect config, templates, docs, presets, or file writes?
+- Does this affect config, templates, docs, skills, or file writes?
 - Does this need an ADR?
 
 ## Acceptance Criteria

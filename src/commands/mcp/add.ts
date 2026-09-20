@@ -8,6 +8,7 @@ import { createWritePlan, type WritePlan } from "../../core/filesystem/write-pla
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
+import { getStyle } from "../../cli/style.js";
 
 export type McpAddOptions = {
   rootDir: string;
@@ -77,7 +78,9 @@ export async function mcpAdd(options: McpAddOptions): Promise<McpAddResult> {
 
 export function formatMcpAddResult(result: McpAddResult): string {
   const lines = [
-    result.dryRun ? "Persist OS mcp add dry run complete." : "Persist OS mcp add complete.",
+    getStyle().heading(
+      result.dryRun ? "Persist OS mcp add dry run complete." : "Persist OS mcp add complete.",
+    ),
     `MCP memory: ${result.docPath} (proposed — review before adopting)`,
     "Capture skill installed so agents record durable MCP context into this memory.",
   ];

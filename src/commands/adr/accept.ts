@@ -9,6 +9,7 @@ import { createWritePlan, type WritePlan } from "../../core/filesystem/write-pla
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { getNextAdrNumber } from "../../core/naming/adr-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
+import { getStyle } from "../../cli/style.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type AdrAcceptOptions = {
@@ -195,7 +196,9 @@ async function findNumberedAdr(
 
 export function formatAdrAcceptResult(result: AdrAcceptResult): string {
   const lines = [
-    result.dryRun ? "Persist OS ADR accept dry run complete." : "Persist OS ADR accept complete.",
+    getStyle().heading(
+      result.dryRun ? "Persist OS ADR accept dry run complete." : "Persist OS ADR accept complete.",
+    ),
     `Accepted: ${result.acceptedPath}`,
   ];
 
