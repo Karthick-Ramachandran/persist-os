@@ -70,6 +70,16 @@ describe("doctor content checks", () => {
   const UNFILLED_ASSETS =
     "Describe what this repository must protect: user data, credentials, money, availability, or reputation.";
 
+  async function writeProduct(rootDir: string, purpose: string, users: string): Promise<void> {
+    const dir = path.join(rootDir, "docs/00-product");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "PRODUCT.md"),
+      `# Product\n\n## Purpose\n\n${purpose}\n\n## Users\n\n${users}\n`,
+      "utf8",
+    );
+  }
+
   it("does not flag unfilled security docs on a bare scaffold (no work yet)", async () => {
     const rootDir = await createRoot("content-security-bare");
     await writeSecurityDocs(rootDir, UNFILLED_AUTH, UNFILLED_ASSETS);
@@ -185,6 +195,50 @@ describe("doctor content checks", () => {
 
     const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
+    expect(findings).toEqual([]);
+  });
+
+  it("warns when PRODUCT is still the unfilled template", async () => {
+    const rootDir = await createRoot("content-product-unfilled");
+    await writeProduct(
+      rootDir,
+      "Describe what this repository is building and why.",
+      "Describe who this is for and what success looks like for them.",
+    );
+    await writeAcceptedAdr(rootDir);
+
+    const { findings, outcome } = await checkContent({ rootDir, config: createDefaultConfig() });
+
+    expect(outcome).toEqual({ id: "content", status: "evaluated" });
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "content-product",
+        message: "Product purpose is still an unfilled template.",
+        path: "docs/00-product/PRODUCT.md",
+      }),
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "content-product",
+        message: "Product users section is still an unfilled template.",
+      }),
+    );
+  });
+
+  it("produces no findings for a filled PRODUCT", async () => {
+    const rootDir = await createRoot("content-product-filled");
+    await writeProduct(
+      rootDir,
+      "This repository tracks decisions so agents stop repeating mistakes.",
+      "Automation authors who need durable engineering memory.",
+    );
+    await writeAcceptedAdr(rootDir);
+
+    const { findings, outcome } = await checkContent({ rootDir, config: createDefaultConfig() });
+
+    expect(outcome).toEqual({ id: "content", status: "evaluated" });
     expect(findings).toEqual([]);
   });
 

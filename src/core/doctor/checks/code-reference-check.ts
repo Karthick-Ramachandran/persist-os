@@ -5,9 +5,15 @@ import path from "node:path";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 
-// Only the current-state docs are checked. Historical docs (completion reports, reviews) legitimately
-// reference paths as they were at the time and must not be flagged when code is later refactored.
+const CONVENTIONS_DOC = "60-engineering/CONVENTIONS.md";
+const COMPLETION_REPORT = "COMPLETION_REPORT.md";
+
+// Only current-state docs are checked. A feature folder containing a completion report is
+// history: its planning docs describe what was built at the time and must not be flagged
+// when code is later deleted. Completion reports and reviews are never scanned for the
+// same reason.
 const FEATURE_DOCS = ["PRD.md", "ARCHITECTURE_IMPACT.md"];
 const MODULE_DOCS = ["MODULE.md", "DECISIONS.md"];
 
@@ -41,21 +47,38 @@ export async function checkCodeReferences(
   );
   const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
   const hasModules = moduleEntries.some((folder) => folder.isDirectory());
+  const adrEntries = await readDirIfExists(context.rootDir, context.config.adrDir);
+  const adrFiles = adrEntries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+  const conventionsPath = path.posix.join(context.config.docsDir, CONVENTIONS_DOC);
+  const conventions = await readFileIfExists(context.rootDir, conventionsPath);
 
-  if (!hasFeatures && !hasModules) {
+  if (!hasFeatures && !hasModules && adrFiles.length === 0 && conventions === undefined) {
     return notEvaluated(
-      "no feature or module folders exist, so there is no memory to scan for code references",
+      "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to scan for code references",
     );
   }
 
   const findings: DoctorFinding[] = [];
 
+  for (const adrFile of adrFiles) {
+    const relativePath = path.posix.join(context.config.adrDir, adrFile.name);
+    findings.push(...(await checkDoc(context.rootDir, relativePath)));
+  }
+
+  if (conventions !== undefined) {
+    findings.push(...(await checkDoc(context.rootDir, conventionsPath)));
+  }
+
   for (const folder of featureEntries) {
     if (!folder.isDirectory() || !featureFolderPattern.test(folder.name)) {
       continue;
     }
+    const featureDir = path.posix.join(context.config.featuresDir, folder.name);
+    if (await isCompletedFeature(context.rootDir, featureDir)) {
+      continue;
+    }
     for (const doc of FEATURE_DOCS) {
-      const relativePath = path.posix.join(context.config.featuresDir, folder.name, doc);
+      const relativePath = path.posix.join(featureDir, doc);
       findings.push(...(await checkDoc(context.rootDir, relativePath)));
     }
   }
@@ -71,6 +94,17 @@ export async function checkCodeReferences(
   }
 
   return { findings, outcome: { id: "code-references", status: "evaluated" } };
+}
+
+/**
+ * A feature with a completion report is treated as history, whether or not the report claims
+ * completion: the report's presence marks the folder as a record of shipped work rather than
+ * current-state planning.
+ */
+async function isCompletedFeature(rootDir: string, featureDir: string): Promise<boolean> {
+  return (
+    (await readFileIfExists(rootDir, path.posix.join(featureDir, COMPLETION_REPORT))) !== undefined
+  );
 }
 
 function notEvaluated(reason: string): CodeReferenceCheckResult {

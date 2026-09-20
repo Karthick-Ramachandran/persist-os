@@ -44,7 +44,7 @@ export function advisoryToolFiles(aiTools: readonly string[] | undefined): strin
  * The minimal required set (ADR-0007): six documents plus the ADR index. Everything else is
  * opt-in — not generated unless asked for, and never an error when absent.
  */
-const requiredDocs = [
+export const requiredDocs = [
   "00-product/PRODUCT.md",
   "20-security/SECURITY_MODEL.md",
   "50-quality/QUALITY_GATES.md",

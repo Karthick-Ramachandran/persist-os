@@ -37,6 +37,8 @@ export async function checkStandards(context: DoctorCheckContext): Promise<Stand
 
   findings.push(...(await checkFeatureStandards(rootDir, config.featuresDir)));
   findings.push(...(await checkAdrStandards(rootDir, config.adrDir)));
+  findings.push(...(await checkAdrAlternatives(rootDir, config.adrDir)));
+  findings.push(...(await checkAdrSecurityNotes(rootDir, config.adrDir)));
 
   return { findings, outcome: { id: "standards", status: "evaluated" } };
 }
@@ -136,6 +138,94 @@ async function checkAdrStandards(rootDir: string, adrDir: string): Promise<Docto
   }
 
   return findings;
+}
+
+/**
+ * A decision without alternatives: the Alternatives Considered section must carry substance,
+ * not just exist (presence alone is memory-integrity's check). Severity mirrors the
+ * consequences rule — an accepted ADR with a placeholder here is an error, a proposed one
+ * a warning.
+ */
+async function checkAdrAlternatives(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const entries = await readDirIfExists(rootDir, adrDir);
+  const adrFiles = entries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+
+  for (const adrFile of adrFiles) {
+    const adrPath = path.posix.join(adrDir, adrFile.name);
+    const content = await readFile(path.join(rootDir, adrPath), "utf8");
+    const isAccepted = sectionContains(content, "Status", /\baccepted\b/iu);
+
+    if (!hasMeaningfulSection(content, "Alternatives Considered")) {
+      findings.push({
+        severity: isAccepted ? "error" : "warning",
+        check: "standards-adr-alternatives",
+        message: "ADR decision evidence is incomplete.",
+        path: adrPath,
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Security-sensitive decisions without security notes: when the Decision section itself uses
+ * security-sensitive language, the ADR must carry a meaningful Security section. Always a
+ * warning — erroring would break builds over a new heuristic and force edits to accepted
+ * history (see F-034 PRD).
+ */
+async function checkAdrSecurityNotes(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const entries = await readDirIfExists(rootDir, adrDir);
+  const adrFiles = entries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+
+  for (const adrFile of adrFiles) {
+    const adrPath = path.posix.join(adrDir, adrFile.name);
+    const content = await readFile(path.join(rootDir, adrPath), "utf8");
+    const decision = getSection(content, "Decision");
+
+    if (decision === undefined || !securitySensitivePattern.test(decision)) {
+      continue;
+    }
+
+    if (!hasMeaningfulSecurityNotes(content)) {
+      findings.push({
+        severity: "warning",
+        check: "standards-adr-security-notes",
+        message: "Security-sensitive ADR decision is missing security notes.",
+        path: adrPath,
+      });
+    }
+  }
+
+  return findings;
+}
+
+function hasMeaningfulSecurityNotes(content: string): boolean {
+  const lines = content.split(/\r?\n/u);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const heading = /^##\s+(.+?)\s*$/u.exec(lines[index].trim());
+
+    if (heading === null || !heading[1].toLowerCase().startsWith("security")) {
+      continue;
+    }
+
+    const body: string[] = [];
+
+    for (let bodyIndex = index + 1; bodyIndex < lines.length; bodyIndex += 1) {
+      if (/^##\s+/u.test(lines[bodyIndex])) {
+        break;
+      }
+
+      body.push(lines[bodyIndex]);
+    }
+
+    return !isPlaceholder(body.join("\n").trim());
+  }
+
+  return false;
 }
 
 function checkSecurityImpactEvidence(
