@@ -11,6 +11,15 @@ Detected toolchain commands are written into `.persist/config.json` as proposed,
 `preCommitGates`. They are never hardcoded into core. An undetected toolchain yields an empty list,
 and the hook then runs only `persist doctor`.
 
+## Warnings Advisory, Errors Blocking (ADR-0013)
+
+The hook continues on doctor exit 0 (pass) and exit 1 (warnings) and fails only on exit 2
+(errors). Warnings advise; they never block the commit. The `set +e` / `set -e` pair around the
+doctor invocation is deliberate — under `set -e` the shell aborts before `$?` can be read — and
+doctor's output is never redirected, because warnings nobody can see are invisible, not advisory.
+No config knob selects the old behaviour: teams who want warnings to block add `persist doctor`
+to their own `preCommitGates`, where `set -e` gives them exactly that.
+
 ## No Git Mutation
 
 `persist init` proposes `git config core.hooksPath .persist/hooks` and never runs it. Activation
@@ -37,3 +46,11 @@ guess — a loud unconfigured gate beats a hanging hook.
 
 `detectPrePushGates` returns typecheck/lint only. The hook runs the test command via
 `persist test-gate`; baking it into the gate list too would run the suite twice.
+
+## Fence Index in SessionStart (ADR-0010)
+
+The SessionStart hook injects the fence index — `## <path>` / `Why:` lines from `FENCES.md`,
+flattened to one JSON-escaped line — never the crossing history. Room is the 24KB budget minus
+the agent files minus the base context minus the index label, so files plus the whole injection
+stay within budget; a truncated index carries a marker naming the file. A missing or
+crossingless `FENCES.md` injects nothing.

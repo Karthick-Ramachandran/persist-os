@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -48,7 +48,10 @@ inferring it from the code is guessing, and a file of confident guesses is worse
 
 ```txt
 INFORM    SessionStart hook injects the fence index.
-          Once per session. Counts against the existing 24KB context budget.
+          Once per session. The index (paths plus one-line reasons, not the full
+          history) is truncated to whatever the 24KB context budget has left after
+          the always-loaded agent files, with a marker pointing at FENCES.md —
+          a large fence file can never push a session over budget.
 
 TRIGGER   persist adr create / adr supersede.
           Zero cost. Fires before the change. `supersede` is precisely the
@@ -119,10 +122,14 @@ of a fence is that nothing crosses it unrecorded.
 It works on a repository with no ADRs and no ceremony, which is the majority of repositories. Cost
 is zero per edit, one injection per session, and one diff comparison per commit.
 
-**Worsens.** `FENCES.md` is a seventh required document when the fence is enabled. The fence is
-useless on day one and only becomes valuable as it accumulates, which is a hard thing to demonstrate
-in a first run. And it is the first feature whose quality depends on the agent, which makes it the
-first feature that can be quietly bad.
+**Worsens.** The fence is useless on day one and only becomes valuable as it accumulates, which
+is a hard thing to demonstrate in a first run. And it is the first feature whose quality depends
+on the agent, which makes it the first feature that can be quietly bad.
+
+`FENCES.md` is never a required document, so `requiredDocs` stays a flat list with no notion of
+conditional requirement. The fence writes the file on first crossing; its absence means no fence
+has been crossed yet, which is true and unremarkable. Erroring on an empty repository over a file
+whose whole design is "starts empty" would read wrong.
 
 **Risks.** The largest is fences full of plausible-sounding guesses — mitigated by requiring a human
 answer, but not eliminated, since a human can also wave it through. Warning-only severity means a

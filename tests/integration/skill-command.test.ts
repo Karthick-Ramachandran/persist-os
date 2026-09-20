@@ -60,7 +60,7 @@ describe("skill command", () => {
     }
   });
 
-  it("lists exactly the three catalog skills", async () => {
+  it("lists exactly the four catalog skills", async () => {
     const rootDir = await createRoot("skill-list");
 
     const result = await runCommand(rootDir, ["skill", "list"]);
@@ -69,6 +69,7 @@ describe("skill command", () => {
     expect(result.stdout).toContain("plan-feature");
     expect(result.stdout).toContain("security-review");
     expect(result.stdout).toContain("conventions-adherence");
+    expect(result.stdout).toContain("chestertons-fence");
     expect(result.stdout).not.toContain("write-tests");
     expect(result.stdout).not.toContain("create-adr");
   });

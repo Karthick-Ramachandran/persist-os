@@ -14,9 +14,9 @@ memory.
 The existing file is reused, and the filesystem write policy determines whether it is skipped or
 explicitly overwritten.
 
-## Supersede Refuses a Colliding Replacement Title
+## F-037: Fence Reminder on Create and Supersede
 
-`adr supersede <old> <new-title>` fails with `DUPLICATE_TITLE` when another live decision or
-proposal already holds the normalised title, pointing at the existing file. The superseded old
-file and superseded records are excluded — a title vacates when its decision does. Prevention
-at the source; the doctor duplicate-titles check still covers hand-written ADRs.
+`adr create` and `adr supersede` append a Chesterton-fence reminder to their next steps when the
+fence is enabled — the zero-cost trigger that fires before the change, since both commands run
+while the past reasoning is being revisited. The reminder is output text only; nothing is read,
+written, or decided.

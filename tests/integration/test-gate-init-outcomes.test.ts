@@ -130,12 +130,12 @@ describe("doctor check outcomes", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("records eleven not-evaluated checks when config is missing", async () => {
+  it("records thirteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("outcomes-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(14);
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(12);
+    expect(report.checks).toHaveLength(15);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(13);
     expect(report.checks).toContainEqual({
       id: "hook-drift",
       status: "not-evaluated",
@@ -185,7 +185,7 @@ describe("doctor check outcomes", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(14);
+    expect(report.checks).toHaveLength(15);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -211,7 +211,7 @@ describe("doctor check outcomes", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(14);
+    expect(parsed.checks).toHaveLength(15);
   });
 
   it("has no guard command left", async () => {

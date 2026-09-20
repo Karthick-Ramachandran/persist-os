@@ -71,6 +71,9 @@ export const persistConfigSchema = z
     // The one-shot test command the test gate runs. null means the gate is off. Optional on
     // read (zod default) so pre-existing configs without it keep loading.
     testCommand: testCommandSchema.nullable().default(null),
+    // Whether the Chesterton fence is active (F-037). Optional on read via zod default so
+    // pre-fence configs keep loading; this spends no breaking-change budget (ADR-0011).
+    fenceEnabled: z.boolean().default(true),
     // Deprecated B5 knobs: accepted on read for backward compat with pre-0.7 configs,
     // never written by new inits and never read. `mode` duplicated `memoryProfile`;
     // `writePolicy` was superseded by --force/--dry-run.

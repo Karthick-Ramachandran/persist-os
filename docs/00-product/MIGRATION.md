@@ -3,6 +3,14 @@
 Two breaking changes land in 1.0 (see [ADR-0011](../adrs/ADR-0011-one-zero-stability-contract.md)).
 Each names the removal and the exact edit that replaces it.
 
+One behaviour change is not breaking but changes what a commit does: generated pre-commit hooks
+now treat doctor warnings as advisory and fail only on errors (see
+[ADR-0013](../adrs/ADR-0013-warnings-are-advisory-in-the-generated-pre-commit-hook.md)). Commits
+that warnings previously refused will now proceed. To keep the old behaviour, add
+`"persist doctor"` to `preCommitGates` in `.persist/config.json` (it runs under `set -e`, so its
+exit 1 blocks again). Either way, regenerate the hook to pick up the new content:
+`persist init --force --reinit` (review the diff first — `--force` overwrites).
+
 ## `persist guard` removed — replaced by `persist test-gate`
 
 `persist guard` (fail when staged source changed without a test change) is deleted. It checked a

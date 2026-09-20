@@ -33,6 +33,8 @@ export type AdrSupersedeResult = {
   newPath: string;
   dryRun: boolean;
   writeResult: WriteResult;
+  // Carried so the formatter can fire the zero-cost fence trigger without reloading config.
+  fenceEnabled: boolean;
 };
 
 export type AdrSupersedeErrorCode =
@@ -108,6 +110,7 @@ export async function supersedeAdr(options: AdrSupersedeOptions): Promise<AdrSup
     oldPath: oldRelative,
     newRef,
     newPath: superseding.path,
+    fenceEnabled: config.fenceEnabled,
     dryRun: options.dryRun ?? false,
     writeResult: {
       created: [...writeNew.created, ...writeOld.created],
@@ -249,6 +252,11 @@ export function formatAdrSupersedeResult(result: AdrSupersedeResult): string {
       `Fill ${result.newPath}: Context (what changed), Decision, Alternatives, Consequences.`,
       `${result.oldRef} stays in history as superseded; update any memory that still relies on it.`,
       "Run `persist doctor` — it flags memory that still references the superseded decision.",
+      ...(result.fenceEnabled
+        ? [
+            "The Chesterton fence is enabled: supersede is the moment a past decision is revisited — if source files shaped by the old decision change, record why in FENCES.md (the chestertons-fence skill walks through it).",
+          ]
+        : []),
     ]);
   }
 

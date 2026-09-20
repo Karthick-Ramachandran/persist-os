@@ -243,11 +243,12 @@ describe("init command", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("stdin is not a TTY");
     expect(result.stdout).toContain("Persist OS init complete.");
+    expect(result.stdout).toContain("Chesterton fence: enabled");
   });
 
   it("writes the config implied by interactive answers", async () => {
     const rootDir = await createRoot("init-answers");
-    const feed = feedFor(["codex", "y", "n", "n"]);
+    const feed = feedFor(["codex", "y", "n", "n", "y"]);
 
     const result = await initProject({
       rootDir,
@@ -256,23 +257,42 @@ describe("init command", () => {
     });
 
     expect(feed.written()).toContain("Which AI tools?");
-    expect(feed.written()).toContain("[1/4]");
+    expect(feed.written()).toContain("[1/5]");
     expect(feed.written()).toContain("Track features?");
     expect(feed.written()).toContain("Track modules?");
+    expect(feed.written()).toContain("Enable the Chesterton fence?");
 
     const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
     expect(config.aiTools).toEqual(["codex"]);
     expect(config.testCommand).toBeNull();
     expect(result.testCommand).toBeNull();
+    expect(config.fenceEnabled).toBe(true);
+    expect(result.fenceEnabled).toBe(true);
 
     const files = await listRelativeFiles(rootDir);
     expect(files).toContain("docs/40-features/README.md");
     expect(files).not.toContain("docs/30-modules/README.md");
   });
 
+  it("records a declined fence as disabled and generates nothing fence-related", async () => {
+    const rootDir = await createRoot("init-fence-off");
+    const feed = feedFor(["", "n", "n", "n", "n"]);
+
+    const result = await initProject({
+      rootDir,
+      stdinTTY: true,
+      promptStreams: { input: feed.input, output: feed },
+    });
+
+    const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
+    expect(config.fenceEnabled).toBe(false);
+    expect(result.fenceEnabled).toBe(false);
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/60-engineering/FENCES.md");
+  });
+
   it("still asks on --dry-run without writing anything", async () => {
     const rootDir = await createRoot("init-dryrun-asks");
-    const feed = feedFor(["", "n", "n", "n"]);
+    const feed = feedFor(["", "n", "n", "n", "n"]);
 
     const result = await initProject({
       rootDir,
