@@ -88,3 +88,12 @@ addition to feature and module documents, so minimal repositories get a real gat
 
 Not-evaluated is now reserved for genuine inability: missing config, no scannable memory at all, or
 (staleness) non-git and shallow-clone repositories.
+
+## F-037: Fence Crossing Check
+
+The `fence` check diffs the staged set (`git diff --cached`) against `FENCES.md` records and ADR
+references. An in-scope source file with neither warns once; a file with a fence record surfaces
+its `Why:` as info so the recorded reason meets the committer. Out-of-scope files (tests, styles,
+markdown, lockfiles, generated output, configuration) and ADR-referenced files stay quiet. Fence
+disabled, non-git repos, and missing config report not-evaluated with reason — never a silent
+pass. The check reads only; the human-answered record is written by the skill-wielding agent.

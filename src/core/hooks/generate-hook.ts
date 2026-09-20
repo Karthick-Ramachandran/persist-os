@@ -13,6 +13,14 @@ export const CLAUDE_SETTINGS_PATH = ".claude/settings.json";
  * `additionalContext` into the model. It lists the repository's accepted ADRs and modules so a fresh
  * agent reliably knows the durable memory exists and where to read it. It is strictly read-only:
  * it only lists files and never modifies anything, makes no network calls, and runs no AI.
+ *
+ * The Chesterton-fence index (ADR-0010) rides the same injection: fenced paths plus their
+ * one-line reasons, flattened to one line — never the full crossing history, which stays on
+ * demand in FENCES.md. The index counts against the 24KB always-loaded budget: room is the
+ * budget minus the agent files minus the base context minus the index label, so files plus the
+ * whole injection stay within budget no matter how large FENCES.md grows. A truncated index
+ * carries a marker naming the file. (When files plus base already fill the budget, the marker
+ * alone may exceed it by its own ~85 bytes — a state the budget check already warns on.)
  */
 export function renderSessionStartHook(): string {
   return `#!/bin/sh
@@ -23,7 +31,31 @@ export function renderSessionStartHook(): string {
 adrs=$(ls docs/adrs/ADR-*.md 2>/dev/null | sed 's|.*/||;s|\\.md$||' | tr '\\n' ' ')
 modules=$(ls -d docs/30-modules/*/ 2>/dev/null | sed 's|docs/30-modules/||;s|/$||' | tr '\\n' ' ')
 
-context="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): \${adrs:-none yet}. Modules (docs/30-modules/): \${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself; do not web-search them. Run 'persist doctor' before claiming work complete."
+# Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.
+# A missing file means no fence crossed yet (FENCES.md is never required), and an empty index
+# injects nothing — silence is the correct signal in both cases.
+base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): \${adrs:-none yet}. Modules (docs/30-modules/): \${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself; do not web-search them. Run 'persist doctor' before claiming work complete."
+context="$base"
+full=$(grep -e '^## ' -e '^Why: ' docs/60-engineering/FENCES.md 2>/dev/null | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+if [ -n "$full" ]; then
+  label=" Chesterton fence index (recorded rationale; full history in docs/60-engineering/FENCES.md): "
+  loaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
+  room=$((24576 - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ')))
+  marker="... (fence index truncated to the context budget; read docs/60-engineering/FENCES.md)"
+  m=$(printf '%s' "$marker" | wc -c | tr -d ' ')
+  if [ "$room" -le 0 ]; then
+    fences="$marker"
+  elif [ "$(printf '%s' "$full" | wc -c | tr -d ' ')" -le "$room" ]; then
+    fences="$full"
+  else
+    keep=$((room - m))
+    if [ "$keep" -lt 0 ]; then
+      keep=0
+    fi
+    fences="$(printf '%s' "$full" | head -c "$keep" | sed 's/\\\\*$//')$marker"
+  fi
+  context="$base$label$fences"
+fi
 
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\\n' "$context"
 `;
@@ -55,7 +87,9 @@ export function renderClaudeSettings(): string {
  *
  * The hook runs `persist doctor` first, then each configured gate in order. Gates come from
  * `.persist/config.json` (`preCommitGates`), so the toolchain choice stays in user config rather than
- * in core. The hook does not modify git configuration; activation is a deliberate human step.
+ * in core. Doctor warnings are advisory (ADR-0013): the hook continues on exit 0 and exit 1 and
+ * fails only on errors (exit 2). The hook does not modify git configuration; activation is a
+ * deliberate human step.
  */
 export function renderPreCommitHook(gates: string[]): string {
   const lines = [
@@ -67,7 +101,14 @@ export function renderPreCommitHook(gates: string[]): string {
     `#   ${HOOKS_PATH_ACTIVATION_COMMAND}`,
     "set -e",
     "",
+    "# Doctor warnings are advisory: they print but never block the commit.",
+    "# Only errors fail the hook. The set +e pair is deliberate — under set -e",
+    "# the shell would abort before $? can be read.",
+    "set +e",
     "persist doctor",
+    "status=$?",
+    "set -e",
+    '[ "$status" -le 1 ] || exit "$status"',
   ];
 
   for (const gate of gates) {

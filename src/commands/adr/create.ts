@@ -23,6 +23,8 @@ export type AdrCreateResult = {
   dryRun: boolean;
   plan: WritePlan;
   writeResult: WriteResult;
+  // Carried so the formatter can fire the zero-cost fence trigger without reloading config.
+  fenceEnabled: boolean;
 };
 
 export type AdrCreateErrorCode = "CONFIG_REQUIRED" | "INVALID_ADR_TITLE" | "WRITE_PLAN_ERROR";
@@ -74,6 +76,7 @@ export async function createAdr(options: AdrCreateOptions): Promise<AdrCreateRes
     dryRun: options.dryRun ?? false,
     plan,
     writeResult,
+    fenceEnabled: config.fenceEnabled,
   };
 }
 
@@ -94,6 +97,11 @@ export function formatAdrCreateResult(result: AdrCreateResult): string {
     appendNextSteps(lines, [
       `Open ${result.adrPath} and fill: Context, Decision, Alternatives, Consequences.`,
       "It is Proposed — set Status to Accepted once the team agrees.",
+      ...(result.fenceEnabled
+        ? [
+            "The Chesterton fence is enabled: if this decision revisits why specific source files are shaped the way they are, record the human-confirmed reason in FENCES.md (the chestertons-fence skill walks through it).",
+          ]
+        : []),
     ]);
   }
 

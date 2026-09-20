@@ -46,3 +46,10 @@ printed before asking, defaulting to no when nothing was detected); any flag or 
 complete non-interactive instruction. Non-TTY stdin behaves as `--yes` and says so, so CI can never
 block on a prompt. Prompts live in `src/cli/prompt.ts` on `node:readline/promises` with injectable
 streams; no new dependencies, no TUI.
+
+## F-037: Init Asks a Fifth Question
+
+The Chesterton fence question ("Enable the Chesterton fence?") comes after the test gate, making
+five; progress tags move from `[n/4]` to `[n/5]`. `--yes` and non-TTY default it to on and the
+closing output states the choice, like the test gate. With the fence off, init writes only the
+`fenceEnabled: false` toggle — never `FENCES.md`.

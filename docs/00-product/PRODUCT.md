@@ -154,31 +154,33 @@ agent's job; proving the artifact exists is the gate's.
 
 ## Decided and being built
 
-**Chesterton's Fence** ([ADR-0010](../adrs/ADR-0010-chestertons-fence.md), Proposed). A record of
+**Chesterton's Fence** ([ADR-0010](../adrs/ADR-0010-chestertons-fence.md), Accepted). A record of
 why code is shaped the way it is, for the reasoning that never rose to the level of an ADR — the
 write that hits four collections deliberately, for a constraint the author has since forgotten.
 
-`FENCES.md` starts empty and grows through use. Fences are never bulk-generated, by init, by adopt,
-or by an agent sweeping the codebase: a file of confident guesses is worse than an empty one. The
-answer to "why is this here" comes from a human, because the premise is that the constraint exists
-only in someone's memory.
+The fence file lives at docs/60-engineering/FENCES.md and starts empty, growing through use. Fences are never
+bulk-generated, by init, by adopt, or by an agent sweeping the codebase: a file of confident
+guesses is worse than an empty one. The answer to "why is this here" comes from a human, because
+the premise is that the constraint exists only in someone's memory. The file is never required —
+its absence means no fence has been crossed yet — and the fifth init question records the
+`fenceEnabled` toggle.
 
 Three moments, none of which costs anything per edit: the SessionStart hook injects the fence index
-once per session; `adr create` and `adr supersede` trigger before a change; a deterministic
+once per session (truncated to the 24KB budget remainder, so a large file never pushes a session
+over budget); `adr create` and `adr supersede` trigger before a change; a deterministic
 pre-commit rule triggers after, where the diff is visible. It warns rather than blocks, because it
 is the first part of the product whose quality depends on an agent rather than a check, and a
 blocking gate satisfied by "an agent wrote something plausible" teaches people to write something
 plausible.
 
-One design question is open and must be settled before it is built: ADR-0007 lists `FENCES.md` among
-the surviving memory, but nothing emits it and nothing defines where it lives.
-
 ## Known behaviour worth stating
 
-**Warnings block commits.** The generated pre-commit hook runs `persist doctor` under `set -e`, and
-doctor exits 1 on warnings, so a repository cannot commit until template sections are filled. This
-makes the warning and error distinction weaker than it reads, and it is the reason the fence's
-warn-rather-than-block decision needs re-examining before the fence ships.
+**Warnings are advisory; errors block.** The generated pre-commit hook runs `persist doctor` and
+continues on exit 0 (pass) and exit 1 (warnings), failing only on exit 2 (errors)
+([ADR-0013](../adrs/ADR-0013-warnings-are-advisory-in-the-generated-pre-commit-hook.md)). A
+repository can commit with unfilled templates — the warnings still print, so they are seen, but
+they no longer refuse the commit. This is what the fence's warn-rather-than-block decision
+([ADR-0010](../adrs/ADR-0010-chestertons-fence.md)) is built on.
 
 **`adopt` over-detects in raw-text ecosystems.** Cargo, Composer, Gemfile and requirements files are
 parsed by pattern, so a dev-only package can still become a signal. Every signal is proposed, so it

@@ -1,3 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -42,6 +47,66 @@ describe("renderPreCommitHook", () => {
 
   it("exposes the tracked hook path", () => {
     expect(PRE_COMMIT_HOOK_PATH).toBe(".persist/hooks/pre-commit");
+  });
+});
+
+describe("renderPreCommitHook exit codes (ADR-0013)", () => {
+  /**
+   * Execute the rendered hook with a stub `persist` first on PATH. The stub prints a
+   * marker (proving doctor output stays visible) and exits with the code from
+   * PERSIST_STUB_EXIT, so each doctor outcome maps to one hook run.
+   */
+  async function runHookWithStub(
+    doctorExit: number,
+    gates: string[],
+  ): Promise<{ status: number | null; stdout: string }> {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-"));
+    try {
+      const stub = path.join(dir, "persist");
+      await writeFile(stub, '#!/bin/sh\necho "stub doctor output"\nexit "$PERSIST_STUB_EXIT"\n');
+      await chmod(stub, 0o755);
+
+      const hookPath = path.join(dir, "pre-commit");
+      await writeFile(hookPath, renderPreCommitHook(gates));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        env: {
+          ...process.env,
+          PATH: `${dir}${path.delimiter}${process.env.PATH ?? ""}`,
+          PERSIST_STUB_EXIT: String(doctorExit),
+        },
+        encoding: "utf8",
+      });
+
+      return { status: result.status, stdout: result.stdout };
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("lets warnings through: doctor exit 1 proceeds and later gates still run", async () => {
+    const { status, stdout } = await runHookWithStub(1, ["echo gate-ran"]);
+
+    expect(status).toBe(0);
+    // Warnings nobody can see are not advisory: doctor output must stay visible.
+    expect(stdout).toContain("stub doctor output");
+    expect(stdout).toContain("gate-ran");
+  });
+
+  it("passes clean: doctor exit 0 proceeds", async () => {
+    const { status, stdout } = await runHookWithStub(0, ["echo gate-ran"]);
+
+    expect(status).toBe(0);
+    expect(stdout).toContain("gate-ran");
+  });
+
+  it("fails on errors: doctor exit 2 blocks and later gates never run", async () => {
+    const { status, stdout } = await runHookWithStub(2, ["echo gate-ran"]);
+
+    expect(status).toBe(2);
+    expect(stdout).toContain("stub doctor output");
+    expect(stdout).not.toContain("gate-ran");
   });
 });
 
@@ -94,5 +159,80 @@ describe("renderPrePushHook", () => {
     };
 
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`./${SESSION_START_HOOK_PATH}`);
+  });
+});
+
+describe("renderSessionStartHook fence index (ADR-0010)", () => {
+  /** Execute the rendered hook in a fixture repo and return the injected context. */
+  async function injectedContext(files: Record<string, string>): Promise<string> {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-session-start-"));
+    try {
+      for (const [relativePath, content] of Object.entries(files)) {
+        const full = path.join(dir, relativePath);
+        await mkdir(path.dirname(full), { recursive: true });
+        await writeFile(full, content);
+      }
+
+      const hookPath = path.join(dir, "session-start.sh");
+      await writeFile(hookPath, renderSessionStartHook());
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], { cwd: dir, encoding: "utf8" });
+      expect(result.status).toBe(0);
+
+      const parsed = JSON.parse(result.stdout) as {
+        hookSpecificOutput: { additionalContext: string };
+      };
+      return parsed.hookSpecificOutput.additionalContext;
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("injects nothing fence-related when FENCES.md is absent", async () => {
+    const context = await injectedContext({ "CLAUDE.md": "# x\n" });
+
+    expect(context).not.toMatch(/fence/i);
+  });
+
+  it("injects paths and reasons but not crossing history for a small FENCES.md", async () => {
+    const context = await injectedContext({
+      "CLAUDE.md": "# x\n",
+      "docs/60-engineering/FENCES.md": [
+        "# Fences",
+        "",
+        "## `src/payments/charge.ts`",
+        "Why: four collections deliberately; the ledger needs per-collection idempotency keys.",
+        "### Crossings",
+        "- 2026-09-20: kept four calls; constraint confirmed by H.",
+        "",
+      ].join("\n"),
+    });
+
+    expect(context).toContain("src/payments/charge.ts");
+    expect(context).toContain("four collections deliberately");
+    expect(context).not.toContain("Crossings");
+    expect(context).not.toContain("constraint confirmed by H.");
+  });
+
+  it("truncates a large FENCES.md to the budget with a marker", async () => {
+    const lines = ["# Fences", ""];
+    for (let i = 0; i < 1500; i += 1) {
+      lines.push(`## \`src/mod/file${String(i).padStart(4, "0")}.ts\``);
+      lines.push(`Why: reason number ${i}; do not merge the handlers.`);
+      lines.push("");
+    }
+
+    const context = await injectedContext({
+      "CLAUDE.md": "x",
+      "docs/60-engineering/FENCES.md": lines.join("\n"),
+    });
+
+    // Files plus the whole injection stay within the 24KB always-loaded budget.
+    expect(Buffer.byteLength(context, "utf8") + 1).toBeLessThanOrEqual(24 * 1024);
+    expect(context).toContain("truncated to the context budget");
+    expect(context).toContain("docs/60-engineering/FENCES.md");
+    expect(context).toContain("src/mod/file0000.ts");
+    expect(context).not.toContain("src/mod/file1499.ts");
   });
 });

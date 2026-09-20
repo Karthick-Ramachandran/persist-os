@@ -20,10 +20,11 @@ describe("config schema", () => {
       preCommitGates: [],
       prePushGates: [],
       testCommand: null,
+      fenceEnabled: true,
     });
   });
 
-  it("loads a 0.6.x config without testCommand or prePushGates", () => {
+  it("loads a 0.6.x config without testCommand, prePushGates, or fenceEnabled", () => {
     const legacy = {
       version: "0.6.2",
       templateVersion: "0.6.2",
@@ -38,6 +39,7 @@ describe("config schema", () => {
     expect(parseConfig(legacy)).toMatchObject({
       prePushGates: [],
       testCommand: null,
+      fenceEnabled: true,
     });
   });
 

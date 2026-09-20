@@ -55,6 +55,8 @@ export type InitResult = {
   aiTools: AiToolTarget[];
   // The detected one-shot test command saved as testCommand (null when none was safe to pick).
   testCommand: string | null;
+  // Whether the Chesterton fence was enabled, so the closing output can state the choice.
+  fenceEnabled: boolean;
   // True when stdin was not a TTY and init proceeded with defaults without prompting.
   assumedNonTTYDefaults: boolean;
 };
@@ -100,7 +102,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   const detectedTestCommand = await detectTestCommand(options.rootDir);
   const prePushGates = await detectPrePushGates(options.rootDir);
 
-  const { aiTools, features, modules, testCommand, assumedNonTTYDefaults } =
+  const { aiTools, features, modules, testCommand, fenceEnabled, assumedNonTTYDefaults } =
     await resolveInitAnswers(options, detectedTestCommand);
 
   validateAiTools(aiTools);
@@ -109,6 +111,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     preCommitGates: [],
     prePushGates,
     testCommand,
+    fenceEnabled,
     ...(aiTools !== undefined ? { aiTools } : {}),
   });
   const files = createInitWriteFiles(options.rootDir, config, {
@@ -140,14 +143,16 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     detected,
     aiTools: [...config.aiTools],
     testCommand: config.testCommand,
+    fenceEnabled: config.fenceEnabled,
     assumedNonTTYDefaults,
   };
 }
 
 /**
  * Answer resolution: explicit flags (or `--yes`) are a complete instruction and
- * never prompt; otherwise a TTY is asked the four questions and a non-TTY
- * proceeds with defaults so CI can never hang on a prompt.
+ * never prompt; otherwise a TTY is asked the five questions and a non-TTY
+ * proceeds with defaults so CI can never hang on a prompt. The fence defaults to
+ * on everywhere it is not explicitly declined.
  */
 async function resolveInitAnswers(
   options: InitOptions,
@@ -157,6 +162,7 @@ async function resolveInitAnswers(
   features: boolean;
   modules: boolean;
   testCommand: string | null;
+  fenceEnabled: boolean;
   assumedNonTTYDefaults: boolean;
 }> {
   const explicitInstruction =
@@ -172,6 +178,7 @@ async function resolveInitAnswers(
       features: options.features ?? false,
       modules: options.modules ?? false,
       testCommand: detectedTestCommand,
+      fenceEnabled: true,
       assumedNonTTYDefaults: false,
     };
   }
@@ -184,6 +191,7 @@ async function resolveInitAnswers(
       features: options.features ?? false,
       modules: options.modules ?? false,
       testCommand: detectedTestCommand,
+      fenceEnabled: true,
       assumedNonTTYDefaults: true,
     };
   }
@@ -192,16 +200,18 @@ async function resolveInitAnswers(
   const prompter = createPrompter(streams);
 
   try {
-    const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/4]");
-    const features = await prompter.askYesNo("Track features?", false, "[2/4]");
-    const modules = await prompter.askYesNo("Track modules?", false, "[3/4]");
-    const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/4]");
+    const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/5]");
+    const features = await prompter.askYesNo("Track features?", false, "[2/5]");
+    const modules = await prompter.askYesNo("Track modules?", false, "[3/5]");
+    const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/5]");
+    const fenceEnabled = await prompter.askYesNo("Enable the Chesterton fence?", true, "[5/5]");
 
     return {
       aiTools,
       features,
       modules,
       testCommand: enableTestGate ? detectedTestCommand : null,
+      fenceEnabled,
       assumedNonTTYDefaults: false,
     };
   } finally {
@@ -228,6 +238,9 @@ export function formatInitResult(result: InitResult): string {
     result.testCommand === null
       ? "Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`)."
       : `Test gate: ${result.testCommand} (saved as testCommand in .persist/config.json).`,
+    result.fenceEnabled
+      ? "Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json)."
+      : "Chesterton fence: disabled (nothing fence-related was generated; set fenceEnabled in .persist/config.json to enable it).",
   ];
 
   if (result.assumedNonTTYDefaults) {

@@ -15,6 +15,7 @@ const TRIGGER_TERMS: Record<string, string[]> = {
   "plan-feature": ["implementation plan", "test plan", "approved requirements"],
   "security-review": ["security risk", "trust boundary", "secret"],
   "conventions-adherence": ["naming convention", "canonical", "reinvent"],
+  "chestertons-fence": ["chesterton", "fence crossing", "fences.md"],
 };
 
 const MUST_ACTIVATE: Record<string, string[]> = {
@@ -29,6 +30,10 @@ const MUST_ACTIVATE: Record<string, string[]> = {
   "conventions-adherence": [
     "Before finishing, check this change against our naming conventions and canonical helpers",
     "Does this refactor reinvent anything our canonical primitives already cover",
+  ],
+  "chestertons-fence": [
+    "A fence warning fired on the staged diff; work through the chesterton questions with me",
+    "Record the human-confirmed reason for this logic in FENCES.md before I commit",
   ],
 };
 
@@ -45,14 +50,19 @@ const MUST_NOT_ACTIVATE: Record<string, string[]> = {
     "Look for hardcoded passwords in this diff",
     "Write tasks and a test plan for the billing feature",
   ],
+  "chestertons-fence": [
+    "Turn this approved plan into ordered tasks with completion evidence",
+    "Check this diff for hardcoded passwords before merging",
+  ],
 };
 
 describe("skill catalog", () => {
-  it("ships exactly the three rewritten skills", () => {
+  it("ships exactly the four rewritten skills", () => {
     expect(SKILL_CATALOG.map((skill) => skill.name)).toEqual([
       "plan-feature",
       "security-review",
       "conventions-adherence",
+      "chestertons-fence",
     ]);
   });
 

@@ -20,6 +20,8 @@ It validates whether repository memory is structurally healthy enough for AI-ass
 - Per-check evaluated / not-evaluated outcomes with reasons (a check whose inputs are absent reports
   so instead of passing silently).
 - Hook-drift comparison of generated hooks against config, and retired-skill detection.
+- Chesterton-fence crossing detection (F-037): staged in-scope source with no fence record and no
+  ADR reference warns; a fenced path surfaces its recorded reason as info.
 - Re-pointed minimal-memory coverage (F-034): required-doc cross-references, ADR alternatives and
   security notes, PRODUCT template detection, ADR/conventions code references and staleness, and
   completion-report history classification.
