@@ -16,7 +16,7 @@ decisions, module ownership, testing and security expectations, AI agent rules �
 code generation.
 
 [Website](https://persist-os.pages.dev) · [Install](#install) · [Quickstart](#quickstart) ·
-[Commands](#commands) · [What Doctor Checks](#what-doctor-checks) · [Presets](#presets) ·
+[Commands](#commands) · [What Doctor Checks](#what-doctor-checks) ·
 [Why I built this](PHILOSOPHY.md) · [Contributing](CONTRIBUTING.md)
 
 ![Persist OS — guided memory creation, ADR acceptance, and the doctor gate](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-demo.gif)
@@ -128,6 +128,7 @@ git config core.hooksPath .persist/hooks
 | `persist init`                      | Create neutral repository memory (and a pre-commit hook).                      |
 | `persist init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
 | `persist init --features --modules` | Also generate the opt-in feature/module workflow scaffolding.                  |
+| `persist init --yes`                | Take every default without prompting (CI, scripts, non-TTY stdin).             |
 | `persist adopt`                     | Inspect an existing repo and propose reviewable memory.                        |
 | `persist feature create <name>`     | Scaffold feature memory (plan, tasks, test evidence).                          |
 | `persist adr create <title>`        | Create a proposed architecture decision record.                                |
@@ -238,16 +239,9 @@ Persist OS does not:
 
 ## Examples
 
-Committed sample outputs show generated memory from the preset era (historical — the current shape
-is goldened in `tests/golden/generated-minimal.test.ts`):
-
-```txt
-examples/generated-generic/         examples/generated-kotlin-android/
-examples/generated-nextjs/          examples/generated-python-fastapi/
-examples/generated-ios-swift/       examples/generated-flutter/
-examples/generated-laravel-react/   examples/generated-laravel-vue/
-examples/generated-laravel-api/
-```
+The exact memory `persist init` writes today is goldened in
+`tests/golden/generated-minimal.test.ts`. The `examples/` directory holds generated output from the
+retired preset era (0.5 and 0.6); it is kept for history and is not published with the package.
 
 ## Development
 
@@ -262,8 +256,8 @@ pnpm pack:check
 ```
 
 Run the gates above and `persist doctor` before claiming work is complete. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and how to add a preset, and
-[SECURITY.md](SECURITY.md) for the security model.
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow, and [SECURITY.md](SECURITY.md) for the
+security model.
 
 ## Acknowledgments
 

@@ -23,10 +23,17 @@ Package binary behavior is covered by binary integration tests.
 
 Initialize neutral repository memory.
 
+On a TTY with no explicit flags, init asks four questions and writes the minimum consistent with
+the answers: which AI tools (`claude`, `codex`, `cursor`, `generic`), whether to track features,
+whether to track modules, and whether to enable the test gate (the detected test command is shown
+first). Explicit flags, `--yes`, or a non-TTY stdin skip the questions; a non-TTY run says so.
+
 Options:
 
+- `--ai-tools <list>`: comma-separated AI tools to generate files for.
 - `--features`: generate opt-in feature workflow scaffolding.
 - `--modules`: generate opt-in module workflow scaffolding.
+- `--yes`: take every default without prompting.
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 - `--reinit`: required with `--force` to overwrite an existing Persist OS installation (a directory
