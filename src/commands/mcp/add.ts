@@ -3,6 +3,7 @@ import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
 import { generateMcpFiles, mcpDocPath } from "../../core/mcp/generate-mcp.js";
 import { generateSkillFiles } from "../../core/skills/generate-skill.js";
+import { filterFilesForTools } from "../../core/aitools/tool-paths.js";
 import { createWritePlan, type WritePlan } from "../../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
@@ -42,9 +43,10 @@ export async function mcpAdd(options: McpAddOptions): Promise<McpAddResult> {
   const config = await loadConfigOrDefault(options.rootDir);
   // The memory doc and adoption ADR, plus the capture skill that tells agents to record durable
   // MCP-derived context into that doc. The skill is shared across servers and skipped if it exists.
+  // Skill files honor config.aiTools so a Codex-only repo never gains a .claude directory.
   const files = [
     ...generateMcpFiles({ adrDir: config.adrDir, server }),
-    ...generateSkillFiles("capture-mcp-context").files,
+    ...filterFilesForTools(generateSkillFiles("capture-mcp-context").files, config.aiTools),
   ];
   const plan = createWritePlan({
     rootDir: options.rootDir,
