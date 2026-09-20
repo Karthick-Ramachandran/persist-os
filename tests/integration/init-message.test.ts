@@ -1,6 +1,23 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import { buildMasthead } from "../../src/commands/init.js";
 import { createTempRoot, removeTempRoot, runInitCommand } from "../helpers/init-test-helpers.js";
+
+describe("init masthead", () => {
+  it("draws the wordmark when the terminal is wide enough", () => {
+    expect(buildMasthead(100)).toContain("██");
+  });
+
+  it("falls back to the compact form below 54 columns", () => {
+    // A broken wordmark is worse than no wordmark.
+    expect(buildMasthead(40)).not.toContain("██");
+    expect(buildMasthead(40)).toContain("persist");
+  });
+
+  it("falls back when stdout is a pipe and columns is undefined", () => {
+    expect(buildMasthead(undefined)).not.toContain("██");
+  });
+});
 
 describe("init message reflects generated files", () => {
   const roots: string[] = [];
