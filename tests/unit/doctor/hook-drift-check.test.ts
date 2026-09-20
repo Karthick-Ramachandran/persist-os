@@ -6,10 +6,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createDefaultConfig } from "../../../src/core/config/default-config.js";
 import { checkHookDrift } from "../../../src/core/doctor/checks/hook-drift-check.js";
 import {
+  CLAUDE_SETTINGS_PATH,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
+  SESSION_START_HOOK_PATH,
+  renderClaudeSettings,
   renderPreCommitHook,
   renderPrePushHook,
+  renderSessionStartHook,
 } from "../../../src/core/hooks/generate-hook.js";
 import { createTempRoot, removeTempRoot } from "../../helpers/init-test-helpers.js";
 
@@ -54,6 +58,17 @@ describe("hook-drift check", () => {
     await writeFile(path.join(rootDir, PRE_PUSH_HOOK_PATH), prePush, "utf8");
   }
 
+  /** The Claude generated files, written as the generator would produce them. */
+  async function writeClaudeFiles(rootDir: string, sessionStart?: string): Promise<void> {
+    await mkdir(path.join(rootDir, ".claude/hooks"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, SESSION_START_HOOK_PATH),
+      sessionStart ?? renderSessionStartHook(),
+      "utf8",
+    );
+    await writeFile(path.join(rootDir, CLAUDE_SETTINGS_PATH), renderClaudeSettings(), "utf8");
+  }
+
   it("passes when both hooks match the config", async () => {
     const rootDir = await createRoot("drift-agree");
     const context = contextFor(rootDir);
@@ -62,6 +77,7 @@ describe("hook-drift check", () => {
       renderPreCommitHook(context.config.preCommitGates ?? []),
       renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
     );
+    await writeClaudeFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
@@ -77,6 +93,7 @@ describe("hook-drift check", () => {
       `${renderPreCommitHook([])}pnpm run test\n`,
       renderPrePushHook("pnpm run test:run", ["pnpm run typecheck"]),
     );
+    await writeClaudeFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
@@ -87,6 +104,45 @@ describe("hook-drift check", () => {
       check: "hook-drift",
       path: PRE_COMMIT_HOOK_PATH,
     });
+  });
+
+  it("warns when the Claude SessionStart hook is stale", async () => {
+    // The one that drifts silently: it carries the memory map and the fence index, so a stale
+    // hook loads the wrong context into every session without anything failing.
+    const rootDir = await createRoot("drift-session-start");
+    const context = contextFor(rootDir);
+    await writeHooks(
+      rootDir,
+      renderPreCommitHook(context.config.preCommitGates ?? []),
+      renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
+    );
+    await writeClaudeFiles(rootDir, "#!/bin/sh\n# an older generated hook\n");
+
+    const { findings, outcome } = await checkHookDrift(context);
+
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      severity: "warning",
+      check: "hook-drift",
+      path: SESSION_START_HOOK_PATH,
+    });
+  });
+
+  it("does not expect Claude files in a repository that did not ask for them", async () => {
+    const rootDir = await createRoot("drift-codex-only");
+    const context = contextFor(rootDir, { aiTools: ["codex"] });
+    await writeHooks(
+      rootDir,
+      renderPreCommitHook(context.config.preCommitGates ?? []),
+      renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
+    );
+
+    const { findings, outcome } = await checkHookDrift(context);
+
+    // No .claude/ anywhere, and that is correct rather than drift.
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
   });
 
   it("reports not-evaluated when the hooks do not exist", async () => {
