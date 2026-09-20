@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1
+
+Documentation only. No code changes.
+
+The npm page for 1.0.0 shipped the README as it stood a few minutes before the landing-page demos
+merged, and npm only refreshes a README when a version is published. This carries them across:
+adopting an existing repository, recording and accepting a decision, and reading a doctor report,
+each using the same verbatim captures the website is checked against.
+
 ## 1.0.0
 
 First stable release. `persist` generates less, checks more honestly, and commits to an interface.

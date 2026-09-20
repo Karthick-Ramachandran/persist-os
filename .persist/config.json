@@ -1,12 +1,19 @@
 {
-  "version": "1.0.0",
-  "templateVersion": "1.0.0",
-  "aiTools": ["claude", "codex", "cursor"],
+  "version": "1.0.1",
+  "templateVersion": "1.0.1",
+  "aiTools": [
+    "claude",
+    "codex",
+    "cursor"
+  ],
   "docsDir": "docs",
   "featuresDir": "docs/40-features",
   "modulesDir": "docs/30-modules",
   "adrDir": "docs/adrs",
   "preCommitGates": [],
-  "prePushGates": ["pnpm run typecheck", "pnpm run lint"],
+  "prePushGates": [
+    "pnpm run typecheck",
+    "pnpm run lint"
+  ],
   "testCommand": "pnpm run test:run"
 }
