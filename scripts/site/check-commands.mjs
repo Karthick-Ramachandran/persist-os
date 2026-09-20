@@ -74,7 +74,9 @@ for (const file of walk(site)) {
   for (const snippet of snippets) {
     // A quoted generated file (the SessionStart hook) is verbatim tool output, not a command list.
     if (snippet.startsWith("#!/bin/sh")) continue;
-    for (const m of snippet.matchAll(
+    // The CLI masthead ("persist repository memory for …") is output, not a command.
+    const scanned = snippet.replace(/persist repository memory for AI-assisted software work/g, "");
+    for (const m of scanned.matchAll(
       /\bpersist ((?:[a-z-]+)(?: [a-z-]+)?)((?: --[a-z-]+(?:[ =][^ ]+)?)*)/g,
     )) {
       const words = m[1].split(" ");

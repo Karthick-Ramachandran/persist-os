@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 
 import { ConfigValidationError } from "../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../core/config/load-config.js";
+import { getStyle } from "../cli/style.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -72,20 +73,24 @@ export async function runTestGate(options: TestGateOptions): Promise<TestGateRes
 }
 
 export function formatTestGateResult(result: TestGateResult): string {
+  const style = getStyle();
+
   if (result.status === "skipped") {
-    return `Persist OS test gate skipped: ${result.reason}.\n`;
+    return `${style.muted(`Persist OS test gate skipped: ${result.reason}.`)}\n`;
   }
 
   if (result.status === "passed") {
     return appendOutput(
-      [`Persist OS test gate passed: ${result.command ?? "(unknown command)"}`],
+      [style.ok(`Persist OS test gate passed: ${result.command ?? "(unknown command)"}`)],
       result,
     );
   }
 
   return appendOutput(
     [
-      `Persist OS test gate failed: ${result.command ?? "(unknown command)"} exited with code ${result.exitCode}.`,
+      style.err(
+        `Persist OS test gate failed: ${result.command ?? "(unknown command)"} exited with code ${result.exitCode}.`,
+      ),
     ],
     result,
   );

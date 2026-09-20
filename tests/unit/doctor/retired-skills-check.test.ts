@@ -32,7 +32,7 @@ describe("retired-skills check", () => {
 
   it("warns with the removal command for a non-catalog skill", async () => {
     const rootDir = await createRoot("retired-present");
-    await writeSkill(rootDir, ".agents/skills", "write-tests");
+    await writeSkill(rootDir, ".agents/skills", "plan-feature");
     await writeSkill(rootDir, ".agents/skills", "old-custom-skill");
 
     const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
@@ -48,10 +48,46 @@ describe("retired-skills check", () => {
     expect(findings[0]?.message).toContain("rm -rf .agents/skills/old-custom-skill");
   });
 
+  it("warns on each of the nine retired catalog ids", async () => {
+    const rootDir = await createRoot("retired-nine");
+    const retired = [
+      "create-prd",
+      "create-adr",
+      "plan-module",
+      "implement-task",
+      "write-tests",
+      "update-module-memory",
+      "completion-report",
+      "capture-mcp-context",
+      "architecture-drift-review",
+    ];
+    for (const name of retired) {
+      await writeSkill(rootDir, ".agents/skills", name);
+    }
+
+    const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
+
+    expect(outcome).toEqual({ id: "retired-skills", status: "evaluated" });
+    expect(findings).toHaveLength(retired.length);
+    for (const name of retired) {
+      expect(findings).toContainEqual(
+        expect.objectContaining({
+          severity: "warning",
+          check: "retired-skills",
+          path: `.agents/skills/${name}/SKILL.md`,
+        }),
+      );
+      expect(
+        findings.find((finding) => finding.path === `.agents/skills/${name}/SKILL.md`)?.message,
+      ).toContain(`rm -rf .agents/skills/${name}`);
+    }
+  });
+
   it("stays quiet when every skill is in the catalog", async () => {
     const rootDir = await createRoot("retired-clean");
-    await writeSkill(rootDir, ".claude/skills", "write-tests");
-    await writeSkill(rootDir, ".agents/skills", "create-adr");
+    await writeSkill(rootDir, ".claude/skills", "plan-feature");
+    await writeSkill(rootDir, ".agents/skills", "security-review");
+    await writeSkill(rootDir, ".agents/skills", "conventions-adherence");
 
     const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
 

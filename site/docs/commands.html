@@ -101,15 +101,22 @@
           </div>
 
           <h2 id="init">persist init</h2>
-          <pre><code>persist init [--ai-tools &lt;list&gt;] [--features] [--modules] [--dry-run] [--force] [--reinit]</code></pre>
+          <pre><code>persist init [--ai-tools &lt;list&gt;] [--features] [--modules] [--yes] [--dry-run] [--force] [--reinit]</code></pre>
           <p>
             Writes the six memory documents and the decision directory under <code>docs/</code>,
             the agent entry points (<code>AGENTS.md</code>, <code>CLAUDE.md</code>, the Cursor
-            rule), twelve agent skills in both <code>.claude/skills/</code> and
+            rule), three agent skills in both <code>.claude/skills/</code> and
             <code>.agents/skills/</code>, the pre-commit and pre-push hooks, a GitHub Actions
             workflow, the Claude SessionStart hook, and <code>.persist/config.json</code>. It works
             in an empty folder. The full file list is in
             <a href="memory.html#structure">Repository memory</a>.
+          </p>
+          <p>
+            On a terminal with no explicit flags it asks four questions, each with a default:
+            which AI tools, whether to track features, whether to track modules, and whether to
+            enable the test gate (the detected command is printed first). Any explicit flag,
+            <code>--yes</code>, or a stdin that is not a terminal skips the questions; a non-TTY
+            run prints a line saying it proceeded with defaults.
           </p>
           <dl class="defs">
             <div>
@@ -119,6 +126,10 @@
                 <code>cursor</code>, <code>generic</code>. Default is claude, codex, cursor.
                 <code>AGENTS.md</code> is always written.
               </dd>
+            </div>
+            <div>
+              <dt><code>--yes</code></dt>
+              <dd>Take every default without prompting. For CI and scripted setup.</dd>
             </div>
             <div>
               <dt><code>--features</code></dt>
@@ -152,6 +163,8 @@
             proposed:
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist init --features</span>
+persist repository memory for AI-assisted software work
+────────────────────────────────────────
 Persist OS init complete.
 Test gate: npm run test:run (saved as testCommand in .persist/config.json).
 <span class="m">  …</span>
@@ -185,7 +198,7 @@ Created:
 
 Next steps:
 - Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
-- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Run persist init to establish neutral repository memory if it does not exist yet.
 - Accept or reject each proposed ADR under docs/adrs/proposed/.</code></pre>
           <p>
             That run was in a Next.js app with <code>tsconfig.json</code> and a
@@ -217,7 +230,7 @@ Created:
 Next steps:
 - Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
 - Then TASKS.md before you implement.
-- Run `persist doctor` to check the memory is complete.</code></pre>
+- Run persist doctor to check the memory is complete.</code></pre>
           <p>
             Without a test command the same run creates only <code>PLAN.md</code> and
             <code>TASKS.md</code>.
@@ -287,7 +300,7 @@ Overwritten:
 Next steps:
 - Fill docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md: Context (what changed), Decision, Alternatives, Consequences.
 - ADR-0001-use-postgresql-for-primary-storage stays in history as superseded; update any memory that still relies on it.
-- Run `persist doctor` — it flags memory that still references the superseded decision.</code></pre>
+- Run persist doctor — it flags memory that still references the superseded decision.</code></pre>
 
           <h2 id="module-create">persist module create</h2>
           <pre><code>persist module create &lt;name&gt; [--dry-run] [--force]</code></pre>
@@ -336,7 +349,7 @@ Persist OS test gate skipped: the gate is off — set testCommand in .persist/co
           <pre><code>persist mcp add &lt;server&gt; [--dry-run] [--force]</code></pre>
           <p>
             Writes proposed, offline memory for an MCP server: <code>docs/ai/mcp/&lt;server&gt;.md</code>
-            plus a proposed adoption ADR, and installs the <code>capture-mcp-context</code> skill
+            plus a proposed adoption ADR, and a <code>capture-mcp-context</code> skill skeleton
             that tells the agent to record durable context from that server into the file. Persist
             OS never connects to the server; the agent, which already has the MCP connection, does
             the recording, and a human reviews it.
@@ -348,12 +361,11 @@ Capture skill installed so agents record durable MCP context into this memory.
 Planned creates:
 - docs/ai/mcp/figma.md
 - docs/adrs/proposed/ADR-PROPOSED-mcp-figma.md
-Skipped:
 - .claude/skills/capture-mcp-context/SKILL.md
 - .agents/skills/capture-mcp-context/SKILL.md</code></pre>
           <p>
-            The skill files were skipped here because <code>persist init</code> had already written
-            them; nothing is overwritten without <code>--force</code>.
+            Files that already exist are skipped and listed as such; nothing is overwritten without
+            <code>--force</code>.
           </p>
 
           <h2 id="skill-create">persist skill create</h2>
@@ -361,26 +373,22 @@ Skipped:
           <p>
             Writes a <code>SKILL.md</code> to both <code>.claude/skills/&lt;name&gt;/</code> and
             <code>.agents/skills/&lt;name&gt;/</code>. A catalog name gets the built-in content; any
-            other name gets a valid skeleton to fill in. Generated skills are instructions only and
-            contain no scripts.
+            other name gets a valid skeleton to fill in. A catalog skill may ship an executable
+            <code>scripts/</code> directory (<code>security-review</code> ships a read-only secret
+            scan); a skill always works with its scripts deleted.
           </p>
 
           <h2 id="skill-list">persist skill list</h2>
           <pre><code><span class="p">$</span> <span class="c">persist skill list</span>
 Persist OS skill catalog
 
-- create-prd: Create PRD
 - plan-feature: Plan Feature
-- plan-module: Plan Module
-- create-adr: Create ADR
-- implement-task: Implement Task
-- write-tests: Write Tests
 - security-review: Security Review
-- architecture-drift-review: Architecture Drift Review
-- update-module-memory: Update Module Memory
-- completion-report: Completion Report
-- conventions-adherence: Conventions Adherence
-- capture-mcp-context: Capture MCP Context</code></pre>
+- conventions-adherence: Conventions Adherence</code></pre>
+          <p>
+            Skills from earlier releases that are no longer in the catalog are not deleted on
+            upgrade; <code>persist doctor</code> names each one and prints the command to remove it.
+          </p>
         </div>
 
         <nav class="docs-pager" aria-label="Previous and next pages">

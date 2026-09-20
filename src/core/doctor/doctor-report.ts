@@ -1,3 +1,4 @@
+import { getStyle, type StyleHelpers } from "../../cli/style.js";
 import type { DoctorFinding, DoctorReport } from "./doctor-check.js";
 
 const severityOrder = ["error", "warning", "info"] as const;
@@ -32,7 +33,13 @@ export function formatDoctorJsonReport(report: DoctorReport): string {
 }
 
 export function formatDoctorReport(report: DoctorReport): string {
-  const lines = ["Doctor Report", ""];
+  const style = getStyle();
+  const lines = [style.heading("Doctor Report"), ""];
+  const sectionHead = {
+    error: style.err("ERROR"),
+    warning: style.warn("WARNING"),
+    info: style.muted("INFO"),
+  } as const;
 
   for (const severity of severityOrder) {
     const findings = report.findings.filter((finding) => finding.severity === severity);
@@ -41,7 +48,7 @@ export function formatDoctorReport(report: DoctorReport): string {
       continue;
     }
 
-    lines.push(severity.toUpperCase());
+    lines.push(sectionHead[severity]);
     for (const finding of findings) {
       lines.push(`- ${formatFinding(finding)}`);
     }
@@ -49,7 +56,7 @@ export function formatDoctorReport(report: DoctorReport): string {
   }
 
   if (report.findings.length === 0) {
-    lines.push("INFO");
+    lines.push(style.muted("INFO"));
     lines.push("- No findings.");
     lines.push("");
   }
@@ -57,14 +64,14 @@ export function formatDoctorReport(report: DoctorReport): string {
   const notEvaluated = report.checks.filter((check) => check.status === "not-evaluated");
 
   if (notEvaluated.length > 0) {
-    lines.push("NOT EVALUATED");
+    lines.push(style.muted("NOT EVALUATED"));
     for (const check of notEvaluated) {
       lines.push(`- ${check.id}: ${check.reason ?? "no reason given"}`);
     }
     lines.push("");
   }
 
-  lines.push(`Result: ${formatResult(report)}`);
+  lines.push(`Result: ${formatResult(report, style)}`);
 
   return `${lines.join("\n")}\n`;
 }
@@ -89,6 +96,14 @@ export function getDoctorStatus(report: DoctorReport): "passed" | "warnings" | "
   return "passed";
 }
 
-function formatResult(report: DoctorReport): string {
-  return getDoctorStatus(report).toUpperCase();
+function formatResult(report: DoctorReport, style: StyleHelpers): string {
+  const status = getDoctorStatus(report);
+
+  if (status === "passed") {
+    return style.ok("PASSED");
+  }
+  if (status === "warnings") {
+    return style.warn("WARNINGS");
+  }
+  return style.err("FAILED");
 }

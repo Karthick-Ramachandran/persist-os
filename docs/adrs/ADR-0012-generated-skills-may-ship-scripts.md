@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -74,6 +74,10 @@ tests that fail loudly rather than documentation that asks nicely.
 `persist adr supersede skill-generation-portable-and-scriptless "Generated Skills May Ship Scripts"`
 and removing the _"Do not add scripts inside generated skills for MVP"_ line from `CLAUDE.md` and
 `AGENTS.md`. Until both happen, the repository contradicts itself.
+
+## Supersedes
+
+- ADR-0004-skill-generation-portable-and-scriptless
 
 ## Related Documents
 

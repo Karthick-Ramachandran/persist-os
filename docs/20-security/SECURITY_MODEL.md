@@ -56,3 +56,18 @@ MVP must use:
 
 AI agents may draft plans, reviews, tests, and docs. Humans own architecture decisions, risk
 acceptance, and releases.
+
+## Executable Generated Output
+
+Generated skills may ship a `scripts/` directory (ADR-0012). The same local-first
+promise applies to those executables:
+
+- Scripts are opt-in per skill, never per repository: nothing executable is written
+  unless the skill that needs it is generated, and `persist init` names every
+  executable file it wrote.
+- Scripts are read-only and local: no network calls, no telemetry, no AI API calls,
+  and no writes outside the repository root — verified by test, not by convention.
+- A skill must work with its `scripts/` directory deleted: the `SKILL.md` workflow
+  states what each script does, so deletion degrades to the prose path.
+- Scripts travel through the same safe, root-confined, never-overwrite-by-default
+  write pipeline as every other generated file.

@@ -1,6 +1,6 @@
 {
-  "version": "0.6.2",
-  "templateVersion": "0.6.2",
+  "version": "1.0.0",
+  "templateVersion": "1.0.0",
   "aiTools": ["claude", "codex", "cursor"],
   "docsDir": "docs",
   "featuresDir": "docs/40-features",

@@ -341,10 +341,10 @@ function collectDependencies(pkg: Record<string, unknown> | null): Record<string
     return {};
   }
 
-  const dependencies = isRecord(pkg.dependencies) ? pkg.dependencies : {};
-  const devDependencies = isRecord(pkg.devDependencies) ? pkg.devDependencies : {};
-
-  return { ...dependencies, ...devDependencies };
+  // Runtime dependencies only. A test-only package must not produce a framework signal: a library
+  // that tests against Express is not an Express app, and adopt's report is the first thing a
+  // maintainer reads.
+  return isRecord(pkg.dependencies) ? pkg.dependencies : {};
 }
 
 async function readJson(

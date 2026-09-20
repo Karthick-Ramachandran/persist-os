@@ -1,16 +1,7 @@
 $ persist skill list
 Persist OS skill catalog
 
-- create-prd: Create PRD
 - plan-feature: Plan Feature
-- plan-module: Plan Module
-- create-adr: Create ADR
-- implement-task: Implement Task
-- write-tests: Write Tests
 - security-review: Security Review
-- architecture-drift-review: Architecture Drift Review
-- update-module-memory: Update Module Memory
-- completion-report: Completion Report
 - conventions-adherence: Conventions Adherence
-- capture-mcp-context: Capture MCP Context
 [exit 0]

@@ -53,8 +53,10 @@ describe("mcp command", () => {
       path.join(rootDir, ".claude/skills/capture-mcp-context/SKILL.md"),
       "utf8",
     );
+    // capture-mcp-context is retired from the catalog (ADR-0008): mcp add still
+    // installs the file, now as a skeleton the agent fills in.
     expect(skill).toContain("name: capture-mcp-context");
-    expect(skill).toContain("Captured Context");
+    expect(skill).toContain("Use when");
   });
 
   it("writes nothing on dry run", async () => {

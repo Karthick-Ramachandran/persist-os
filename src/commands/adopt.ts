@@ -6,6 +6,7 @@ import { inspectRepo, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { createWritePlan, type WritePlan } from "../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
 import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
+import { getStyle } from "../cli/style.js";
 
 export type AdoptOptions = {
   rootDir: string;
@@ -66,7 +67,9 @@ export async function adoptProject(options: AdoptOptions): Promise<AdoptResult> 
 
 export function formatAdoptResult(result: AdoptResult): string {
   const lines = [
-    result.dryRun ? "Persist OS adopt dry run complete." : "Persist OS adopt complete.",
+    getStyle().heading(
+      result.dryRun ? "Persist OS adopt dry run complete." : "Persist OS adopt complete.",
+    ),
     "Inferred signals are proposed and require human review.",
     `Languages: ${formatList(result.signals.languages)}`,
     `Package manager: ${result.signals.packageManager ?? "none detected"}`,

@@ -10,6 +10,6 @@ Created:
 
 Next steps:
 - Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
-- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Run persist init to establish neutral repository memory if it does not exist yet.
 - Accept or reject each proposed ADR under docs/adrs/proposed/.
 [exit 0]

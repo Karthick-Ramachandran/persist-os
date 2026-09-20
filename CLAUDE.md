@@ -37,7 +37,6 @@ Read these first before non-trivial work:
   without reason, or claim completion without evidence.
 - Do not add network calls, telemetry, cloud behavior, AI API calls, runtime MCP, or generated
   production app code.
-- Do not add scripts inside generated skills for MVP.
 - Never overwrite existing files by default in future implementation work.
 - Treat chat history and MCP data as context, not source of truth.
 

@@ -23,10 +23,17 @@ Package binary behavior is covered by binary integration tests.
 
 Initialize neutral repository memory.
 
+On a TTY with no explicit flags, init asks four questions and writes the minimum consistent with
+the answers: which AI tools (`claude`, `codex`, `cursor`, `generic`), whether to track features,
+whether to track modules, and whether to enable the test gate (the detected test command is shown
+first). Explicit flags, `--yes`, or a non-TTY stdin skip the questions; a non-TTY run says so.
+
 Options:
 
+- `--ai-tools <list>`: comma-separated AI tools to generate files for.
 - `--features`: generate opt-in feature workflow scaffolding.
 - `--modules`: generate opt-in module workflow scaffolding.
+- `--yes`: take every default without prompting.
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 - `--reinit`: required with `--force` to overwrite an existing Persist OS installation (a directory
@@ -52,7 +59,8 @@ Options:
 
 Generate a portable AI agent skill as `SKILL.md` for both Claude Code (`.claude/skills/`) and the
 portable Agent Skills target (`.agents/skills/`). Known names use the built-in catalog; unknown
-names produce a valid skeleton. Generated skills contain no scripts.
+names produce a valid skeleton. Catalog skills may ship an executable `scripts/`
+directory; a skill always works with its scripts deleted.
 
 Options:
 
@@ -68,8 +76,8 @@ List the built-in catalog skills.
 Generate offline, proposed memory for an MCP server (for example `figma`) as
 `docs/ai/mcp/<server>.md` plus a proposed adoption ADR. Persist OS never connects to the MCP server
 or makes network calls; the agent records durable MCP-derived context into the generated memory for
-human review. It also installs a `capture-mcp-context` agent skill that prompts the agent to record
-that context.
+human review. It also installs a `capture-mcp-context` skill skeleton for the agent to fill in
+and use when recording that context.
 
 Options:
 

@@ -18,11 +18,25 @@ export function generateSkillFiles(name: string): GenerateSkillResult {
   const skill = catalogSkill ?? skeletonSkill(name);
   const content = renderSkill(skill);
 
+  const files: WriteFileInput[] = SKILL_TARGETS.map((target) => ({
+    path: `${target}/${name}/SKILL.md`,
+    content,
+  }));
+
+  // Scripts ride the same safe write pipeline as everything else: root-confined and
+  // never-overwrite-by-default, with the executable bit carried on the plan entry.
+  for (const target of SKILL_TARGETS) {
+    for (const script of skill.scripts ?? []) {
+      files.push({
+        path: `${target}/${name}/${script.path}`,
+        content: script.content,
+        executable: script.executable,
+      });
+    }
+  }
+
   return {
-    files: SKILL_TARGETS.map((target) => ({
-      path: `${target}/${name}/SKILL.md`,
-      content,
-    })),
+    files,
     fromCatalog: catalogSkill !== undefined,
   };
 }
@@ -32,16 +46,12 @@ function skeletonSkill(name: string): SkillDefinition {
     name,
     title: titleize(name),
     description: `Describe what the ${name} skill does and when to use it. Use when ... (replace this with concrete trigger keywords).`,
-    purpose: ["Describe the single job this skill performs."],
-    inputs: ["List the inputs this skill needs."],
-    requiredReading: ["List the source-of-truth docs this skill must read."],
-    outputFiles: ["List the files this skill produces or updates."],
-    process: ["Describe the steps, one job, routing to source-of-truth docs."],
-    stopConditions: [
-      "A request conflicts with accepted repository memory or engineering standards.",
-      "The work would add network, telemetry, MCP runtime, AI API, or other accepted non-goals.",
-    ],
-    qualityBar: ["State how to tell the skill did its job well."],
+    goal: "Describe the single job this skill performs.",
+    inputs: ["List the inputs this skill needs, if any are non-obvious."],
+    workflow: ["Describe the steps: one job, routing to source-of-truth docs."],
+    verification: ["State how to tell the skill did its job well."],
+    resources: ["List the source-of-truth docs this skill reads on demand."],
+    output: ["List what the skill hands back."],
   };
 }
 

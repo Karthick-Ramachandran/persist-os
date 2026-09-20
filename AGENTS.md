@@ -59,6 +59,9 @@ standards, stop and report the conflict.
 Never commit secrets, hardcode credentials, bypass auth, add dependencies without review, skip
 required migrations, skip tests without reason, or claim completion without evidence.
 
+Stop when tests cannot be designed from the available requirements, and escalate missing test
+evidence for risky changes.
+
 ## Non-Negotiable MVP Constraints
 
 - No runtime MCP.
@@ -67,7 +70,6 @@ required migrations, skip tests without reason, or claim completion without evid
 - No telemetry.
 - No cloud behavior.
 - No tool execution from generated skills.
-- No scripts inside skills.
 - No AI API calls.
 - No generated production app code.
 

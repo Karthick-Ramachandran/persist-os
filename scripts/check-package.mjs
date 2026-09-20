@@ -10,21 +10,9 @@ const [packResult] = JSON.parse(output);
 const files = packResult.files.map((file) => file.path).sort();
 const fileSet = new Set(files);
 
-const requiredFiles = [
-  "LICENSE",
-  "README.md",
-  "dist/cli.js",
-  "dist/index.js",
-  "examples/generated-generic/README.md",
-  "examples/generated-nextjs/README.md",
-  "examples/generated-ios-swift/README.md",
-  "examples/generated-flutter/README.md",
-  "examples/generated-laravel-react/README.md",
-  "examples/generated-laravel-vue/README.md",
-  "examples/generated-laravel-api/README.md",
-  "package.json",
-];
+const requiredFiles = ["LICENSE", "README.md", "dist/cli.js", "dist/index.js", "package.json"];
 
+// examples/ holds preset-era generated output kept for history; it is not part of the package.
 const blockedPrefixes = [
   ".github/",
   ".persist/",
@@ -32,7 +20,10 @@ const blockedPrefixes = [
   ".claude/",
   "coverage/",
   "docs/",
+  "examples/",
   "node_modules/",
+  "scripts/",
+  "site/",
   "src/",
   "tests/",
 ];

@@ -1,67 +1,48 @@
 ---
 name: plan-feature
-description:
-  "Plan a feature from approved requirements by producing implementation tasks, architecture impact,
-  test plan, review expectations, and completion evidence. Use when turning an approved PRD into a
-  plan, tasks, and a test plan."
+description: "Turn approved requirements into an implementation plan with tasks and a test plan. Use when planning a substantial feature from approved requirements before any implementation begins. Skip for small local changes (implement directly with focused tests), security reviews, and convention checks."
 ---
 
-# Skill: Plan Feature
+# Goal
 
-## Purpose
-
-Turn product intent into a scoped engineering plan that an implementation agent can follow safely.
+Turn approved requirements into an ordered implementation plan without writing implementation code.
 
 ## Inputs
 
-- Feature PRD.
+- Approved requirements or feature PRD.
 - Acceptance criteria.
-- Relevant module or architecture docs.
 - Known constraints or release target.
 
-## Required Reading
+## Workflow
 
-- `docs/10-architecture/ARCHITECTURE.md`
-- `docs/10-architecture/FILE_WRITE_POLICY.md`
-- `docs/20-security/SECURITY_MODEL.md`
-- `docs/50-quality/QUALITY_GATES.md`
-- `docs/60-engineering/ENGINEERING_STANDARDS.md`
-- Relevant feature docs under `docs/40-features/`
-- Relevant module docs under `docs/30-modules/`
-- Relevant ADRs under `docs/adrs/`
+1. Restate the objective and acceptance criteria in one paragraph.
+2. Identify the affected modules, docs, templates, and tests.
+3. Record architecture impact and whether a new ADR is needed (propose it; never accept it yourself).
+4. Break the work into ordered tasks, each with explicit completion evidence.
+5. Derive the test plan from acceptance criteria, risks, and likely regressions.
+6. Stop before implementation and hand back the PLAN, TASKS, and TEST_PLAN paths.
 
-## Output Files
+## Decisions
 
-- `docs/40-features/<feature>/PLAN.md`
-- `docs/40-features/<feature>/TASKS.md`
-- `docs/40-features/<feature>/ARCHITECTURE_IMPACT.md`
-- `docs/40-features/<feature>/TEST_PLAN.md`
+- If requirements are missing or contradictory → stop and ask for them.
+- If a task would change accepted non-goals → stop and ask for approval.
+- If the request is a small local fix → skip this skill and implement directly with focused tests.
 
-## Process
+## Verification
 
-1. Restate the feature objective and acceptance criteria.
-2. Identify modules, docs, templates, and tests affected.
-3. Document architecture impact and ADR needs.
-4. Break work into ordered tasks with clear completion evidence.
-5. Define tests from requirements, risk, security invariants, and regressions.
-6. For module requests, treat the module as a mini product and create feature delivery docs before
-   implementation tasks.
+- PLAN.md states the objective, scope, and architecture impact.
+- Every task maps to an acceptance criterion or a stated risk.
+- No implementation code was written.
 
-## Stop Conditions
+## Resources
 
-Stop and request human decision if:
+- For completion evidence rules → docs/50-quality/QUALITY_GATES.md
+- For engineering rules → docs/60-engineering/ENGINEERING_STANDARDS.md
+- For sensitive scope → docs/20-security/SECURITY_MODEL.md
+- For prior decisions → docs/adrs/
 
-- Requirements are missing or contradictory.
-- Architecture impact cannot be determined.
-- The plan conflicts with engineering standards.
-- A task requires changing accepted non-goals.
-- A module request tries to start implementation before PRD, acceptance, architecture impact, test
-  plan, and tasks exist.
+## Output
 
-## Quality Bar
+- Paths of the PLAN.md, TASKS.md, and TEST_PLAN.md files written.
+- One-paragraph summary of scope and the recommended first task.
 
-- Tasks are ordered and independently reviewable.
-- Tests map to acceptance criteria and risks.
-- Architecture impact is explicit.
-- Engineering standards are accounted for in tasks and completion evidence.
-- The plan does not include implementation code when only planning is requested.

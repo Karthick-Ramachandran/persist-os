@@ -85,7 +85,20 @@ Depends on phase 3 — skills reference documents, so the document shape settles
 Four questions, plus a non-interactive path so CI and scripted setup keep working. Comes after
 phases 1–5 because init can only ask about capabilities that exist.
 
-### 7. The fence
+### 7. The fence — moved to 1.1
+
+**Not in 1.0.0.** ADR-0010 stays Proposed and nothing in `src/` implements it.
+
+ADR-0011's Decision defines 1.0.0 as CLI-surface and config-schema stability and does not name the
+fence as a shipping condition; it appears only in that ADR's Context. ADR-0011 also permits adding
+optional config fields within 1.x, so a fence toggle and `FENCES.md` can arrive in 1.1 without
+breaking the contract.
+
+The fence is also the worst candidate for a release deadline: the risk section below calls it the
+one feature whose quality depends on agent behaviour rather than a deterministic check, and rushing
+the feature that cannot be gated is how it ships badly.
+
+What 1.1 still has to build, unchanged from the original plan:
 
 - `FENCES.md`, empty on creation
 - SessionStart injection, inside the existing 24KB context budget
@@ -94,7 +107,10 @@ phases 1–5 because init can only ask about capabilities that exist.
 - `chestertons-fence` skill
 - Non-logic exclusion list, visible and overridable
 
-Last because it uses the skill infrastructure from phase 4 and the hook split from phase 5.
+Last because it uses the skill infrastructure from phase 4 and the hook split from phase 5. One
+design question is still open and must be settled before it is built: ADR-0007 lists `FENCES.md` in
+the surviving memory set, but no generator emits it and nothing defines where it lives. ADR-0010
+should have specified the path and did not.
 
 ### 8. 1.0 readiness
 
@@ -128,9 +144,9 @@ honest 0.7.
 staleness, context budget, conventions and lessons memory, right-size discipline, doctor `--json`.
 It should be rewritten against this plan or deleted.
 
-Items from it still unbuilt and **not** in 1.0, deliberately: `persist upgrade`, doctor baseline for
-legacy adoption, `persist task` and tracker integration, organization memory. `persist upgrade` is
-the most valuable of these and is the natural 1.1.
+Items still unbuilt and **not** in 1.0, deliberately: the Chesterton fence (phase 7 above),
+`persist upgrade`, doctor baseline for legacy adoption, `persist task` and tracker integration,
+organization memory. The fence and `persist upgrade` are the two worth doing first in 1.1.
 
 ## Related documents
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted — superseded by ADR-0012-generated-skills-may-ship-scripts
 
 ## Context
 

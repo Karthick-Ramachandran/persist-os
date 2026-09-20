@@ -69,6 +69,7 @@ export function createCliProgram(
     .option("--dry-run", "Show planned writes without writing files.")
     .option("--force", "Overwrite existing files explicitly.")
     .option("--reinit", "Allow --force to overwrite an existing Persist OS installation.")
+    .option("--yes", "Take every default without prompting.")
     .action(
       async (options: {
         aiTools?: string;
@@ -77,6 +78,7 @@ export function createCliProgram(
         dryRun?: boolean;
         force?: boolean;
         reinit?: boolean;
+        yes?: boolean;
       }) => {
         const aiTools =
           options.aiTools === undefined
@@ -98,6 +100,7 @@ export function createCliProgram(
           dryRun: options.dryRun,
           force: options.force,
           reinit: options.reinit,
+          yes: options.yes,
         });
 
         stdout.write(formatInitResult(result));

@@ -8,5 +8,5 @@ Created:
 Next steps:
 - Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
 - Then TASKS.md before you implement.
-- Run `persist doctor` to check the memory is complete.
+- Run persist doctor to check the memory is complete.
 [exit 0]

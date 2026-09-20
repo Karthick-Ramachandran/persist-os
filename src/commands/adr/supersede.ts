@@ -9,6 +9,7 @@ import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-
 import { generateSupersedingAdr } from "../../core/generator/generate-adr.js";
 import { getNextAdrNumber } from "../../core/naming/adr-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
+import { getStyle } from "../../cli/style.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 
 export type AdrSupersedeOptions = {
@@ -161,8 +162,8 @@ async function write(
 export function formatAdrSupersedeResult(result: AdrSupersedeResult): string {
   const lines = [
     result.dryRun
-      ? "Persist OS ADR supersede dry run complete."
-      : "Persist OS ADR supersede complete.",
+      ? getStyle().heading("Persist OS ADR supersede dry run complete.")
+      : getStyle().heading("Persist OS ADR supersede complete."),
     `Superseded: ${result.oldPath} (now marked superseded by ${result.newRef})`,
     `New decision: ${result.newPath}`,
   ];
