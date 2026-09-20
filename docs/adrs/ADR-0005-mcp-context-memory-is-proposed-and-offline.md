@@ -47,6 +47,7 @@ make network calls, or treat MCP data as architectural truth (`docs/ai/MCP_STRAT
 
 ## Related Documents
 
+- Security: `docs/20-security/SECURITY_MODEL.md`, `docs/20-security/THREAT_MODEL.md`
 - `docs/40-features/F-024-mcp-context-memory/`
 - `docs/ai/MCP_STRATEGY.md`
 - `docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md`
