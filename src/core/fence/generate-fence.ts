@@ -19,6 +19,18 @@ no entry at all.
 Add an entry with \`persist fence add <path> --why "<reason>"\`.
 `;
 
+/** A fence section heading: `` ## `path` `` with an optional `:symbol` suffix. */
+export const FENCE_HEADING_PATTERN = /^## `([^`]+)`/u;
+
+/**
+ * The file part of a fence key. A fence may name a symbol — `src/billing.ts:writeLedger` — but a
+ * diff is per-file and so is existence, so both the matcher and the rot check work on the file.
+ */
+export function fenceFileKey(fencePath: string): string {
+  const separator = fencePath.indexOf(":");
+  return separator === -1 ? fencePath : fencePath.slice(0, separator);
+}
+
 export type FenceEntry = {
   /** Repo-relative path, optionally suffixed with a symbol or line (\`src/a.ts:writeLedger\`). */
   path: string;

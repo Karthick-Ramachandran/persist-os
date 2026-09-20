@@ -8,6 +8,60 @@ import { checkCodeReferences } from "../../../src/core/doctor/checks/code-refere
 import { createTempRoot, removeTempRoot } from "../../helpers/init-test-helpers.js";
 
 describe("doctor code-reference checks", () => {
+  it("flags a fence whose file no longer exists", async () => {
+    // A fence is current-state memory. A renamed or deleted file leaves an entry pointing at
+    // nothing — inert, but still loaded into every session by the SessionStart hook.
+    const rootDir = await createRoot("coderef-dead-fence");
+    await mkdir(path.join(rootDir, "docs/60-engineering"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/FENCES.md"),
+      "# Fences\n\n## `src/gone.ts`\n\nWhy: Deliberate.\n",
+      "utf8",
+    );
+
+    const { findings } = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "code-reference",
+        message: expect.stringContaining("src/gone.ts"),
+      }),
+    );
+  });
+
+  it("stays quiet on a fence whose file still exists", async () => {
+    const rootDir = await createRoot("coderef-live-fence");
+    await mkdir(path.join(rootDir, "src"), { recursive: true });
+    await writeFile(path.join(rootDir, "src/here.ts"), "export const x = 1;\n", "utf8");
+    await mkdir(path.join(rootDir, "docs/60-engineering"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/FENCES.md"),
+      "# Fences\n\n## `src/here.ts`\n\nWhy: Deliberate.\n",
+      "utf8",
+    );
+
+    const { findings } = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("resolves a symbol-suffixed fence to its file before checking existence", async () => {
+    // The shared backticked-path pattern does not admit a `:symbol` suffix, so fences are read
+    // from their headings instead. Without that, a suffixed fence would never be checked at all.
+    const rootDir = await createRoot("coderef-suffixed-fence");
+    await mkdir(path.join(rootDir, "docs/60-engineering"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/FENCES.md"),
+      "# Fences\n\n## `src/gone.ts:writeLedger`\n\nWhy: Deliberate.\n",
+      "utf8",
+    );
+
+    const { findings } = await checkCodeReferences({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toHaveLength(1);
+  });
+
   const roots: string[] = [];
 
   async function createRoot(prefix: string): Promise<string> {

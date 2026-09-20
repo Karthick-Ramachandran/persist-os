@@ -2,12 +2,14 @@ import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { FENCE_HEADING_PATTERN, fenceFileKey } from "../../fence/generate-fence.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 
 const CONVENTIONS_DOC = "60-engineering/CONVENTIONS.md";
+const FENCES_DOC = "60-engineering/FENCES.md";
 const COMPLETION_REPORT = "COMPLETION_REPORT.md";
 
 // Only current-state docs are checked. A feature folder containing a completion report is
@@ -51,8 +53,16 @@ export async function checkCodeReferences(
   const adrFiles = adrEntries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
   const conventionsPath = path.posix.join(context.config.docsDir, CONVENTIONS_DOC);
   const conventions = await readFileIfExists(context.rootDir, conventionsPath);
+  const fencesPath = path.posix.join(context.config.docsDir, FENCES_DOC);
+  const fences = await readFileIfExists(context.rootDir, fencesPath);
 
-  if (!hasFeatures && !hasModules && adrFiles.length === 0 && conventions === undefined) {
+  if (
+    !hasFeatures &&
+    !hasModules &&
+    adrFiles.length === 0 &&
+    conventions === undefined &&
+    fences === undefined
+  ) {
     return notEvaluated(
       "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to scan for code references",
     );
@@ -67,6 +77,10 @@ export async function checkCodeReferences(
 
   if (conventions !== undefined) {
     findings.push(...(await checkDoc(context.rootDir, conventionsPath)));
+  }
+
+  if (fences !== undefined) {
+    findings.push(...(await checkFences(context.rootDir, fencesPath, fences)));
   }
 
   for (const folder of featureEntries) {
@@ -105,6 +119,48 @@ async function isCompletedFeature(rootDir: string, featureDir: string): Promise<
   return (
     (await readFileIfExists(rootDir, path.posix.join(featureDir, COMPLETION_REPORT))) !== undefined
   );
+}
+
+/**
+ * Fences whose path no longer exists. A fence is current-state memory, so a renamed or deleted
+ * file leaves an entry pointing at nothing — inert, but loaded into every session by the
+ * SessionStart hook, which is the stale context the index exists to avoid.
+ *
+ * Headings are read directly rather than through the shared backticked-path pattern, because a
+ * fence may carry a `:symbol` suffix that the pattern does not admit.
+ */
+async function checkFences(
+  rootDir: string,
+  fencesPath: string,
+  content: string,
+): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const seen = new Set<string>();
+
+  for (const line of content.split("\n")) {
+    const heading = FENCE_HEADING_PATTERN.exec(line);
+    if (heading === null) {
+      continue;
+    }
+
+    const fenced = (heading[1] ?? "").trim();
+    const file = fenceFileKey(fenced);
+    if (file === "" || seen.has(file)) {
+      continue;
+    }
+    seen.add(file);
+
+    if (!existsSync(path.join(rootDir, file))) {
+      findings.push({
+        severity: "warning",
+        check: "code-reference",
+        message: `Fence names ${fenced}, which no longer exists — the reason it records has nowhere to apply. Remove the entry, or repoint it if the file moved.`,
+        path: fencesPath,
+      });
+    }
+  }
+
+  return findings;
 }
 
 function notEvaluated(reason: string): CodeReferenceCheckResult {
