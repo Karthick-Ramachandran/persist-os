@@ -58,6 +58,75 @@ your-repo/
 
 Six documents and a decision log. Nothing else is required.
 
+<details>
+<summary><strong>Adopt an existing repository</strong> — it proposes, you decide</summary>
+
+```console
+$ persist adopt
+Persist OS adopt complete.
+Inferred signals are proposed and require human review.
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.
+```
+
+Signals come from manifests and lockfiles, runtime dependencies only. Nothing it writes is accepted
+repository memory until a human says so.
+
+</details>
+
+<details>
+<summary><strong>Record a decision</strong> — proposed, then accepted</summary>
+
+```console
+$ persist adr create "Use PostgreSQL for primary storage"
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Open it and fill: Context, Decision, Alternatives, Consequences.
+
+$ persist adr accept use-postgresql-for-primary-storage
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+- It is now repository source of truth. Other memory can cite it.
+```
+
+Generating a decision does not accept it. Changed your mind later? `persist adr supersede` records
+the replacement and keeps the trail.
+
+</details>
+
+<details>
+<summary><strong>Check for drift</strong> — warnings print, only errors block</summary>
+
+```console
+$ persist doctor
+Doctor Report
+
+WARNING
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Conventions canonical-primitives section is still an unfilled template.
+  (docs/60-engineering/CONVENTIONS.md)
+
+Result: WARNINGS
+```
+
+```txt
+Exit codes:  0 = healthy   1 = warnings only   2 = errors
+```
+
+The generated pre-commit hook fails on errors. Warnings print and the commit proceeds, so the two
+severities mean different things.
+
+</details>
+
 ---
 
 AI can write code fast, but its context is temporary — it forgets decisions, compacts conversations,
