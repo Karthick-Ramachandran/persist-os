@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { FeedOnPrompt } from "../helpers/fake-prompt.js";
 import {
   createTempRoot,
   listRelativeFiles,
@@ -12,6 +13,16 @@ import {
   runInitCommand,
 } from "../helpers/init-test-helpers.js";
 import type { PersistConfig } from "../../src/core/config/config-schema.js";
+import { initProject } from "../../src/commands/init.js";
+import { stripAnsi } from "../../src/cli/style.js";
+
+const feeds: FeedOnPrompt[] = [];
+
+function feedFor(lines: string[]): FeedOnPrompt {
+  const feed = new FeedOnPrompt(lines);
+  feeds.push(feed);
+  return feed;
+}
 
 describe("init command", () => {
   const roots: string[] = [];
@@ -24,6 +35,9 @@ describe("init command", () => {
 
   afterEach(async () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
+    for (const feed of feeds.splice(0)) {
+      feed.destroyInput();
+    }
   });
 
   it("creates config and repository memory in an empty folder", async () => {
@@ -42,6 +56,17 @@ describe("init command", () => {
     expect(await readGeneratedFile(rootDir, "docs/00-product/PRODUCT.md")).toContain(
       "Describe what this repository is building",
     );
+  });
+
+  it("names every executable file it wrote", async () => {
+    const rootDir = await createRoot("init-executables");
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Executable files written:");
+    expect(result.stdout).toContain(".persist/hooks/pre-commit");
+    expect(result.stdout).toContain(".persist/hooks/pre-push");
+    expect(result.stdout).toContain("security-review/scripts/scan-secrets.sh");
   });
 
   it("works in a non-Git directory", async () => {
@@ -184,5 +209,151 @@ describe("init command", () => {
     expect(await readGeneratedFile(rootDir, ".persist/config.json")).toContain(
       '"testCommand": null',
     );
+  });
+
+  it("takes every default without prompting on --yes", async () => {
+    const rootDir = await createRoot("init-yes");
+
+    const result = await runInitCommand(rootDir, ["--yes"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain("Which AI tools?");
+    expect(result.stdout).not.toContain("Track features?");
+    expect(result.stdout).toContain("Persist OS init complete.");
+  });
+
+  it("prompts for nothing when flags are given", async () => {
+    const rootDir = await createRoot("init-flags");
+
+    const result = await runInitCommand(rootDir, ["--ai-tools", "codex", "--features"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain("Which AI tools?");
+    expect(result.stdout).not.toContain("Track features?");
+    expect(result.stdout).not.toContain("Track modules?");
+    expect(await listRelativeFiles(rootDir)).toContain("docs/40-features/README.md");
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/30-modules/README.md");
+  });
+
+  it("says so when non-TTY stdin takes the defaults", async () => {
+    const rootDir = await createRoot("init-nontty");
+
+    const result = await runInitCommand(rootDir);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("stdin is not a TTY");
+    expect(result.stdout).toContain("Persist OS init complete.");
+  });
+
+  it("writes the config implied by interactive answers", async () => {
+    const rootDir = await createRoot("init-answers");
+    const feed = feedFor(["codex", "y", "n", "n"]);
+
+    const result = await initProject({
+      rootDir,
+      stdinTTY: true,
+      promptStreams: { input: feed.input, output: feed },
+    });
+
+    expect(feed.written()).toContain("Which AI tools?");
+    expect(feed.written()).toContain("[1/4]");
+    expect(feed.written()).toContain("Track features?");
+    expect(feed.written()).toContain("Track modules?");
+
+    const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
+    expect(config.aiTools).toEqual(["codex"]);
+    expect(config.testCommand).toBeNull();
+    expect(result.testCommand).toBeNull();
+
+    const files = await listRelativeFiles(rootDir);
+    expect(files).toContain("docs/40-features/README.md");
+    expect(files).not.toContain("docs/30-modules/README.md");
+  });
+
+  it("still asks on --dry-run without writing anything", async () => {
+    const rootDir = await createRoot("init-dryrun-asks");
+    const feed = feedFor(["", "n", "n", "n"]);
+
+    const result = await initProject({
+      rootDir,
+      dryRun: true,
+      stdinTTY: true,
+      promptStreams: { input: feed.input, output: feed },
+    });
+
+    expect(feed.written()).toContain("Which AI tools?");
+    expect(result.dryRun).toBe(true);
+    expect(await listRelativeFiles(rootDir)).toEqual([]);
+  });
+
+  it("opens with the product masthead", async () => {
+    const rootDir = await createRoot("init-masthead");
+
+    const result = await runInitCommand(rootDir, ["--yes"]);
+
+    expect(
+      result.stdout.startsWith("persist repository memory for AI-assisted software work\n"),
+    ).toBe(true);
+    expect(result.stdout).toContain("─".repeat(40));
+  });
+
+  it("emits zero escape codes with NO_COLOR set", async () => {
+    const rootDir = await createRoot("init-nocolor");
+    process.env.NO_COLOR = "1";
+
+    try {
+      const result = await runInitCommand(rootDir, ["--yes"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain("\x1b");
+    } finally {
+      delete process.env.NO_COLOR;
+    }
+  });
+
+  it("emits zero escape codes with TERM=dumb", async () => {
+    const rootDir = await createRoot("init-dumb");
+    const previous = process.env.TERM;
+    process.env.TERM = "dumb";
+
+    try {
+      const result = await runInitCommand(rootDir, ["--yes"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).not.toContain("\x1b");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.TERM;
+      } else {
+        process.env.TERM = previous;
+      }
+    }
+  });
+
+  it("emits color when forced, and stripping loses nothing", async () => {
+    const forcedRoot = await createRoot("init-forcecolor");
+    process.env.FORCE_COLOR = "1";
+
+    try {
+      const forced = await runInitCommand(forcedRoot, ["--yes"]);
+
+      expect(forced.exitCode).toBe(0);
+      expect(forced.stdout).toContain("\x1b");
+    } finally {
+      delete process.env.FORCE_COLOR;
+    }
+
+    const plain = await runInitCommand(await createRoot("init-plain"), ["--yes"]);
+
+    {
+      process.env.FORCE_COLOR = "1";
+      try {
+        const forced = await runInitCommand(await createRoot("init-force-stripped"), ["--yes"]);
+
+        expect(stripAnsi(forced.stdout)).toBe(plain.stdout);
+      } finally {
+        delete process.env.FORCE_COLOR;
+      }
+    }
   });
 });

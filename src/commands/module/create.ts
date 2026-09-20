@@ -5,6 +5,7 @@ import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-
 import { generateModuleFiles } from "../../core/generator/generate-module.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
+import { getStyle } from "../../cli/style.js";
 
 export type ModuleCreateOptions = {
   rootDir: string;
@@ -72,8 +73,8 @@ export async function createModule(options: ModuleCreateOptions): Promise<Module
 export function formatModuleCreateResult(result: ModuleCreateResult): string {
   const lines = [
     result.dryRun
-      ? "Persist OS module create dry run complete."
-      : "Persist OS module create complete.",
+      ? getStyle().heading("Persist OS module create dry run complete.")
+      : getStyle().heading("Persist OS module create complete."),
     `Module: ${result.modulePath}`,
   ];
 

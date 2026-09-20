@@ -7,6 +7,7 @@ import { generateFeatureFiles } from "../../core/generator/generate-feature.js";
 import { getFeatureFolderForSlug } from "../../core/naming/feature-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
+import { getStyle } from "../../cli/style.js";
 
 export type FeatureCreateOptions = {
   rootDir: string;
@@ -83,8 +84,8 @@ export async function createFeature(options: FeatureCreateOptions): Promise<Feat
 export function formatFeatureCreateResult(result: FeatureCreateResult): string {
   const lines = [
     result.dryRun
-      ? "Persist OS feature create dry run complete."
-      : "Persist OS feature create complete.",
+      ? getStyle().heading("Persist OS feature create dry run complete.")
+      : getStyle().heading("Persist OS feature create complete."),
     `Feature: ${result.featurePath}`,
   ];
 

@@ -7,6 +7,7 @@ import { generateAdrFile } from "../../core/generator/generate-adr.js";
 import { getAdrFileForSlug } from "../../core/naming/adr-number.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
+import { getStyle } from "../../cli/style.js";
 
 export type AdrCreateOptions = {
   rootDir: string;
@@ -78,7 +79,9 @@ export async function createAdr(options: AdrCreateOptions): Promise<AdrCreateRes
 
 export function formatAdrCreateResult(result: AdrCreateResult): string {
   const lines = [
-    result.dryRun ? "Persist OS ADR create dry run complete." : "Persist OS ADR create complete.",
+    getStyle().heading(
+      result.dryRun ? "Persist OS ADR create dry run complete." : "Persist OS ADR create complete.",
+    ),
     `ADR: ${result.adrPath}`,
   ];
 

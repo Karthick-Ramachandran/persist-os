@@ -3,8 +3,9 @@ import type { SkillDefinition } from "./skill-catalog.js";
 /**
  * Render a SkillDefinition into a valid Agent Skills SKILL.md.
  *
- * The output uses only the standard portable fields (`name`, `description`) and contains no scripts,
- * so the same file works in Claude Code and other Agent Skills-compatible tools.
+ * Sections are earned, never stamped: a heading appears only when the skill has content
+ * for it, so a skill without non-obvious inputs gets no `Inputs` heading. The output
+ * uses only the standard portable fields (`name`, `description`).
  */
 export function renderSkill(skill: SkillDefinition): string {
   const lines: string[] = [
@@ -15,64 +16,34 @@ export function renderSkill(skill: SkillDefinition): string {
     `description: ${JSON.stringify(skill.description)}`,
     "---",
     "",
-    `# Skill: ${skill.title}`,
+    "# Goal",
     "",
-    "## Purpose",
-    "",
-    ...paragraphs(skill.purpose),
-    "",
-    "## Inputs",
-    "",
-    ...bullets(skill.inputs),
-    "",
-    "## Required Reading",
-    "",
-    ...bullets(skill.requiredReading),
-    "",
-    "## Output Files",
-    "",
-    ...bullets(skill.outputFiles),
-    "",
-    "## Process",
-    "",
-    ...numbered(skill.process),
+    skill.goal,
     "",
   ];
 
-  for (const section of skill.extraSections ?? []) {
-    lines.push(`## ${section.heading}`, "", ...bullets(section.bullets), "");
-  }
-
-  lines.push(
-    "## Stop Conditions",
-    "",
-    "Stop and request human decision if:",
-    "",
-    ...bullets(skill.stopConditions),
-    "",
-    "## Quality Bar",
-    "",
-    ...bullets(skill.qualityBar),
-  );
+  pushBullets(lines, "Inputs", skill.inputs);
+  pushNumbered(lines, "Workflow", skill.workflow);
+  pushBullets(lines, "Decisions", skill.decisions);
+  pushBullets(lines, "Verification", skill.verification);
+  pushBullets(lines, "Resources", skill.resources);
+  pushBullets(lines, "Output", skill.output);
 
   return `${lines.join("\n")}\n`;
 }
 
-function paragraphs(values: string[]): string[] {
-  const out: string[] = [];
-  values.forEach((value, index) => {
-    if (index > 0) {
-      out.push("");
-    }
-    out.push(value);
-  });
-  return out;
+function pushBullets(lines: string[], heading: string, values: string[] | undefined): void {
+  if (values === undefined || values.length === 0) {
+    return;
+  }
+
+  lines.push(`## ${heading}`, "", ...values.map((value) => `- ${value}`), "");
 }
 
-function bullets(values: string[]): string[] {
-  return values.map((value) => `- ${value}`);
-}
+function pushNumbered(lines: string[], heading: string, values: string[] | undefined): void {
+  if (values === undefined || values.length === 0) {
+    return;
+  }
 
-function numbered(values: string[]): string[] {
-  return values.map((value, index) => `${index + 1}. ${value}`);
+  lines.push(`## ${heading}`, "", ...values.map((value, index) => `${index + 1}. ${value}`), "");
 }

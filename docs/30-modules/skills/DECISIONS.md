@@ -1,9 +1,10 @@
 # Skills Decisions
 
-## ADR-0004: Portable And Scriptless
+## ADR-0008/ADR-0012: Three Rewritten Skills, Scripts Allowed
 
-Generated skills use only standard Agent Skills fields and contain no scripts, so the same SKILL.md
-works across Claude Code and other compatible tools.
+The portable-and-scriptless decision is superseded. The catalog is three skills rewritten from
+scratch with earned sections and WHAT/WHEN descriptions; scripts are opt-in per skill under
+the four ADR-0012 constraints, verified by tests that fail loudly.
 
 ## Dual Target
 

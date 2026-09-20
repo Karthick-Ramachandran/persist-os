@@ -7,6 +7,7 @@ import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
 import { SlugifyError, slugify } from "../../core/naming/slugify.js";
 import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
+import { getStyle } from "../../cli/style.js";
 
 export type SkillCreateOptions = {
   rootDir: string;
@@ -72,8 +73,8 @@ export async function createSkill(options: SkillCreateOptions): Promise<SkillCre
 export function formatSkillCreateResult(result: SkillCreateResult): string {
   const lines = [
     result.dryRun
-      ? "Persist OS skill create dry run complete."
-      : "Persist OS skill create complete.",
+      ? getStyle().heading("Persist OS skill create dry run complete.")
+      : getStyle().heading("Persist OS skill create complete."),
     `Skill: ${result.slug}${result.fromCatalog ? " (from catalog)" : " (skeleton — fill it in)"}`,
   ];
 

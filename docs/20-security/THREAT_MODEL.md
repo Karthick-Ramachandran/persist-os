@@ -53,6 +53,14 @@ Supply chain risk:
 - Dependency or publish process introduces hidden behavior.
 - Control: small dependency set, lockfile, CI, npm package audit before release.
 
+Executable skill scripts:
+
+- A generated script reaches the network, mutates state outside the repository, or
+  grows into an application reviewers did not ask for.
+- Control: per-skill opt-in with init naming every executable written; read-only
+  and local behavior verified by failing tests; prose fallback so deletion is safe;
+  the shared safe write pipeline for confinement and overwrite policy.
+
 MCP prompt injection:
 
 - Future external context attempts to override repo memory.

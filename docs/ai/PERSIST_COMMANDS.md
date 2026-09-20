@@ -52,7 +52,8 @@ Options:
 
 Generate a portable AI agent skill as `SKILL.md` for both Claude Code (`.claude/skills/`) and the
 portable Agent Skills target (`.agents/skills/`). Known names use the built-in catalog; unknown
-names produce a valid skeleton. Generated skills contain no scripts.
+names produce a valid skeleton. Catalog skills may ship an executable `scripts/`
+directory; a skill always works with its scripts deleted.
 
 Options:
 
@@ -68,8 +69,8 @@ List the built-in catalog skills.
 Generate offline, proposed memory for an MCP server (for example `figma`) as
 `docs/ai/mcp/<server>.md` plus a proposed adoption ADR. Persist OS never connects to the MCP server
 or makes network calls; the agent records durable MCP-derived context into the generated memory for
-human review. It also installs a `capture-mcp-context` agent skill that prompts the agent to record
-that context.
+human review. It also installs a `capture-mcp-context` skill skeleton for the agent to fill in
+and use when recording that context.
 
 Options:
 

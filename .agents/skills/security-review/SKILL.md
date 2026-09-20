@@ -1,61 +1,46 @@
 ---
 name: security-review
-description:
-  "Review a change for file write safety, path traversal, symlink risk, overwrite behavior,
-  dependencies, secrets, telemetry, network, MCP, and supply chain risk. Use when reviewing a change
-  for security before it is accepted."
+description: "Review a change for security risks before it is accepted. Use when a change touches a trust boundary — file writes, paths, dependencies, stored secrets, network calls, telemetry, MCP, auth — and needs a decision before merging. Skip for feature planning, test writing, and convention checks."
 ---
 
-# Skill: Security Review
+# Goal
 
-## Purpose
-
-Find security risks before a change is accepted.
+Find security risks in a change before it is accepted.
 
 ## Inputs
 
-- Change summary or diff.
-- Feature docs.
-- Architecture and security docs.
-- Test results.
+- The change as a diff or summary.
+- Test results, when they exist.
 
-## Required Reading
+## Workflow
 
-- `docs/20-security/SECURITY_MODEL.md`
-- `docs/20-security/THREAT_MODEL.md`
-- `docs/10-architecture/FILE_WRITE_POLICY.md`
-- `docs/60-engineering/ENGINEERING_STANDARDS.md`
-- `docs/ai/MCP_STRATEGY.md`
+1. Identify changed trust boundaries: file writes, paths, dependencies, auth, stored secrets, network calls, telemetry, MCP.
+2. Run scripts/scan-secrets.sh over the staged diff and treat matches as blockers until cleared. If scripts/ is unavailable (deleted or cannot execute), perform the same scan by reading the diff directly.
+3. Check path validation, overwrite policy, and symlink handling.
+4. Check dependency, template, and configuration risk.
+5. Check that tests cover the security-sensitive behavior.
+6. Classify findings as blockers, risks, or documented tradeoffs.
+7. Hand back the verdict with the finding list.
 
-## Output Files
+## Decisions
 
-- Relevant feature `REVIEW.md`
-- Relevant feature `COMPLETION_REPORT.md`
-- Security docs, if the accepted behavior changes.
+- If a credential is present in the change → blocker; stop and ask for its removal.
+- If writes can escape the repository root → blocker.
+- If the change conflicts with accepted repository memory → stop and ask for a human decision.
 
-## Process
+## Verification
 
-1. Identify changed trust boundaries.
-2. Check path validation, overwrite policy, symlink policy, and dry-run behavior.
-3. Check dependency, package, template, and preset risk.
-4. Check for network, telemetry, secrets, `.env`, cloud, AI API, or runtime MCP behavior.
-5. Check tests for security-sensitive behavior.
-6. Classify findings as blockers, risks, or documented acceptable tradeoffs.
+- Every trust boundary the change touches has a finding or an explicit all-clear.
+- Blockers name the exact file and line.
+- No finding is generic filler.
 
-## Stop Conditions
+## Resources
 
-Stop and request human decision if:
+- For the security model → docs/20-security/SECURITY_MODEL.md
+- For threat context → docs/20-security/THREAT_MODEL.md (when present)
 
-- Runtime network, telemetry, cloud, MCP, AI API, auth, secrets, storage, or file write behavior
-  changes without ADR or security review.
-- Existing files can be overwritten by default.
-- Writes can escape the project root.
-- Secrets could be read, logged, or generated into docs.
-- Engineering standards are bypassed for secrets, dependencies, migrations, tests, or completion
-  evidence.
+## Output
 
-## Quality Bar
+- Verdict: accept, accept with risks, or block.
+- Finding list with files, lines, and severity.
 
-- Findings are specific and actionable.
-- Security claims cite docs or test evidence.
-- Remaining risks are explicit.

@@ -27,6 +27,8 @@ import {
 import { generateSkillFiles } from "../core/skills/generate-skill.js";
 import { keepPathForTools } from "../core/aitools/tool-paths.js";
 import { listCatalogSkillNames } from "../core/skills/skill-catalog.js";
+import { createPrompter, type PromptStreams } from "../cli/prompt.js";
+import { getStyle } from "../cli/style.js";
 import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
 export type InitOptions = {
@@ -37,6 +39,11 @@ export type InitOptions = {
   dryRun?: boolean;
   force?: boolean;
   reinit?: boolean;
+  yes?: boolean;
+  /** Defaults to `process.stdin.isTTY`; injectable so tests never need a real TTY. */
+  stdinTTY?: boolean;
+  /** Streams the interactive questions use; default to process stdin/stdout. */
+  promptStreams?: PromptStreams;
 };
 
 export type InitResult = {
@@ -48,6 +55,8 @@ export type InitResult = {
   aiTools: AiToolTarget[];
   // The detected one-shot test command saved as testCommand (null when none was safe to pick).
   testCommand: string | null;
+  // True when stdin was not a TTY and init proceeded with defaults without prompting.
+  assumedNonTTYDefaults: boolean;
 };
 
 export type InitErrorCode = "INVALID_AI_TOOL" | "WRITE_PLAN_ERROR" | "EXISTING_INSTALLATION";
@@ -88,17 +97,23 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   const detected = await inspectRepo(options.rootDir);
   // Doctor already runs in the pre-commit hook body, so no commit-time gates are seeded.
   // The expensive gates (tests, typecheck, lint) are detected for the pre-push hook instead.
-  const testCommand = await detectTestCommand(options.rootDir);
+  const detectedTestCommand = await detectTestCommand(options.rootDir);
   const prePushGates = await detectPrePushGates(options.rootDir);
+
+  const { aiTools, features, modules, testCommand, assumedNonTTYDefaults } =
+    await resolveInitAnswers(options, detectedTestCommand);
+
+  validateAiTools(aiTools);
+
   const config = createDefaultConfig({
     preCommitGates: [],
     prePushGates,
     testCommand,
-    ...(options.aiTools !== undefined ? { aiTools: options.aiTools } : {}),
+    ...(aiTools !== undefined ? { aiTools } : {}),
   });
   const files = createInitWriteFiles(options.rootDir, config, {
-    features: options.features ?? false,
-    modules: options.modules ?? false,
+    features,
+    modules,
   });
   const plan = createWritePlan({
     rootDir: options.rootDir,
@@ -125,16 +140,99 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     detected,
     aiTools: [...config.aiTools],
     testCommand: config.testCommand,
+    assumedNonTTYDefaults,
   };
 }
 
+/**
+ * Answer resolution: explicit flags (or `--yes`) are a complete instruction and
+ * never prompt; otherwise a TTY is asked the four questions and a non-TTY
+ * proceeds with defaults so CI can never hang on a prompt.
+ */
+async function resolveInitAnswers(
+  options: InitOptions,
+  detectedTestCommand: string | null,
+): Promise<{
+  aiTools: string[] | undefined;
+  features: boolean;
+  modules: boolean;
+  testCommand: string | null;
+  assumedNonTTYDefaults: boolean;
+}> {
+  const explicitInstruction =
+    options.aiTools !== undefined ||
+    options.features !== undefined ||
+    options.modules !== undefined ||
+    options.force === true ||
+    options.reinit === true;
+
+  if (options.yes === true || explicitInstruction) {
+    return {
+      aiTools: options.aiTools,
+      features: options.features ?? false,
+      modules: options.modules ?? false,
+      testCommand: detectedTestCommand,
+      assumedNonTTYDefaults: false,
+    };
+  }
+
+  const stdinTTY = options.stdinTTY ?? process.stdin.isTTY ?? false;
+
+  if (!stdinTTY) {
+    return {
+      aiTools: options.aiTools,
+      features: options.features ?? false,
+      modules: options.modules ?? false,
+      testCommand: detectedTestCommand,
+      assumedNonTTYDefaults: true,
+    };
+  }
+
+  const streams = options.promptStreams ?? { input: process.stdin, output: process.stdout };
+  const prompter = createPrompter(streams);
+
+  try {
+    const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/4]");
+    const features = await prompter.askYesNo("Track features?", false, "[2/4]");
+    const modules = await prompter.askYesNo("Track modules?", false, "[3/4]");
+    const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/4]");
+
+    return {
+      aiTools,
+      features,
+      modules,
+      testCommand: enableTestGate ? detectedTestCommand : null,
+      assumedNonTTYDefaults: false,
+    };
+  } finally {
+    prompter.close();
+  }
+}
+
+/**
+ * The init masthead: a small wordmark and one line of what is about to happen.
+ * Restrained by design — the top of the landing page, not an installer banner.
+ */
+export function buildMasthead(): string {
+  const style = getStyle();
+  return `${style.heading("persist")} ${style.muted("repository memory for AI-assisted software work")}\n${style.rule()}`;
+}
+
 export function formatInitResult(result: InitResult): string {
+  const style = getStyle();
   const lines = [
-    result.dryRun ? "Persist OS init dry run complete." : "Persist OS init complete.",
+    buildMasthead(),
+    style.heading(
+      result.dryRun ? "Persist OS init dry run complete." : "Persist OS init complete.",
+    ),
     result.testCommand === null
       ? "Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`)."
       : `Test gate: ${result.testCommand} (saved as testCommand in .persist/config.json).`,
   ];
+
+  if (result.assumedNonTTYDefaults) {
+    lines.push("stdin is not a TTY — proceeded with defaults without prompting (as --yes).");
+  }
 
   if (!result.dryRun) {
     lines.push(buildInitSummary(result));
@@ -144,6 +242,16 @@ export function formatInitResult(result: InitResult): string {
     dryRun: result.dryRun,
     writeResult: result.writeResult,
   });
+
+  // ADR-0012: init states which executable files it wrote, so generated executables
+  // (hooks, skill scripts) are visible rather than discovered later.
+  if (!result.dryRun) {
+    const executables = executedExecutables(result);
+    if (executables.length > 0) {
+      lines.push("");
+      lines.push(`Executable files written: ${joinList(executables)}.`);
+    }
+  }
 
   appendDetectedStack(lines, result.detected);
 
@@ -302,6 +410,24 @@ function buildInitNextSteps(result: InitResult): string[] {
   steps.push("Check repository memory health anytime: `persist doctor`.");
 
   return steps;
+}
+
+function executedExecutables(result: InitResult): string[] {
+  const written = new Set([...result.writeResult.created, ...result.writeResult.overwritten]);
+  const paths: string[] = [];
+
+  for (const entry of result.plan.entries) {
+    if (
+      (entry.action === "create" || entry.action === "overwrite") &&
+      "executable" in entry &&
+      entry.executable === true &&
+      written.has(entry.path)
+    ) {
+      paths.push(entry.path);
+    }
+  }
+
+  return paths;
 }
 
 function joinList(parts: string[]): string {
