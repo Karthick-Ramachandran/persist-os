@@ -110,6 +110,7 @@ describe("persist fence add", () => {
 
   it("fences a second path without disturbing the first", async () => {
     const rootDir = await repoWithStagedChange("fence-add-second");
+    await writeFile(path.join(rootDir, "src/auth.ts"), "export const token = 1;\n", "utf8");
 
     await runCommand(rootDir, ["fence", "add", "src/billing.ts", "--why", "First reason."]);
     await runCommand(rootDir, ["fence", "add", "src/auth.ts", "--why", "Second reason."]);
@@ -149,6 +150,32 @@ describe("persist fence add", () => {
     const result = await runCommand(rootDir, ["fence", "add", "src/billing.ts"]);
 
     expect(result.exitCode).not.toBe(0);
+  });
+
+  it("refuses a fence for a path that does not exist", async () => {
+    // A typo'd path recorded cleanly and then warned on every doctor run — the command
+    // contradicted the gate on the next invocation. Existence is checked up front.
+    const rootDir = await repoWithStagedChange("fence-add-missing");
+
+    const result = await runCommand(rootDir, ["fence", "add", "src/nope.ts", "--why", "Reason."]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("src/nope.ts");
+    const files = await listRelativeFiles(rootDir);
+    expect(files).not.toContain("docs/60-engineering/FENCES.md");
+  });
+
+  it("refuses to record a fence outside a Persist repository", async () => {
+    // Without a config there is no hook, fence warning, or doctor loop to read the entry —
+    // the default-config fallback scattered dead FENCES.md files into bare directories.
+    const rootDir = await createRoot("fence-add-no-repo");
+
+    const result = await runCommand(rootDir, ["fence", "add", "src/thing.ts", "--why", "Reason."]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toMatch(/init/);
+    const files = await listRelativeFiles(rootDir);
+    expect(files).not.toContain("docs/60-engineering/FENCES.md");
   });
 
   it("writes nothing on --dry-run", async () => {

@@ -51,8 +51,11 @@ export class FenceValidationError extends Error {
   }
 }
 
-/** The path portion, with any `:symbol` suffix kept but the file part normalised and checked. */
-function normalizeFencePath(raw: string): string {
+/**
+ * The path portion, with any `:symbol` suffix kept but the file part normalised and checked.
+ * Exported so `fence add` validates existence against the recorded path, not the raw input.
+ */
+export function normalizeFencePath(raw: string): string {
   const trimmed = raw.trim();
   if (trimmed === "") {
     throw new FenceValidationError("A fence needs a path.");
