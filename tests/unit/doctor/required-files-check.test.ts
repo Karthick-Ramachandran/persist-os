@@ -56,6 +56,17 @@ describe("requiredRootFiles derives required files from aiTools", () => {
   });
 });
 
+describe("required-files always evaluates", () => {
+  // ADR-0011 requires every check to report not-evaluated rather than pass when its input is
+  // missing. required-files has no such condition on purpose: with no config it falls back to the
+  // legacy required set, so it can always run and always reports a real result. This test records
+  // that deliberate choice, so a future change that makes it skip silently fails here.
+  it("has no not-evaluated path, because it can run without a config", async () => {
+    expect(requiredRootFiles(undefined)).toEqual(["AGENTS.md", "CLAUDE.md"]);
+    expect(advisoryToolFiles(undefined)).toEqual([]);
+  });
+});
+
 describe("checkRequiredFiles honors aiTools", () => {
   const roots: string[] = [];
 

@@ -75,6 +75,10 @@ tests that fail loudly rather than documentation that asks nicely.
 and removing the _"Do not add scripts inside generated skills for MVP"_ line from `CLAUDE.md` and
 `AGENTS.md`. Until both happen, the repository contradicts itself.
 
+## Supersedes
+
+- ADR-0004-skill-generation-portable-and-scriptless
+
 ## Related Documents
 
 - PRD: `docs/00-product/PRD.md`

@@ -25,6 +25,42 @@ describe("inspectRepo", () => {
     await writeFile(full, content, "utf8");
   }
 
+  it("ignores devDependencies as framework signals", async () => {
+    // A library that tests against Express is not an Express app. adopt's report is the first
+    // thing a maintainer reads, so a test-only package must not become a proposed decision.
+    const rootDir = await createRoot("inspect-devdeps");
+    await write(
+      rootDir,
+      "package.json",
+      JSON.stringify({
+        name: "some-library",
+        dependencies: { "follow-redirects": "^1.15.0" },
+        devDependencies: { express: "^4.18.0", next: "^14.0.0", react: "^18.0.0" },
+      }),
+    );
+
+    const signals = await inspectRepo(rootDir);
+
+    expect(signals.frameworks).toEqual([]);
+  });
+
+  it("still detects a framework that is a runtime dependency", async () => {
+    const rootDir = await createRoot("inspect-runtime-dep");
+    await write(
+      rootDir,
+      "package.json",
+      JSON.stringify({
+        name: "some-app",
+        dependencies: { express: "^4.18.0" },
+        devDependencies: { vitest: "^2.0.0" },
+      }),
+    );
+
+    const signals = await inspectRepo(rootDir);
+
+    expect(signals.frameworks).toContain("Express");
+  });
+
   it("detects TypeScript, pnpm, and Next.js", async () => {
     const rootDir = await createRoot("inspect-next");
     await write(
