@@ -49,6 +49,12 @@ const preCommitGateSchema = z
     "Pre-commit gate must be a single line without control characters.",
   );
 
+const testCommandSchema = z
+  .string()
+  .min(1, "Test command cannot be empty.")
+  .max(200, "Test command cannot exceed 200 characters.")
+  .regex(PRE_COMMIT_GATE_PATTERN, "Test command must be a single line without control characters.");
+
 const safeRelativePathSchema = z.string().transform((value, context) => {
   try {
     return normalizeOutputPath(value);
@@ -72,6 +78,10 @@ export const persistConfigSchema = z
     modulesDir: safeRelativePathSchema,
     adrDir: safeRelativePathSchema,
     preCommitGates: z.array(preCommitGateSchema).max(50, "Too many pre-commit gates.").default([]),
+    prePushGates: z.array(preCommitGateSchema).max(50, "Too many pre-push gates.").default([]),
+    // The one-shot test command the test gate runs. null means the gate is off. Optional on
+    // read (zod default) so pre-existing configs without it keep loading.
+    testCommand: testCommandSchema.nullable().default(null),
     // Deprecated B5 knobs: accepted on read for backward compat with pre-0.7 configs,
     // never written by new inits and never read. `mode` duplicated `memoryProfile`;
     // `writePolicy` was superseded by --force/--dry-run.

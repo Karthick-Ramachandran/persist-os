@@ -19,7 +19,37 @@ describe("config schema", () => {
       modulesDir: "docs/30-modules",
       adrDir: "docs/adrs",
       preCommitGates: [],
+      prePushGates: [],
+      testCommand: null,
     });
+  });
+
+  it("loads a 0.6.x config without testCommand or prePushGates", () => {
+    const legacy = {
+      version: "0.6.2",
+      templateVersion: "0.6.2",
+      preset: null,
+      aiTools: ["claude", "codex", "cursor"],
+      docsDir: "docs",
+      featuresDir: "docs/40-features",
+      modulesDir: "docs/30-modules",
+      adrDir: "docs/adrs",
+      preCommitGates: [],
+    };
+
+    expect(parseConfig(legacy)).toMatchObject({
+      prePushGates: [],
+      testCommand: null,
+    });
+  });
+
+  it("rejects an invalid testCommand", () => {
+    const baseConfig = createDefaultConfig();
+
+    expect(() => parseConfig({ ...baseConfig, testCommand: "" })).toThrow(ConfigValidationError);
+    expect(() => parseConfig({ ...baseConfig, testCommand: "pnpm test\nrm -rf /" })).toThrow(
+      ConfigValidationError,
+    );
   });
 
   it("keeps version and templateVersion in sync with the package", async () => {

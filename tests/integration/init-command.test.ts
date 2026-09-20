@@ -99,9 +99,15 @@ describe("init command", () => {
       const hookPath = path.join(rootDir, `.persist/hooks/${name}`);
       const hook = await readFile(hookPath, "utf8");
       expect(hook.startsWith("#!/bin/sh")).toBe(true);
-      expect(hook).toContain("persist doctor");
       expect((await stat(hookPath)).mode & 0o100).toBe(0o100);
     }
+
+    const preCommit = await readFile(path.join(rootDir, ".persist/hooks/pre-commit"), "utf8");
+    const prePush = await readFile(path.join(rootDir, ".persist/hooks/pre-push"), "utf8");
+    expect(preCommit).toContain("persist doctor");
+    expect(preCommit).not.toContain("persist test-gate");
+    expect(prePush).toContain("persist test-gate");
+    expect(prePush).not.toContain("persist doctor");
 
     const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
     expect(config.preCommitGates).toEqual([]);

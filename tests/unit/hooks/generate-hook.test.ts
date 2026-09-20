@@ -46,20 +46,32 @@ describe("renderPreCommitHook", () => {
 });
 
 describe("renderPrePushHook", () => {
-  it("starts with a POSIX sh shebang and runs persist doctor", () => {
-    const hook = renderPrePushHook([]);
+  it("starts with a POSIX sh shebang and runs the test gate instead of doctor", () => {
+    const hook = renderPrePushHook(null, []);
     expect(hook.startsWith("#!/bin/sh\n")).toBe(true);
-    expect(hook).toContain("\npersist doctor\n");
+    expect(hook).toContain("\npersist test-gate\n");
+    expect(hook).not.toContain("persist doctor");
   });
 
-  it("appends each configured gate in order after persist doctor", () => {
-    const hook = renderPrePushHook(["pnpm run test", "pnpm run typecheck"]);
-    expect(hook.indexOf("persist doctor")).toBeLessThan(hook.indexOf("pnpm run test"));
-    expect(hook.indexOf("pnpm run test")).toBeLessThan(hook.indexOf("pnpm run typecheck"));
+  it("appends each push gate in order after the test gate", () => {
+    const hook = renderPrePushHook("pnpm run test:run", ["pnpm run typecheck", "pnpm run lint"]);
+    expect(hook.indexOf("persist test-gate")).toBeLessThan(hook.indexOf("pnpm run typecheck"));
+    expect(hook.indexOf("pnpm run typecheck")).toBeLessThan(hook.indexOf("pnpm run lint"));
+    expect(hook).not.toContain("persist doctor");
+  });
+
+  it("takes a different list than pre-commit", () => {
+    const preCommit = renderPreCommitHook(["pnpm run test"]);
+    const prePush = renderPrePushHook("pnpm run test:run", ["pnpm run typecheck"]);
+
+    expect(preCommit).toContain("persist doctor");
+    expect(prePush).not.toContain("persist doctor");
+    expect(prePush).toContain("persist test-gate");
+    expect(preCommit).not.toContain("persist test-gate");
   });
 
   it("documents the activation command without running it", () => {
-    expect(renderPrePushHook([])).toContain(HOOKS_PATH_ACTIVATION_COMMAND);
+    expect(renderPrePushHook(null, [])).toContain(HOOKS_PATH_ACTIVATION_COMMAND);
   });
 
   it("exposes the tracked pre-push hook path", () => {

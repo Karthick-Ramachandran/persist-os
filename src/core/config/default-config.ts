@@ -11,6 +11,8 @@ const DEFAULT_CONFIG = {
   modulesDir: "docs/30-modules",
   adrDir: "docs/adrs",
   preCommitGates: [],
+  prePushGates: [],
+  testCommand: null,
 } satisfies PersistConfig;
 
 export function createDefaultConfig(overrides: Partial<PersistConfig> = {}): PersistConfig {
@@ -18,6 +20,7 @@ export function createDefaultConfig(overrides: Partial<PersistConfig> = {}): Per
     ...DEFAULT_CONFIG,
     aiTools: [...DEFAULT_CONFIG.aiTools],
     preCommitGates: [...DEFAULT_CONFIG.preCommitGates],
+    prePushGates: [...DEFAULT_CONFIG.prePushGates],
     ...overrides,
   });
 }
