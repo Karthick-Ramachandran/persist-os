@@ -41,21 +41,27 @@
     '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' +
     '<span class="sr-only">Copy code</span>';
 
-  // Docs code blocks get a copy button. Prompt markers ($) are dropped from the copied text so a
-  // command block pastes straight into a shell.
-  var blocks = document.querySelectorAll(".prose pre");
+  // Code blocks get a copy button. A recorded transcript copies only its command lines (the
+  // spans marked .c), so what lands in the clipboard pastes straight into a shell; a block with
+  // no commands copies as-is, minus any prompt markers.
+  var blocks = document.querySelectorAll(".prose pre, pre.transcript");
   Array.prototype.forEach.call(blocks, function (pre) {
     if (pre.querySelector(".copy")) {
       return;
     }
+    var commands = pre.querySelectorAll(".c");
+    var text = commands.length
+      ? Array.prototype.map
+          .call(commands, function (c) {
+            return c.textContent;
+          })
+          .join("\n")
+      : pre.textContent.replace(/^\$ /gm, "");
     var button = document.createElement("button");
     button.type = "button";
     button.className = "copy";
     button.innerHTML = copyIcon;
-    button.setAttribute(
-      "data-copy",
-      pre.textContent.replace(/^\$ /gm, "").replace(/\s+$/, ""),
-    );
+    button.setAttribute("data-copy", text.replace(/\s+$/, ""));
     pre.appendChild(button);
   });
 

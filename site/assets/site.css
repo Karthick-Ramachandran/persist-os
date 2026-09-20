@@ -258,6 +258,38 @@ pre code {
   color: inherit;
 }
 
+/* Recorded transcripts wrap instead of scrolling, so nothing hides off-screen on a phone. */
+.transcript {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.block-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--t-1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 var(--s-2);
+}
+
+.stack > * + * {
+  margin-top: var(--s-5);
+}
+
+.stack .block-label {
+  margin-top: var(--s-6);
+}
+
+.stack .block-label:first-child {
+  margin-top: 0;
+}
+
+.two-col.even {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
 /* Hand-marked syntax: prompt, command, comment/muted, and doctor severities. */
 .p {
   color: var(--accent);

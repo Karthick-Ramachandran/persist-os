@@ -148,8 +148,21 @@
           <p>
             Init also reads <code>package.json</code>. A one-shot test script becomes
             <code>testCommand</code>; <code>typecheck</code> and <code>lint</code> scripts become
-            pre-push gates. See <a href="hooks.html">Hooks, test gate, CI</a>.
+            pre-push gates. When it finds a manifest it also prints what it detected, marked as
+            proposed:
           </p>
+          <pre><code><span class="p">$</span> <span class="c">persist init --features</span>
+Persist OS init complete.
+Test gate: npm run test:run (saved as testCommand in .persist/config.json).
+<span class="m">  …</span>
+Detected in this repository (proposed — review, nothing was accepted):
+- Languages: JavaScript
+- Package manager: npm (from `package.json`)
+- Frameworks: none detected
+- Tests: detected via `tests/` directory
+If any signal is wrong, correct the source file noted. Run `persist adopt` to record this as proposed memory.
+<span class="m">  …</span></code></pre>
+          <p>See <a href="hooks.html">Hooks, test gate, CI</a> for what the gates do with those values.</p>
 
           <h2 id="adopt">persist adopt</h2>
           <pre><code>persist adopt [--dry-run] [--force]</code></pre>
@@ -160,14 +173,30 @@
             and never produces accepted memory; every inferred signal names its source and waits
             for human review.
           </p>
-          <pre><code><span class="p">$</span> <span class="c">persist adopt --dry-run</span>
-Persist OS adopt dry run complete.
+          <pre><code><span class="p">$</span> <span class="c">persist adopt</span>
+Persist OS adopt complete.
 Inferred signals are proposed and require human review.
-Languages: none detected
-Package manager: none detected
-Frameworks: none detected
-Planned creates:
-- docs/adopt/ADOPTION_REPORT.md</code></pre>
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.</code></pre>
+          <p>
+            That run was in a Next.js app with <code>tsconfig.json</code> and a
+            <code>pnpm-lock.yaml</code>. The report records where each signal came from:
+          </p>
+          <pre><code>- Languages: TypeScript
+- Package manager: pnpm (from `pnpm-lock.yaml`)
+- Frameworks: Next.js (from `package.json`)
+- Tests: detected via `"test"` script in package.json
+- README present: no
+- Docs folder present: no</code></pre>
 
           <h2 id="feature-create">persist feature create</h2>
           <pre><code>persist feature create &lt;name&gt; [--dry-run] [--force]</code></pre>

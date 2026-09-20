@@ -175,7 +175,8 @@
               Persist OS puts that reasoning in the repository as Markdown, next to the code it
               explains, where it is versioned, reviewed, and read back. It is a small discipline
               system, not a memory model: the tool writes templates, you accept decisions, a check
-              keeps them honest.
+              keeps them honest. Every terminal block on this page is a recorded run of the CLI,
+              trimmed where marked with an ellipsis and otherwise unedited.
             </p>
           </div>
           <div>
@@ -190,92 +191,181 @@
         </div>
       </section>
 
-      <section class="section" id="how" aria-labelledby="how-title">
+      <section class="section" id="start" aria-labelledby="start-title">
         <div class="wrap">
           <div class="section-head">
-            <span class="eyebrow">How it works</span>
-            <h2 id="how-title">Six files, loaded on every session, checked before every commit.</h2>
+            <span class="eyebrow">Start</span>
+            <h2 id="start-title">Six files in an empty folder. A proposal in a repository that already exists.</h2>
+            <p class="lede">
+              <code>persist init</code> writes product intent, security model, quality gates,
+              engineering standards, conventions, lessons, and a decision directory, plus the
+              entry points each AI tool reads and the hooks that gate commits. Each document is a
+              short template with prompts, not a guess about your stack. In a repository with
+              history, <code>persist adopt</code> reads the manifests and writes a proposal; it
+              accepts nothing on its own.
+            </p>
           </div>
-          <ol class="steps">
-            <li>
-              <span class="step-n">01 · Record</span>
-              <h3>One command writes the memory</h3>
-              <p>
-                <code>persist init</code> writes six documents and a decision directory: product
-                intent, security model, quality gates, engineering standards, conventions, lessons.
-                Each is a short template with prompts, not a guess about your stack. Feature and
-                module memory is opt-in, and a decision is one command away.
-              </p>
-              <ul class="paths" aria-label="Files written by persist init">
-                <li>docs/00-product/PRODUCT.md</li>
-                <li>docs/20-security/SECURITY_MODEL.md</li>
-                <li>docs/50-quality/QUALITY_GATES.md</li>
-                <li>docs/60-engineering/ENGINEERING_STANDARDS.md</li>
-                <li>docs/60-engineering/CONVENTIONS.md</li>
-                <li>docs/60-engineering/LESSONS.md</li>
-                <li>docs/adrs/</li>
-              </ul>
-            </li>
-            <li>
-              <span class="step-n">02 · Load</span>
-              <h3>Each AI tool gets its native entry point</h3>
-              <p>
-                Claude Code loads <code>CLAUDE.md</code>, which imports <code>AGENTS.md</code>, and a
-                SessionStart hook injects the list of accepted ADRs and modules. Cursor gets an
-                always-apply rule. Codex reads <code>AGENTS.md</code>. Twelve agent skills ship in
-                both the Claude and the portable Agent Skills layout.
-              </p>
-              <ul class="paths" aria-label="Agent entry points">
-                <li>CLAUDE.md, AGENTS.md</li>
-                <li>.claude/hooks/session-start.sh</li>
-                <li>.cursor/rules/persist-memory.mdc</li>
-                <li>.claude/skills/*/SKILL.md</li>
-                <li>.agents/skills/*/SKILL.md</li>
-              </ul>
-            </li>
-            <li>
-              <span class="step-n">03 · Check</span>
-              <h3>Doctor returns an exit code</h3>
-              <p>
-                <code>persist doctor</code> reads the memory and exits 0, 1, or 2. The generated
-                pre-commit hook runs it. The pre-push hook runs <code>persist test-gate</code>, your
-                one-shot test command. A generated GitHub Actions workflow runs doctor on every pull
-                request. Same input, same answer.
-              </p>
-              <ul class="paths" aria-label="Gate files">
-                <li>.persist/hooks/pre-commit</li>
-                <li>.persist/hooks/pre-push</li>
-                <li>.github/workflows/persist.yml</li>
-                <li>.persist/config.json</li>
-              </ul>
-            </li>
-          </ol>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Empty folder</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist init</span>
+Persist OS init complete.
+Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Generated repository memory, 12 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Created:
+- .persist/config.json
+- AGENTS.md
+- CLAUDE.md
+- .cursor/rules/persist-memory.mdc
+- docs/00-product/PRODUCT.md
+- docs/20-security/SECURITY_MODEL.md
+- docs/50-quality/QUALITY_GATES.md
+- docs/60-engineering/ENGINEERING_STANDARDS.md
+- docs/60-engineering/CONVENTIONS.md
+- docs/60-engineering/LESSONS.md
+- docs/adrs/README.md
+- .github/workflows/persist.yml
+- .persist/hooks/pre-commit
+- .persist/hooks/pre-push
+- .claude/hooks/session-start.sh
+- .claude/settings.json
+<span class="m">  … 24 skill files</span>
+
+Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
+Enable them once per clone: git config core.hooksPath .persist/hooks
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Existing Next.js app</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist adopt</span>
+Persist OS adopt complete.
+Inferred signals are proposed and require human review.
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">The report names its sources</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">sed -n '1,40p' docs/adopt/ADOPTION_REPORT.md</span>
+# Adoption Report
+
+## Status
+
+Proposed. Everything below is inferred from this repository and requires human review. Nothing here
+is accepted repository memory until you accept it.
+
+## Detected Signals
+<span class="m">  …</span>
+- Languages: TypeScript
+- Package manager: pnpm (from `pnpm-lock.yaml`)
+- Frameworks: Next.js (from `package.json`)
+- Tests: detected via `"test"` script in package.json
+<span class="m">  …</span></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features" aria-labelledby="features-title">
+        <div class="wrap two-col">
+          <div>
+            <span class="eyebrow">Features</span>
+            <h2 id="features-title">Two files per feature. Three when something enforces the third.</h2>
+            <p class="lede">
+              A feature gets a plan (approach, boundaries, acceptance criteria) and a task list
+              with a completion-evidence section. A test plan is added only when
+              <code>testCommand</code> is configured, because a scaffold should not ask for a
+              document that nothing checks. Both are opt-in: run the command when the work is big
+              enough to deserve it.
+            </p>
+            <p class="lede">
+              Modules work the same way. <code>persist module create billing</code> writes what
+              the module owns, its tasks, its test plan, and its decisions.
+            </p>
+          </div>
+          <div class="stack">
+            <span class="block-label">No test command configured</span>
+            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+
+Next steps:
+- Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
+- Then TASKS.md before you implement.
+- Run `persist doctor` to check the memory is complete.
+<span class="ok">[exit 0]</span></pre>
+            <span class="block-label">testCommand set to npm run test:run</span>
+            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+- docs/40-features/F-001-checkout/TEST_PLAN.md
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+          </div>
         </div>
       </section>
 
       <section class="section section-sunken" id="decisions" aria-labelledby="decisions-title">
-        <div class="wrap two-col">
-          <div>
+        <div class="wrap">
+          <div class="section-head">
             <span class="eyebrow">Decisions</span>
             <h2 id="decisions-title">A decision has a status, and the status is in the file.</h2>
             <p class="lede">
               <code>persist adr create</code> writes a Proposed ADR with Context, Decision,
               Alternatives Considered, and Consequences. <code>persist adr accept</code> promotes
-              it to Accepted; from then on other memory can cite it as source of truth.
-            </p>
-            <p class="lede">
-              When the decision changes, <code>persist adr supersede</code> writes a new accepted
-              ADR that links back and marks the old one superseded. Nothing is deleted or edited in
-              place, so the trail stays readable. Doctor then warns about any memory still citing
-              the old decision.
-            </p>
-            <p class="lede">
-              Proposals from <code>persist adopt</code> and <code>persist mcp add</code> land in
-              <code>docs/adrs/proposed/</code>. Only a human moves them to accepted.
+              it to Accepted; from then on other memory can cite it as source of truth. When the
+              decision changes, <code>persist adr supersede</code> writes a new accepted ADR that
+              links back and marks the old one superseded. Nothing is deleted or edited in place,
+              and the doctor warns about any memory still citing the old decision.
             </p>
           </div>
-          <div>
-            <pre class="diff"><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Proposed, then accepted</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist adr create "Use PostgreSQL for primary storage"</span>
+Persist OS ADR create complete.
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+<span class="m">  …</span>
+- It is Proposed — set Status to Accepted once the team agrees.
+
+<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+# ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+<span class="warn">Proposed</span>
+
+<span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+<span class="m">  …</span>
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.
+
+<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+# ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+<span class="ok">Accepted</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Changed later, never overwritten</span>
+              <pre class="diff"><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
 
 <span class="file">docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
  ## Status
@@ -292,6 +382,11 @@
 <span class="add">+## Supersedes</span>
 <span class="add">+</span>
 <span class="add">+- ADR-0001-use-postgresql-for-primary-storage</span></pre>
+              <p class="muted">
+                Proposals from <code>persist adopt</code> and <code>persist mcp add</code> land in
+                <code>docs/adrs/proposed/</code>. Only a human moves them to accepted.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -309,8 +404,8 @@
                 budget. Same input, same exit code, offline.
               </p>
               <p class="lede">
-                When a check has nothing to look at, it says so instead of passing. A partial run
-                never looks like a full pass.
+                This is the report one accepted decision in, before anyone has filled the
+                templates. Every warning names a file and a section.
               </p>
             </div>
             <figure class="terminal" aria-label="A recorded doctor run">
@@ -334,8 +429,7 @@ INFO
 - 1 ADRs detected.
 
 Result: <span class="warn">WARNINGS</span>
-<span class="p">$</span> <span class="c">echo $?</span>
-<span class="warn">1</span></pre>
+<span class="warn">[exit 1]</span></pre>
             </figure>
           </div>
 
@@ -348,7 +442,7 @@ Result: <span class="warn">WARNINGS</span>
             <li class="warn">
               <span class="n">1</span>
               <span class="l">Warnings only</span>
-              <span class="d">Something to look at. Nothing blocks.</span>
+              <span class="d">Something to look at. Still non-zero, so hooks and CI stop on it.</span>
             </li>
             <li class="err">
               <span class="n">2</span>
@@ -416,10 +510,174 @@ Result: <span class="warn">WARNINGS</span>
             </li>
           </ul>
           <p class="muted" style="margin-top: var(--s-5); max-width: 64ch">
-            <code>persist doctor --json</code> emits the same report as
-            <code>persist.doctor.v1</code> JSON, including which checks could not run and why.
             <a href="docs/doctor.html">Every check, documented.</a>
           </p>
+        </div>
+      </section>
+
+      <section class="section" id="report" aria-labelledby="report-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Honest reports</span>
+            <h2 id="report-title">Nothing to check is not a pass.</h2>
+            <p class="lede">
+              When a check has no input, or cannot run, the doctor lists it as not evaluated with
+              the reason instead of counting it as passed. A fresh repository outside git gets
+              three such lines. The same report is available as versioned JSON for CI artifacts
+              and agent handoffs.
+            </p>
+          </div>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Fresh memory, no git repository</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+<span class="warn">NOT EVALUATED</span>
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- staleness: not a git repository, so commit history is unavailable
+
+Result: <span class="ok">PASSED</span>
+<span class="ok">[exit 0]</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Machine-readable</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor --json</span>
+{
+  "schemaVersion": "persist.doctor.v1",
+  "status": "warnings",
+  "exitCode": 1,
+  "summary": {
+    "errors": 0,
+    "warnings": 4,
+    "info": 4
+  },
+  "findings": [
+<span class="m">    …</span>
+    {
+      "severity": "warning",
+      "check": "content-product",
+      "message": "Product purpose is still an unfilled template.",
+      "path": "docs/00-product/PRODUCT.md"
+    },
+<span class="m">    …</span>
+  ],
+  "checks": [
+    {
+      "id": "config",
+      "status": "evaluated"
+    },
+<span class="m">    …</span>
+  ]
+}
+<span class="warn">[exit 1]</span></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-sunken" id="gates" aria-labelledby="gates-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Hooks</span>
+            <h2 id="gates-title">The hooks say no.</h2>
+            <p class="lede">
+              <code>persist init</code> writes two tracked hooks. Pre-commit runs the doctor.
+              Pre-push runs <code>persist test-gate</code>, the one-shot test command detected from
+              <code>package.json</code>, and only passes when the suite does. Git runs them once you
+              point it at the directory; Persist OS prints the command and never runs it for you.
+            </p>
+          </div>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Enable, then commit</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span>
+<span class="p">$</span> <span class="c">git commit -m "Add repository memory"</span>
+Doctor Report
+<span class="m">  …</span>
+Result: <span class="ok">PASSED</span>
+[main (root-commit) d84bda4] Add repository memory
+ 40 files changed, 1700 insertions(+)
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">A commit that removes required memory</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
+Doctor Report
+
+<span class="err">ERROR</span>
+- Required file is missing. (docs/00-product/PRODUCT.md)
+<span class="m">  …</span>
+Result: <span class="err">FAILED</span>
+<span class="err">[exit 1]</span></pre>
+              <span class="block-label">Warnings block too: exit 1 is not zero</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+<span class="m">  …</span>
+Result: <span class="warn">WARNINGS</span>
+<span class="warn">[exit 1]</span>
+<span class="p">$</span> <span class="c">git log --oneline</span>
+d84bda4 Add repository memory</pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">The test gate, passing</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate <span class="ok">passed</span>: npm run test:run
+
+
+&gt; orders-api@1.4.0 test:run
+&gt; node --test
+
+<span class="ok">✔</span> totals a cart (0.44075ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">The test gate, failing</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
+
+
+&gt; orders-api@1.4.0 test:run
+&gt; node --test
+
+<span class="err">✖</span> totals a cart (0.839417ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+<span class="m">  …</span>
+<span class="err">✖</span> failing tests:
+
+test at tests/cart.test.js:5:1
+<span class="err">✖</span> totals a cart (0.839417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  24 !== 29
+<span class="m">  …</span>
+<span class="err">[exit 1]</span></pre>
+              <span class="block-label">Which is what stops a push</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git push -u origin main</span>
+Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
+<span class="m">  …</span>
+  24 !== 29
+<span class="m">  …</span>
+error: failed to push some refs to '../origin.git'
+<span class="err">[exit 1]</span></pre>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -434,41 +692,61 @@ Result: <span class="warn">WARNINGS</span>
               of accepted decisions and modules, with the detail one file away.
             </p>
           </div>
-          <dl class="defs">
-            <div>
-              <dt>Claude Code</dt>
-              <dd>
-                <code>CLAUDE.md</code> is loaded automatically and imports <code>AGENTS.md</code>. A
-                read-only SessionStart hook in <code>.claude/hooks/session-start.sh</code> injects the
-                list of accepted ADRs and modules at the start of every session.
-              </dd>
+          <div class="two-col">
+            <dl class="defs">
+              <div>
+                <dt>Claude Code</dt>
+                <dd>
+                  <code>CLAUDE.md</code> is loaded automatically and imports <code>AGENTS.md</code>. A
+                  read-only SessionStart hook in <code>.claude/hooks/session-start.sh</code> injects the
+                  list of accepted ADRs and modules at the start of every session.
+                </dd>
+              </div>
+              <div>
+                <dt>Cursor</dt>
+                <dd>
+                  <code>.cursor/rules/persist-memory.mdc</code> is an always-apply rule, so the memory
+                  rules go into every request.
+                </dd>
+              </div>
+              <div>
+                <dt>Codex and others</dt>
+                <dd>
+                  <code>AGENTS.md</code> is always written and is the portable floor. It opens with the
+                  rules: read memory first, reuse what <code>CONVENTIONS.md</code> names, record
+                  lessons, never contradict an accepted ADR, run <code>persist doctor</code> before
+                  claiming done.
+                </dd>
+              </div>
+              <div>
+                <dt>Skills</dt>
+                <dd>
+                  Workflow skills written to both <code>.claude/skills/</code> and
+                  <code>.agents/skills/</code>. They are instructions only; generated skills contain
+                  no scripts.
+                </dd>
+              </div>
+            </dl>
+            <div class="stack">
+              <span class="block-label">The catalog</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist skill list</span>
+Persist OS skill catalog
+
+- create-prd: Create PRD
+- plan-feature: Plan Feature
+- plan-module: Plan Module
+- create-adr: Create ADR
+- implement-task: Implement Task
+- write-tests: Write Tests
+- security-review: Security Review
+- architecture-drift-review: Architecture Drift Review
+- update-module-memory: Update Module Memory
+- completion-report: Completion Report
+- conventions-adherence: Conventions Adherence
+- capture-mcp-context: Capture MCP Context
+<span class="ok">[exit 0]</span></pre>
             </div>
-            <div>
-              <dt>Cursor</dt>
-              <dd>
-                <code>.cursor/rules/persist-memory.mdc</code> is an always-apply rule, so the memory
-                rules go into every request.
-              </dd>
-            </div>
-            <div>
-              <dt>Codex and others</dt>
-              <dd>
-                <code>AGENTS.md</code> is always written and is the portable floor. It opens with the
-                rules: read memory first, reuse what <code>CONVENTIONS.md</code> names, record
-                lessons, never contradict an accepted ADR, run <code>persist doctor</code> before
-                claiming done.
-              </dd>
-            </div>
-            <div>
-              <dt>Skills</dt>
-              <dd>
-                Twelve workflow skills, from <code>create-prd</code> to
-                <code>completion-report</code>, written to both <code>.claude/skills/</code> and
-                <code>.agents/skills/</code>. They are instructions only; generated skills contain
-                no scripts.
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
       </section>
 
@@ -495,7 +773,7 @@ Result: <span class="warn">WARNINGS</span>
                 <tr>
                   <td class="cmd-cell"><code>persist init</code></td>
                   <td class="desc">
-                    Write the six memory documents, the decision directory, twelve agent skills,
+                    Write the six memory documents, the decision directory, the agent skills,
                     pre-commit and pre-push hooks, a CI workflow, the Claude SessionStart hook, and
                     the Cursor rule. Refuses to overwrite an existing installation without
                     <code>--force --reinit</code>.
@@ -633,18 +911,18 @@ Result: <span class="warn">WARNINGS</span>
               <a class="btn" href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">persist-os on npm</a>
             </div>
           </div>
-          <pre><code><span class="m"># run without installing</span>
-npx persist-os@latest init
+          <pre class="transcript"><span class="m"># run without installing</span>
+<span class="c">npx persist-os@latest init</span>
 
 <span class="m"># or install the binary</span>
-npm install -g persist-os
-persist init
+<span class="c">npm install -g persist-os</span>
+<span class="c">persist init</span>
 
 <span class="m"># enable the generated hooks, once per clone</span>
-git config core.hooksPath .persist/hooks
+<span class="c">git config core.hooksPath .persist/hooks</span>
 
 <span class="m"># check the memory any time</span>
-persist doctor</code></pre>
+<span class="c">persist doctor</span></pre>
         </div>
       </section>
     </main>

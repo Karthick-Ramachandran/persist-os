@@ -121,10 +121,31 @@ Result: <span class="warn">WARNINGS</span></code></pre>
             </li>
           </ul>
           <p>
-            Info findings never change the exit code. A hook or CI step that runs
-            <code>persist doctor</code> therefore blocks on errors, passes with warnings, and shows
-            the warnings in its log. To block on warnings too, check for exit code 0 explicitly.
+            Info findings never change the exit code. Exit 1 is still non-zero: the generated
+            pre-commit hook runs the doctor under <code>set -e</code>, and a CI step fails on any
+            non-zero exit, so a warning blocks a commit and a pull request just as an error does
+            until the section it names is filled in. This is a recorded commit attempt right after
+            <code>persist feature create</code>, before any template was filled:
           </p>
+          <pre><code><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 1 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+Result: <span class="warn">WARNINGS</span>
+<span class="warn">[exit 1]</span>
+<span class="p">$</span> <span class="c">git log --oneline</span>
+d84bda4 Add repository memory</code></pre>
 
           <h2 id="checks">Every check</h2>
           <p>
@@ -232,6 +253,22 @@ INFO
 NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+
+Result: PASSED</code></pre>
+          <p>The same fresh memory in a folder that is not a git repository adds a third line:</p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+NOT EVALUATED
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- staleness: not a git repository, so commit history is unavailable
 
 Result: PASSED</code></pre>
 
