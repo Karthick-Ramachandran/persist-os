@@ -221,7 +221,7 @@ describe("doctor standards checks", () => {
     expect(findings.filter((finding) => finding.severity === "error")).toEqual([]);
   });
 
-  it("warns on security-sensitive decisions without security notes", async () => {
+  it("warns when a security-sensitive decision links no security memory", async () => {
     const rootDir = await createRoot("doctor-standards-security-notes");
     await writeAdrFull(rootDir, {
       status: "Accepted",
@@ -239,20 +239,21 @@ describe("doctor standards checks", () => {
       expect.objectContaining({
         severity: "warning",
         check: "standards-adr-security-notes",
-        message: "Security-sensitive ADR decision is missing security notes.",
+        message:
+          "Security-sensitive ADR decision does not link security memory. Fill the `Security:` entry under `## Related Documents`.",
       }),
     );
     expect(findings.filter((finding) => finding.severity === "error")).toEqual([]);
   });
 
-  it("stays quiet when security notes exist", async () => {
+  it("stays quiet when the Security entry under Related Documents is filled", async () => {
     const rootDir = await createRoot("doctor-standards-security-noted");
     await writeAdrFull(rootDir, {
       status: "Accepted",
       decision: "Route authentication through the MCP gateway with network retries.",
       alternatives: "Real alternative text.",
       consequences: "Real consequence text.",
-      securityNotes: "MCP calls stay local; the gateway never reaches the network.",
+      securityNotes: "`docs/20-security/SECURITY_MODEL.md`",
     });
 
     const { findings } = await checkStandards({
@@ -394,10 +395,11 @@ ${options.alternatives ?? "Example alternative."}
 ## Consequences
 
 ${options.consequences ?? "Example consequence."}
-${options.securityNotes === undefined ? "" : `\n## Security Notes\n\n${options.securityNotes}\n`}
+
 ## Related Documents
 
 - Example.
+- Security:${options.securityNotes === undefined ? "" : ` ${options.securityNotes}`}
 `,
     "utf8",
   );

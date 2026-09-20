@@ -171,9 +171,18 @@ async function checkAdrAlternatives(rootDir: string, adrDir: string): Promise<Do
 
 /**
  * Security-sensitive decisions without security notes: when the Decision section itself uses
- * security-sensitive language, the ADR must carry a meaningful Security section. Always a
- * warning — erroring would break builds over a new heuristic and force edits to accepted
- * history (see F-034 PRD).
+ * security-sensitive language, the ADR must point its `Security:` entry under
+ * `## Related Documents` at something.
+ *
+ * That entry is the right anchor because `generate-adr.ts` already emits it in every ADR, so the
+ * check asks for a field the tool creates rather than a `## Security` heading it has never
+ * produced. Requiring a heading warned on every correctly-written ADR forever; requiring the
+ * security prose itself would be circular, since the same vocabulary that marks a decision as
+ * security-sensitive would also satisfy the check, and the rule could never fire.
+ *
+ * Always a warning — erroring would break builds over a heuristic and force edits to accepted
+ * history (see F-034 PRD). It confirms the author linked the security memory they considered; a
+ * pasted path satisfies it. Judging whether the reasoning is any good is the agent's job.
  */
 async function checkAdrSecurityNotes(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
   const findings: DoctorFinding[] = [];
@@ -193,7 +202,8 @@ async function checkAdrSecurityNotes(rootDir: string, adrDir: string): Promise<D
       findings.push({
         severity: "warning",
         check: "standards-adr-security-notes",
-        message: "Security-sensitive ADR decision is missing security notes.",
+        message:
+          "Security-sensitive ADR decision does not link security memory. Fill the `Security:` entry under `## Related Documents`.",
         path: adrPath,
       });
     }
@@ -202,30 +212,27 @@ async function checkAdrSecurityNotes(rootDir: string, adrDir: string): Promise<D
   return findings;
 }
 
+/**
+ * True when the ADR's `Security:` entry under `## Related Documents` points at something.
+ * A missing section, a missing entry, or an entry left as the generated empty placeholder all
+ * count as unlinked.
+ */
 function hasMeaningfulSecurityNotes(content: string): boolean {
-  const lines = content.split(/\r?\n/u);
+  const related = getSection(content, "Related Documents");
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const heading = /^##\s+(.+?)\s*$/u.exec(lines[index].trim());
-
-    if (heading === null || !heading[1].toLowerCase().startsWith("security")) {
-      continue;
-    }
-
-    const body: string[] = [];
-
-    for (let bodyIndex = index + 1; bodyIndex < lines.length; bodyIndex += 1) {
-      if (/^##\s+/u.test(lines[bodyIndex])) {
-        break;
-      }
-
-      body.push(lines[bodyIndex]);
-    }
-
-    return !isPlaceholder(body.join("\n").trim());
+  if (related === undefined) {
+    return false;
   }
 
-  return false;
+  const entry = /^\s*[-*]\s*Security:\s*(.*)$/imu.exec(related);
+
+  if (entry === null) {
+    return false;
+  }
+
+  const value = (entry[1] ?? "").trim();
+
+  return value.length > 0 && !isPlaceholder(value);
 }
 
 function checkSecurityImpactEvidence(
