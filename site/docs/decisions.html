@@ -7,9 +7,8 @@
     <meta name="description" content="The decision lifecycle in Persist OS: proposed, accepted, superseded. What deserves an ADR, how the files are named, and how the doctor treats decisions." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/decisions" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="../assets/site.css" />
     <script>
       (function () {
@@ -154,11 +153,11 @@ What improves, what worsens, and what risks remain?
           <h3>Proposed</h3>
           <p>
             Someone writes the decision down. That can be a person running
-            <code>persist adr create</code>, an agent following the generated
-            <code>create-adr</code> skill, <code>persist adopt</code> inferring a framework from a
-            manifest, or <code>persist mcp add</code> proposing an integration. In every case the
-            status is Proposed and nothing else in the memory may treat it as settled. The doctor
-            warns when a feature or module cites an ADR that is not yet accepted.
+            <code>persist adr create</code>, an agent recording a decision it just made,
+            <code>persist adopt</code> inferring a framework from a manifest, or
+            <code>persist mcp add</code> proposing an integration. In every case the status is
+            Proposed and nothing else in the memory may treat it as settled. The doctor warns
+            when a feature or module cites an ADR that is not yet accepted.
           </p>
           <h3>Accepted</h3>
           <p>
@@ -182,7 +181,9 @@ Next steps:
             supersede &lt;old&gt; &lt;new-title&gt;</code> does it the other way: a new numbered ADR
             is written as Accepted with a <code>## Supersedes</code> link, and the old ADR's status
             line is rewritten to say what replaced it. Only an accepted ADR can be superseded; the
-            command refuses otherwise.
+            command refuses otherwise. It also refuses a replacement title that another live
+            decision or proposal already holds, naming the existing file — two accepted
+            decisions under one title is the drift the doctor reports as an error.
           </p>
           <pre class="diff"><code><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
 
@@ -228,6 +229,8 @@ Next steps:
                 <tr><td>Feature or module memory cites an ADR that does not exist</td><td class="sev-err">error</td></tr>
                 <tr><td>Memory cites an ADR that is still Proposed</td><td class="sev-warn">warning</td></tr>
                 <tr><td>Memory cites an ADR that has been superseded</td><td class="sev-warn">warning</td></tr>
+                <tr><td>Two accepted ADRs share one title</td><td class="sev-err">error</td></tr>
+                <tr><td>A proposal shares the title of a live accepted ADR</td><td class="sev-warn">warning</td></tr>
                 <tr><td>An accepted ADR has no substance in Consequences or Alternatives Considered</td><td class="sev-err">error</td></tr>
                 <tr><td>A proposed ADR has no substance in Consequences or Alternatives Considered</td><td class="sev-warn">warning</td></tr>
                 <tr><td>A decision written in security-sensitive terms has no security document linked under Related Documents</td><td class="sev-warn">warning</td></tr>
@@ -252,8 +255,7 @@ Next steps:
             The doctor checks structure and references, not meaning. If an accepted ADR says
             PostgreSQL and the code quietly moved to MySQL, the file is still there, the references
             still resolve, and the doctor passes. Catching that needs reading, so it is left to the
-            agent: the generated <code>architecture-drift-review</code> skill walks the docs and
-            asks whether they still line up. The gate stays deterministic; the model does the
+            people and agents doing the work. The gate stays deterministic; the model does the
             reading.
           </p>
         </div>

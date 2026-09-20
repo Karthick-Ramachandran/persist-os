@@ -7,14 +7,13 @@ Persist OS has reached the first release-ready foundation.
 Completed capabilities:
 
 - Repository memory initialization.
-- Optional presets as opinion packs.
 - Feature memory creation.
 - Proposed ADR creation.
 - Module memory creation.
 - Structural Doctor checks.
 - Doctor standards checks for completion, review, ADR consequence, and security-impact evidence.
 - Doctor drift checks for ADR reference integrity in feature and module memory.
-- Pre-commit hook generation that enforces Doctor and configured gates at commit time.
+- Pre-commit hook generation that runs Doctor (warnings advisory, errors blocking) and configured gates at commit time.
 - AI command memory.
 - Packaged `persist` CLI build.
 - README, examples, CI, release-candidate workflow, and package validation.
@@ -99,7 +98,7 @@ Adoption must produce proposed memory, not silently accepted truth.
 
 ### P15: Organization Memory Planning
 
-Define organization memory as shared standards, ADRs, architecture guidance, and opinion packs
+Define organization memory as shared standards, ADRs, and architecture guidance
 across repositories.
 
 Organization memory must remain explicit and reviewable.

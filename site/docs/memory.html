@@ -7,9 +7,8 @@
     <meta name="description" content="What persist init writes, the source-of-truth order, how each AI tool loads the memory, and the opt-in feature and module memory." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/memory" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="../assets/site.css" />
     <script>
       (function () {
@@ -206,18 +205,19 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
 
           <h2 id="skills">Skills</h2>
           <p>
-            Three workflow skills are written to <code>.claude/skills/</code> and
+            Four workflow skills are written to <code>.claude/skills/</code> and
             <code>.agents/skills/</code>: <code>plan-feature</code>, <code>security-review</code>,
-            and <code>conventions-adherence</code>. Each is a short <code>SKILL.md</code> that
-            points at the memory it needs rather than repeating it. <code>security-review</code>
-            also ships <code>scripts/scan-secrets.sh</code>, a read-only scan for common
-            accidentally committed secrets; the skill works with the script deleted, and init lists
-            every executable it writes. The earlier catalog of twelve was folded into the root
-            files, the CLI commands, and <code>MODULE_DELIVERY_WORKFLOW.md</code> under ADR-0008
-            and ADR-0013. <code>persist skill create &lt;name&gt;</code> adds a skill by catalog
-            name or as a skeleton. The doctor warns about a skill directory that is not in the
-            catalog, so a retired skill left on disk after an upgrade is named, with the command to
-            remove it, rather than silently ignored.
+            <code>conventions-adherence</code>, and <code>chestertons-fence</code>. Each is a
+            short <code>SKILL.md</code> that points at the memory it needs rather than repeating
+            it. <code>security-review</code> also ships
+            <code>scripts/scan-secrets.sh</code>, a read-only scan for common accidentally
+            committed secrets; the skill works with the script deleted, and init lists every
+            executable it writes. The earlier catalog of twelve was folded into the root files,
+            the CLI commands, and <code>MODULE_DELIVERY_WORKFLOW.md</code> under ADR-0008 and
+            ADR-0012. <code>persist skill create &lt;name&gt;</code> adds a skill by catalog name
+            or as a skeleton for one of your own. The doctor warns only about the nine skills
+            retired in 1.0 left on disk after an upgrade, with the command to remove each; your
+            own custom skills stay silent.
           </p>
 
           <h2 id="conventions">Conventions and lessons</h2>
@@ -305,6 +305,7 @@ Remaining Risks:
                 <tr><td><code>preCommitGates</code></td><td class="desc">Commands the pre-commit hook runs after <code>persist doctor</code>.</td></tr>
                 <tr><td><code>prePushGates</code></td><td class="desc">Commands the pre-push hook runs after <code>persist test-gate</code>.</td></tr>
                 <tr><td><code>testCommand</code></td><td class="desc">The one-shot test command for <code>persist test-gate</code>, or <code>null</code> to leave the gate off.</td></tr>
+                <tr><td><code>fenceEnabled</code></td><td class="desc">Whether the Chesterton fence is active. Default <code>true</code>; set <code>false</code> to switch the fence check off. Nothing fence-related is generated either way except this toggle.</td></tr>
               </tbody>
             </table>
           </div>

@@ -5,7 +5,7 @@ Persist OS test gate passed: npm run test:run
 > orders-api@1.4.0 test:run
 > node --test
 
-✔ totals a cart (0.42975ms)
+✔ totals a cart (0.475875ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -13,5 +13,5 @@ Persist OS test gate passed: npm run test:run
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 53.683416
+ℹ duration_ms 58.830583
 [exit 0]

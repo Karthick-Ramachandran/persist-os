@@ -7,9 +7,8 @@
     <meta name="description" content="persist doctor is a deterministic, read-only gate for repository memory. Exit codes 0, 1, 2, every check it runs, the JSON report, and where to run it." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/doctor" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="../assets/site.css" />
     <script>
       (function () {
@@ -121,11 +120,11 @@ Result: <span class="warn">WARNINGS</span></code></pre>
             </li>
           </ul>
           <p>
-            Info findings never change the exit code. Exit 1 is still non-zero: the generated
-            pre-commit hook runs the doctor under <code>set -e</code>, and a CI step fails on any
-            non-zero exit, so a warning blocks a commit and a pull request just as an error does
-            until the section it names is filled in. This is a recorded commit attempt right after
-            <code>persist feature create</code>, before any template was filled:
+            Info findings never change the exit code. Exit 1 is still non-zero, and a CI step
+            fails on any non-zero exit — but the generated pre-commit hook reads the exit code
+            and only fails on errors, so a warning is visible without blocking the commit. This
+            is a recorded commit attempt right after <code>persist feature create</code>, before
+            any template was filled:
           </p>
           <pre><code><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
 Doctor Report
@@ -143,9 +142,12 @@ INFO
 - 0 ADRs detected.
 
 Result: <span class="warn">WARNINGS</span>
-<span class="warn">[exit 1]</span>
+[main 37dc89f] Plan the checkout feature
+ 2 files changed, 50 insertions(+)
+<span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-04dfe77 Add repository memory</code></pre>
+37dc89f Plan the checkout feature
+922b092 Add repository memory</code></pre>
 
           <h2 id="checks">Every check</h2>
           <p>
@@ -224,8 +226,18 @@ Result: <span class="warn">WARNINGS</span>
                 </tr>
                 <tr>
                   <td><code>retired-skills</code></td>
-                  <td class="desc">A directory under <code>.claude/skills/</code> or <code>.agents/skills/</code> is not in the built-in catalog. It is either a retired skill (the message gives the removal command) or a hand-made one, which is fine to keep.</td>
+                  <td class="desc">A skill directory holds one of the nine skills retired in 1.0 (the message gives the removal command). Custom skills you wrote yourself stay silent — <code>skill create</code> is a supported workflow.</td>
                   <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>duplicate-titles</code></td>
+                  <td class="desc">Two accepted decisions share one title (error), or a proposal shares a live title (warning). Superseded records are history and never collide.</td>
+                  <td class="sev-mixed">error / warning</td>
+                </tr>
+                <tr>
+                  <td><code>fence</code></td>
+                  <td class="desc">A staged source change crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). A second crossing surfaces the recorded reason as info.</td>
+                  <td class="sev-mixed">warning / info</td>
                 </tr>
               </tbody>
             </table>
@@ -237,9 +249,11 @@ Result: <span class="warn">WARNINGS</span>
             silently passing. In a fresh repository with no ADRs, features, or modules,
             <code>standards</code> and <code>content</code> are listed as not evaluated with the
             reason. The config-dependent checks are all not evaluated when the config is missing
-            or invalid. <code>staleness</code> is not evaluated outside a git repository or in a
-            shallow clone; <code>hook-drift</code> is not evaluated when a hook file is missing.
-            Each one carries a reason, in both the text report and the JSON.
+            or invalid. <code>staleness</code> and <code>fence</code> are not evaluated
+            outside a git repository (staleness also in a shallow clone); <code>hook-drift</code>
+            is not evaluated when a hook file is missing; <code>retired-skills</code> when the
+            skills directories do not exist; <code>duplicate-titles</code> when the ADR directory
+            does not exist. Each one carries a reason, in both the text report and the JSON.
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
 Doctor Report
@@ -255,7 +269,7 @@ NOT EVALUATED
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 
 Result: PASSED</code></pre>
-          <p>The same fresh memory in a folder that is not a git repository adds a third line:</p>
+          <p>The same fresh memory in a folder that is not a git repository adds two more lines:</p>
           <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
 Doctor Report
 
@@ -269,6 +283,7 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - staleness: not a git repository, so commit history is unavailable
+- fence: not inside a git work tree, so the staged set is unknown
 
 Result: PASSED</code></pre>
 
@@ -343,9 +358,9 @@ Result: PASSED</code></pre>
           <h2 id="limits">What it will not catch</h2>
           <p>
             Contradictions in meaning. An accepted ADR that says one thing while the code does
-            another passes every structural check. That judgment is left to the agent through the
-            <code>architecture-drift-review</code> skill, because the moment the gate needs a model
-            to decide whether two documents agree, it stops being something you can trust blindly.
+            another passes every structural check. That judgment stays with the people and agents
+            doing the work, because the moment the gate needs a model to decide whether two
+            documents agree, it stops being something you can trust blindly.
           </p>
         </div>
 

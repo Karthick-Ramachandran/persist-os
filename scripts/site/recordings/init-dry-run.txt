@@ -3,6 +3,7 @@ persist repository memory for AI-assisted software work
 ────────────────────────────────────────
 Persist OS init dry run complete.
 Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json).
 stdin is not a TTY — proceeded with defaults without prompting (as --yes).
 Planned creates:
 - .persist/config.json
@@ -29,6 +30,8 @@ Planned creates:
 - .agents/skills/security-review/scripts/scan-secrets.sh
 - .claude/skills/conventions-adherence/SKILL.md
 - .agents/skills/conventions-adherence/SKILL.md
+- .claude/skills/chestertons-fence/SKILL.md
+- .agents/skills/chestertons-fence/SKILL.md
 
 Pre-commit and pre-push hooks will be written to .persist/hooks/.
 Enable them once per clone: git config core.hooksPath .persist/hooks

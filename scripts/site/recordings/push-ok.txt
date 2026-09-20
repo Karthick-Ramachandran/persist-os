@@ -5,7 +5,7 @@ Persist OS test gate passed: npm run test:run
 > orders-api@1.4.0 test:run
 > node --test
 
-✔ totals a cart (0.423041ms)
+✔ totals a cart (0.475583ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -13,7 +13,7 @@ Persist OS test gate passed: npm run test:run
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 56.878959
+ℹ duration_ms 63.536208
 To ../origin.git
  * [new branch]      main -> main
 branch 'main' set up to track 'origin/main'.

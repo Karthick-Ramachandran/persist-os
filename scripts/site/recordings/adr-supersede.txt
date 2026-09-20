@@ -11,4 +11,5 @@ Next steps:
 - Fill docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md: Context (what changed), Decision, Alternatives, Consequences.
 - ADR-0001-use-postgresql-for-primary-storage stays in history as superseded; update any memory that still relies on it.
 - Run persist doctor — it flags memory that still references the superseded decision.
+- The Chesterton fence is enabled: supersede is the moment a past decision is revisited — if source files shaped by the old decision change, record why in FENCES.md (the chestertons-fence skill walks through it).
 [exit 0]

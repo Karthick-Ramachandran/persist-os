@@ -107,6 +107,14 @@ $ persist doctor --json
     {
       "id": "retired-skills",
       "status": "evaluated"
+    },
+    {
+      "id": "duplicate-titles",
+      "status": "evaluated"
+    },
+    {
+      "id": "fence",
+      "status": "evaluated"
     }
   ]
 }
