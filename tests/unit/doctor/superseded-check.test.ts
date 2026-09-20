@@ -55,6 +55,36 @@ describe("doctor superseded-reference check", () => {
     );
   });
 
+  it("stays quiet on a completed feature, whose citation is accurate history", async () => {
+    // A finished feature cites the decision that was accepted when the work was done. That
+    // citation is still correct after the decision is superseded, so flagging it asks someone
+    // to rewrite history. code-reference and staleness already draw this line.
+    const rootDir = await createRoot("superseded-completed");
+    await writeSupersededAdr(rootDir);
+    await writeFeature(rootDir, "# Impact\n\nBuilt against ADR-0001.\n");
+    await writeFile(
+      path.join(rootDir, "docs/40-features/F-001-checkout/COMPLETION_REPORT.md"),
+      "# Completion\n\nShipped.\n",
+      "utf8",
+    );
+
+    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("still warns on a feature that is in progress", async () => {
+    // No completion report: this is current-state planning, and pointing at a superseded
+    // decision is exactly what the check exists to catch.
+    const rootDir = await createRoot("superseded-in-progress");
+    await writeSupersededAdr(rootDir);
+    await writeFeature(rootDir, "# Impact\n\nWe will follow ADR-0001.\n");
+
+    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toHaveLength(1);
+  });
+
   it("produces no findings when nothing references the superseded ADR", async () => {
     const rootDir = await createRoot("superseded-none");
     await writeSupersededAdr(rootDir);

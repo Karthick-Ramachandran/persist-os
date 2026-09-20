@@ -56,6 +56,24 @@ async function loadSupersededAdrIds(rootDir: string, adrDir: string): Promise<Se
   return superseded;
 }
 
+/**
+ * A feature folder containing a completion report is history. Its docs cite the decision that was
+ * accepted when the work was done, and that citation stays correct after the decision is later
+ * superseded — the same rule code-reference and staleness already apply.
+ */
+async function isCompletedFeature(rootDir: string, featureDir: string): Promise<boolean> {
+  try {
+    await readFile(path.join(rootDir, featureDir, "COMPLETION_REPORT.md"), "utf8");
+    return true;
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function checkReferences(
   rootDir: string,
   referenceDir: string,
@@ -63,8 +81,21 @@ async function checkReferences(
 ): Promise<DoctorFinding[]> {
   const findings: DoctorFinding[] = [];
   const files = await readMarkdownFiles(rootDir, referenceDir);
+  const completed = new Map<string, boolean>();
 
   for (const file of files) {
+    const folder = path.posix.dirname(file);
+    if (folder !== referenceDir) {
+      let isHistory = completed.get(folder);
+      if (isHistory === undefined) {
+        isHistory = await isCompletedFeature(rootDir, folder);
+        completed.set(folder, isHistory);
+      }
+      if (isHistory) {
+        continue;
+      }
+    }
+
     const content = await readFile(path.join(rootDir, file), "utf8");
     const referenced = new Set<string>();
 
