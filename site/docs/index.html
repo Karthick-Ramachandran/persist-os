@@ -7,9 +7,8 @@
     <meta name="description" content="Install Persist OS, initialize repository memory, enable the generated hooks, record a first decision, and run the doctor." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="../assets/site.css" />
     <script>
       (function () {
@@ -104,20 +103,22 @@
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist init --dry-run</span></code></pre>
           <p>
-            On a terminal, init asks four questions first: which AI tools to generate files for,
-            whether to track features, whether to track modules, and whether to enable the test
-            gate (it prints the detected test command before asking). Empty answers take the
-            defaults shown in brackets. <code>--yes</code> takes every default without asking, and
-            any explicit flag such as <code>--features</code> skips the questions too. The run
-            below was recorded with stdin piped, so it took the defaults and said so:
+            On a terminal, init asks five questions first: which AI tools to generate files for,
+            whether to track features, whether to track modules, whether to enable the test
+            gate (it prints the detected test command before asking), and whether to enable the
+            Chesterton fence. Empty answers take the defaults shown in brackets.
+            <code>--yes</code> takes every default without asking, and any explicit flag such as
+            <code>--features</code> skips the questions too. The run below was recorded with
+            stdin piped, so it took the defaults and said so:
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist init</span>
 persist repository memory for AI-assisted software work
 ────────────────────────────────────────
 Persist OS init complete.
 Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json).
 stdin is not a TTY — proceeded with defaults without prompting (as --yes).
-Generated repository memory, 3 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Generated repository memory, 4 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
 Created:
 - .persist/config.json
 - AGENTS.md
@@ -135,6 +136,8 @@ Created:
 - .persist/hooks/pre-push
 - .claude/hooks/session-start.sh
 - .claude/settings.json
+- .claude/skills/chestertons-fence/SKILL.md
+- .agents/skills/chestertons-fence/SKILL.md
 - .claude/skills/plan-feature/SKILL.md
 - .agents/skills/plan-feature/SKILL.md
 - .claude/skills/security-review/SKILL.md
@@ -198,7 +201,7 @@ Next steps:
             Restart your AI tool so it picks up the new files. Claude Code reads
             <code>CLAUDE.md</code>, which imports <code>AGENTS.md</code>, and runs the SessionStart
             hook. Cursor applies <code>.cursor/rules/persist-memory.mdc</code> to every request.
-            Codex reads <code>AGENTS.md</code>. The three generated skills appear in
+            Codex reads <code>AGENTS.md</code>. The four generated skills appear in
             <code>.claude/skills/</code> and <code>.agents/skills/</code>.
           </p>
 
@@ -215,7 +218,8 @@ Created:
 
 Next steps:
 - Open docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md and fill: Context, Decision, Alternatives, Consequences.
-- It is Proposed — set Status to Accepted once the team agrees.</code></pre>
+- It is Proposed — set Status to Accepted once the team agrees.
+- The Chesterton fence is enabled: if this decision revisits why specific source files are shaped the way they are, record the human-confirmed reason in FENCES.md (the chestertons-fence skill walks through it).</code></pre>
           <p>Fill in the sections, then accept it when the team agrees:</p>
           <pre><code><span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
 Persist OS ADR accept complete.

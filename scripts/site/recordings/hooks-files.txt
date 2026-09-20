@@ -7,7 +7,14 @@ $ cat .persist/hooks/pre-commit; echo ---; tail -3 .persist/hooks/pre-push
 #   git config core.hooksPath .persist/hooks
 set -e
 
+# Doctor warnings are advisory: they print but never block the commit.
+# Only errors fail the hook. The set +e pair is deliberate — under set -e
+# the shell would abort before $? can be read.
+set +e
 persist doctor
+status=$?
+set -e
+[ "$status" -le 1 ] || exit "$status"
 ---
 
 persist test-gate

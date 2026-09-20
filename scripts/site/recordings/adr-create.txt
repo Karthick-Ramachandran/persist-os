@@ -7,4 +7,5 @@ Created:
 Next steps:
 - Open docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md and fill: Context, Decision, Alternatives, Consequences.
 - It is Proposed — set Status to Accepted once the team agrees.
+- The Chesterton fence is enabled: if this decision revisits why specific source files are shaped the way they are, record the human-confirmed reason in FENCES.md (the chestertons-fence skill walks through it).
 [exit 0]

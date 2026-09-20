@@ -1,959 +1,352 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Persist OS — Git tracks what changed. Persist OS tracks why.</title>
-    <meta
-      name="description"
-      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor. No network calls, no telemetry, no model calls."
-    />
-    <link rel="canonical" href="https://persist-os.pages.dev/" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#171311" media="(prefers-color-scheme: dark)" />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Persist OS" />
-    <meta property="og:title" content="Persist OS — Git tracks what changed. Persist OS tracks why." />
-    <meta
-      property="og:description"
-      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor."
-    />
-    <meta property="og:url" content="https://persist-os.pages.dev/" />
-    <meta property="og:image" content="https://persist-os.pages.dev/assets/og.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Persist OS — Git tracks what changed. Persist OS tracks why." />
-    <meta
-      name="twitter:description"
-      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor."
-    />
-    <meta name="twitter:image" content="https://persist-os.pages.dev/assets/og.png" />
-
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
-    />
-    <link rel="stylesheet" href="assets/site.css" />
-    <script>
-      // Apply a saved theme before first paint so there is no flash. Storage may be unavailable.
-      (function () {
-        try {
-          var t = localStorage.getItem("theme");
-          if (t === "dark" || t === "light") {
-            document.documentElement.setAttribute("data-theme", t);
-          }
-        } catch (e) {}
-      })();
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Persist OS",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "macOS, Linux, Windows (Node.js 20 or newer)",
-        "description": "A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor. No network calls, no telemetry, no model calls.",
-        "url": "https://persist-os.pages.dev/",
-        "downloadUrl": "https://www.npmjs.com/package/persist-os",
-        "sameAs": ["https://github.com/Karthick-Ramachandran/persist-os"],
-        "license": "https://opensource.org/licenses/MIT",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-      }
-    </script>
-  </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-
-    <div class="banner">
-      <a href="docs/index.html">1.0.0 is out — read the docs <span class="arrow" aria-hidden="true">→</span></a>
-    </div>
-
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="index.html" aria-label="Persist OS home">
-          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-            <rect width="32" height="32" rx="8" fill="var(--accent)" />
-            <path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          Persist OS
-        </a>
-        <nav class="site-nav" aria-label="Site">
-          <a href="docs/index.html">Docs</a>
-          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
-          <span class="sep" aria-hidden="true"></span>
-          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub">
-            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
-          </a>
-          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-          </a>
-          <button class="theme-toggle" type="button" aria-label="Switch theme">
-            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
-            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-          </button>
-        </nav>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Persist OS · Keep the reasoning with the code.</title>
+  <meta name="description" content="A local-first CLI for engineering memory. Keep decisions, conventions, and lessons in your repository. Check stale references and missing evidence before the next commit.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fafafa">
+  <link rel="canonical" href="https://persist-os.pages.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Persist OS">
+  <meta property="og:title" content="Persist OS · Keep the reasoning with the code.">
+  <meta property="og:description" content="Engineering memory for the next coding session. Local-first, checked into Git, and reviewed by humans.">
+  <meta property="og:url" content="https://persist-os.pages.dev/">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <script>
+    // A small pre-paint enhancement. Storage restrictions must not break the page.
+    (function () {
+      var root = document.documentElement;
+      root.classList.add('js');
+      var theme;
+      try { theme = localStorage.getItem('persist-theme') || localStorage.getItem('theme'); } catch (_) {}
+      if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.dataset.theme = theme;
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/landing.css">
+  <script src="assets/landing.js" defer></script>
+</head>
+<body class="persist-landing">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#" aria-label="Persist OS home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M8.5 21V7h6.8a4.7 4.7 0 0 1 0 9.4H8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Persist<span class="brand-os"> OS</span></span></a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#doctor">Doctor</a>
+        <a href="#agents">For agents</a>
+        <a href="docs/index.html">Docs <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+      </nav>
+      <div class="header-actions">
+        <a class="command-trigger" href="#commands" data-open-commands><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg><span>Commands</span><kbd data-shortcut>⌘ K</kbd></a>
+        <button class="icon-button theme-toggle" type="button" aria-label="Switch to dark theme"><svg class="icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1"/></svg><svg class="icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 13.5A9 9 0 0 1 10.5 3a9 9 0 1 0 10 10.5Z"/></svg></button>
+        <a aria-label="Persist OS on GitHub" class="button button-github" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg class="icon " viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.35 1.08 2.93.83.09-.64.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03A9.6 9.6 0 0 1 12 5c.85 0 1.71.11 2.51.34 1.91-1.3 2.75-1.03 2.75-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v3.57c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg><span>GitHub</span></a>
+        <button class="icon-button menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open navigation"><svg class="icon menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="icon close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </div>
-    </header>
+    </div>
+    <nav class="mobile-nav container" id="mobile-nav" aria-label="Mobile navigation" hidden>
+      <a href="#workflow">Workflow</a><a href="#doctor">Doctor</a><a href="#agents">For agents</a>
+      <a href="#commands" data-open-commands>Commands</a><a href="docs/index.html">Documentation <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+    </nav>
+  </header>
 
-    <main id="main">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="wrap">
-          <div class="hero-copy">
-            <h1 id="hero-title">
-              Git tracks what changed.<br />
-              Persist OS tracks <span class="why">why</span> it changed.
-            </h1>
-            <p class="lede">
-              A local-first CLI that writes the decisions behind your code into plain files in the
-              repository, then checks them with a deterministic doctor. Agents read the files every
-              session. Humans review them in pull requests. No network calls, no telemetry, no model
-              calls.
-            </p>
-            <div class="hero-actions">
-              <div class="cmd">
-                <span class="prompt" aria-hidden="true">$</span>
-                <span class="cmd-text">npx persist-os@latest init</span>
-                <button class="copy" type="button" data-copy="npx persist-os@latest init">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-                  <span class="sr-only">Copy command</span>
-                </button>
-              </div>
-              <a class="btn btn-primary" href="docs/index.html">Get started <span class="arrow" aria-hidden="true">→</span></a>
-              <a class="btn" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
-                Star on GitHub
-              </a>
-            </div>
-            <ul class="hero-meta">
-              <li>MIT licensed</li>
-              <li>Node.js 20 or newer</li>
-              <li>Two runtime dependencies</li>
-            </ul>
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero-copy">
+          <div class="hero-eyebrow"><span class="live-dot" aria-hidden="true"></span> Repository memory for coding agents <span class="tiny-badge">Open source</span></div>
+          <h1 id="hero-title">Keep the <span>reasoning</span><br>with the code.</h1>
+          <p>Give your next coding session the decisions, conventions, and lessons<br class="desktop-break"> it needs. Persist OS keeps them in your repo and checks for drift.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#start">Get started <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a>
+            <a class="button button-secondary" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg class="icon " viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.35 1.08 2.93.83.09-.64.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03A9.6 9.6 0 0 1 12 5c.85 0 1.71.11 2.51.34 1.91-1.3 2.75-1.03 2.75-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v3.57c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>View on GitHub</a>
           </div>
+          <div class="hero-install"><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>npx persist-os@latest init</code><button class="copy-button" type="button" data-copy="npx persist-os@latest init" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><span class="install-requirement">Node.js 20+</span></div>
+        </div>
 
-          <figure class="ledger" aria-label="What changed next to why it changed, from this repository's own history">
-            <div class="ledger-head">
-              <div>What changed <span class="file">git log --oneline</span></div>
-              <div>Why it changed <span class="file">docs/adrs/</span></div>
+        <figure class="product-demo" data-tabs="demo" aria-label="Interactive Persist OS command examples">
+          <div class="window-chrome"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="window-title"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg> ~/work/checkout-api</span><span class="window-local"><i></i> local session</span></div>
+          <div class="demo-tabs" role="tablist" aria-label="Explore CLI workflows"><button type="button" role="tab" id="tab-init" aria-controls="demo-init" aria-selected="false" tabindex="-1"><span class="tab-dot" aria-hidden="true"></span>Start fresh</button><button type="button" role="tab" id="tab-adopt" aria-controls="demo-adopt" aria-selected="false" tabindex="-1"><span class="tab-dot" aria-hidden="true"></span>Adopt a repo</button><button type="button" role="tab" id="tab-adr" aria-controls="demo-adr" aria-selected="false" tabindex="-1"><span class="tab-dot" aria-hidden="true"></span>Record a decision</button><button type="button" role="tab" id="tab-doctor" aria-controls="demo-doctor" aria-selected="true" tabindex="0"><span class="tab-dot" aria-hidden="true"></span>Check drift</button></div>
+          <div class="demo-panel" id="demo-init" role="tabpanel" aria-labelledby="tab-init" tabindex="0" hidden>
+      <div class="demo-grid">
+        <aside class="demo-tree" aria-label="Example repository files">
+          <div class="tree-heading">EXPLORER <span>repository</span></div>
+          <div class="tree-root"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> checkout-api</div>
+          <div class="tree-list"><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title=".persist/config.json">.persist/config.json</span></div><div class="tree-row is-highlighted" style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="AGENTS.md">AGENTS.md</span><i></i></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="CLAUDE.md">CLAUDE.md</span></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="docs/">docs/</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="00-product/PRODUCT.md">00-product/PRODUCT.md</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="20-security/SECURITY_MODEL.md">20-security/SECURITY_MODEL.md</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="50-quality/QUALITY_GATES.md">50-quality/QUALITY_GATES.md</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="60-engineering/">60-engineering/</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="adrs/">adrs/</span></div></div>
+          <div class="tree-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM8 6l8 8M12 10v8"/><circle cx="12" cy="10" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg> Plain files. Tracked in Git.</div>
+        </aside>
+        <div class="demo-output">
+          <div class="terminal-command"><span class="shell-prompt" aria-hidden="true">❯</span><code>persist init</code><button class="copy-button" type="button" data-copy="persist init" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+          <pre class="terminal-code"><code><span class="t-muted"># Choose your tools and the memory you want to track.</span>
+<span class="t-strong">persist init</span>
+
+<span class="t-purple">◆</span> AI tools      <span class="t-white">Claude Code · Codex · Cursor</span>
+<span class="t-purple">◆</span> Memory        <span class="t-white">6 core documents + docs/adrs/</span>
+<span class="t-purple">◆</span> Test gate     <span class="t-muted">Off unless configured</span>
+
+<span class="t-green">✓</span> Agent entry files, hooks, and CI workflow generated
+<span class="t-muted">  Review and fill in the templates before committing.</span>
+
+<span class="t-muted"># Hooks are opt-in, once per clone.</span>
+<span class="t-white">git config core.hooksPath .persist/hooks</span></code></pre>
+        </div>
+      </div>
+      <div class="demo-status"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg> Existing files are not overwritten by default.</span><span class="status-tag neutral"><i></i>setup example</span></div>
+    </div><div class="demo-panel" id="demo-adopt" role="tabpanel" aria-labelledby="tab-adopt" tabindex="0" hidden>
+      <div class="demo-grid">
+        <aside class="demo-tree" aria-label="Example repository files">
+          <div class="tree-heading">EXPLORER <span>repository</span></div>
+          <div class="tree-root"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> checkout-api</div>
+          <div class="tree-list"><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="package.json">package.json</span></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="pnpm-lock.yaml">pnpm-lock.yaml</span></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="docs/">docs/</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="adopt/">adopt/</span></div><div class="tree-row is-highlighted" style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="ADOPTION_REPORT.md">ADOPTION_REPORT.md</span><i></i></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="adrs/">adrs/</span></div><div class="tree-row " style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="proposed/">proposed/</span></div><div class="tree-row " style="--indent:3"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="ADR-PROPOSED-adopt-nextjs.md">ADR-PROPOSED-adopt-nextjs.md</span></div></div>
+          <div class="tree-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM8 6l8 8M12 10v8"/><circle cx="12" cy="10" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg> Plain files. Tracked in Git.</div>
+        </aside>
+        <div class="demo-output">
+          <div class="terminal-command"><span class="shell-prompt" aria-hidden="true">❯</span><code>persist adopt</code><button class="copy-button" type="button" data-copy="persist adopt" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+          <pre class="terminal-code"><code><span class="t-strong">Persist OS adopt complete.</span>
+<span class="t-muted">Inferred signals are proposed and require human review.</span>
+
+Languages:        <span class="t-white">TypeScript</span>
+Package manager:  <span class="t-white">pnpm</span>
+Frameworks:       <span class="t-white">Next.js</span>
+
+<span class="t-muted">Created:</span>
+<span class="t-purple">+</span> docs/adopt/ADOPTION_REPORT.md
+<span class="t-purple">+</span> docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+<span class="t-amber">Proposed.</span> Review the report and each decision.
+<span class="t-muted">Nothing here is accepted repository memory yet.</span></code></pre>
+        </div>
+      </div>
+      <div class="demo-status"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg> Signals come from manifests and lockfiles.</span><span class="status-tag amber"><i></i>proposed</span></div>
+    </div><div class="demo-panel" id="demo-adr" role="tabpanel" aria-labelledby="tab-adr" tabindex="0" hidden>
+      <div class="demo-grid">
+        <aside class="demo-tree" aria-label="Example repository files">
+          <div class="tree-heading">EXPLORER <span>repository</span></div>
+          <div class="tree-root"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> checkout-api</div>
+          <div class="tree-list"><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="docs/">docs/</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="adrs/">adrs/</span></div><div class="tree-row is-highlighted" style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="ADR-0001-use-postgresql-for-primary-storage.md">ADR-0001-use-postgresql-for-primary-storage.md</span><i></i></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="00-product/">00-product/</span></div><div class="tree-row " style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="PRODUCT.md">PRODUCT.md</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="60-engineering/">60-engineering/</span></div><div class="tree-row " style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="CONVENTIONS.md">CONVENTIONS.md</span></div></div>
+          <div class="tree-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM8 6l8 8M12 10v8"/><circle cx="12" cy="10" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg> Plain files. Tracked in Git.</div>
+        </aside>
+        <div class="demo-output">
+          <div class="terminal-command"><span class="shell-prompt" aria-hidden="true">❯</span><code>persist adr create &quot;Use PostgreSQL for primary storage&quot;</code><button class="copy-button" type="button" data-copy="persist adr create &quot;Use PostgreSQL for primary storage&quot;" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+          <pre class="terminal-code"><code><span class="t-strong">Persist OS ADR create complete.</span>
+<span class="t-muted">docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+
+<span class="t-purple"># ADR-0001: Use PostgreSQL For Primary Storage</span>
+Status: <span class="t-amber">Proposed</span>
+
+<span class="t-muted"># Fill in context, alternatives, and consequences.</span>
+<span class="t-muted"># Accept it once the team agrees.</span>
+<span class="t-green">$</span> <span class="t-white">persist adr accept use-postgresql-for-primary-storage</span>
+
+<span class="t-green">Accepted.</span> Other memory can now cite this decision.
+<span class="t-muted">Changed your mind? Supersede it and keep the trail.</span></code></pre>
+        </div>
+      </div>
+      <div class="demo-status"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg> Generating a decision does not accept it.</span><span class="status-tag green"><i></i>proposed → accepted</span></div>
+    </div><div class="demo-panel" id="demo-doctor" role="tabpanel" aria-labelledby="tab-doctor" tabindex="0" >
+      <div class="demo-grid">
+        <aside class="demo-tree" aria-label="Example repository files">
+          <div class="tree-heading">EXPLORER <span>repository</span></div>
+          <div class="tree-root"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> checkout-api</div>
+          <div class="tree-list"><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title=".persist/config.json">.persist/config.json</span></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="AGENTS.md">AGENTS.md</span></div><div class="tree-row " style="--indent:0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="docs/">docs/</span></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="00-product/">00-product/</span></div><div class="tree-row is-highlighted" style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="PRODUCT.md">PRODUCT.md</span><i></i></div><div class="tree-row " style="--indent:1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg><span title="adrs/">adrs/</span></div><div class="tree-row " style="--indent:2"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span title="ADR-0010-chestertons-fence.md">ADR-0010-chestertons-fence.md</span></div></div>
+          <div class="tree-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM8 6l8 8M12 10v8"/><circle cx="12" cy="10" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg> Plain files. Tracked in Git.</div>
+        </aside>
+        <div class="demo-output">
+          <div class="terminal-command"><span class="shell-prompt" aria-hidden="true">❯</span><code>persist doctor</code><button class="copy-button" type="button" data-copy="persist doctor" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+          <pre class="terminal-code"><code><span class="t-strong">Doctor Report</span>
+
+<span class="t-amber">WARNING</span>  <span class="t-muted">content</span>
+<span class="t-white">Product purpose is still an unfilled template.</span>
+<span class="t-muted">  docs/00-product/PRODUCT.md</span>
+
+<span class="t-muted">Fill in the template, then re-run doctor.</span>
+
+Result: <span class="t-amber">WARNINGS</span>
+<span class="t-muted">Warnings print. Only errors block the commit.</span></code></pre>
+        </div>
+      </div>
+      <div class="demo-status"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg> Fill in the template to resolve the finding. The commit proceeds either way.</span><span class="status-tag amber"><i></i>exit 1</span></div>
+    </div>
+          <figcaption class="demo-caption"><span><span class="caption-mark" aria-hidden="true">※</span> Illustrative output, condensed for this tour.</span><a href="docs/commands.html">Command reference <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></figcaption>
+        </figure>
+
+        <div class="agent-strip" aria-label="Supported agent entry points">
+          <p>Fits the tools<br>you already use.</p>
+          <span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M5 19 14-14"/></svg> Claude Code</span><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg> Codex</span><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 3 16 10-8 1-4 7Z"/></svg> Cursor</span><span class="portable"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg> AGENTS.md</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section workflow-section" id="workflow" aria-labelledby="workflow-title">
+      <div class="container">
+        <div class="memory-layout">
+          <div class="section-copy">
+            <p class="eyebrow"><span>01</span> A home for the context</p>
+            <h2 id="workflow-title">Stop explaining the<br class="wide-break"> same decisions.</h2>
+            <p>The next agent shouldn't have to guess why you chose that database or which helper it should reuse. Put the answer in the repository.</p>
+            <p>Start with six short memory documents and a directory for decisions. Your team fills them in; agents get entry files that point to the context.</p>
+            <a class="text-link" href="docs/index.html">See what init creates <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a>
+            <div class="small-principle"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 7v10M18 7a12 12 0 0 1-12 12"/></svg><p>Accepted ADRs take precedence.<br><span>Conflicting sources should be reported, not guessed through.</span></p></div>
+          </div>
+          <div class="memory-browser" data-tabs="memory">
+            <div class="memory-browser-top"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> <span>your-repository / docs</span><span class="file-count">6 core files</span></div>
+            <div class="memory-browser-body">
+              <div class="memory-tabs" role="tablist" aria-label="Explore the core memory documents" aria-orientation="vertical"><button type="button" role="tab" id="memory-tab-product" aria-controls="memory-product" aria-selected="false" tabindex="-1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>PRODUCT.md</span></button><button type="button" role="tab" id="memory-tab-standards" aria-controls="memory-standards" aria-selected="false" tabindex="-1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>ENGINEERING_STANDARDS.md</span></button><button type="button" role="tab" id="memory-tab-conventions" aria-controls="memory-conventions" aria-selected="true" tabindex="0"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>CONVENTIONS.md</span></button><button type="button" role="tab" id="memory-tab-lessons" aria-controls="memory-lessons" aria-selected="false" tabindex="-1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>LESSONS.md</span></button><button type="button" role="tab" id="memory-tab-security" aria-controls="memory-security" aria-selected="false" tabindex="-1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>SECURITY_MODEL.md</span></button><button type="button" role="tab" id="memory-tab-quality" aria-controls="memory-quality" aria-selected="false" tabindex="-1"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>QUALITY_GATES.md</span></button><div class="adr-directory"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg> docs/adrs/ <span>decisions</span></div></div>
+              <div class="memory-content"><div class="memory-panel" id="memory-product" role="tabpanel" aria-labelledby="memory-tab-product" tabindex="0" hidden><div class="document-path">docs/00-product/PRODUCT.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Product intent</h3><p class="doc-intro">What are we building, and who is it for?</p><div class="doc-section"><h4><span>##</span> Purpose</h4><p>Describe what the product does and the problem it solves.</p></div><div class="doc-section"><h4><span>##</span> Users</h4><p>Name the people this repository serves.</p></div><div class="doc-section"><h4><span>##</span> Boundaries</h4><p>Write down what the product deliberately does not do.</p></div></div></div><div class="memory-panel" id="memory-standards" role="tabpanel" aria-labelledby="memory-tab-standards" tabindex="0" hidden><div class="document-path">docs/60-engineering/ENGINEERING_STANDARDS.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Engineering standards</h3><p class="doc-intro">What evidence should completed work carry?</p><div class="doc-section"><h4><span>##</span> Completion evidence</h4><p>Record how a change was verified.</p></div><div class="doc-section"><h4><span>##</span> Decision quality</h4><p>Accepted decisions need real alternatives and consequences.</p></div><div class="doc-section"><h4><span>##</span> Security links</h4><p>Connect security-sensitive decisions to the security model.</p></div></div></div><div class="memory-panel" id="memory-conventions" role="tabpanel" aria-labelledby="memory-tab-conventions" tabindex="0" ><div class="document-path">docs/60-engineering/CONVENTIONS.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Shared conventions</h3><p class="doc-intro">What should the next agent reuse?</p><div class="doc-section"><h4><span>##</span> Canonical primitives</h4><p>Name the helpers, components, and patterns to reuse.</p></div><div class="doc-section"><h4><span>##</span> Existing approaches</h4><p>Point to the files that already solve the problem.</p></div><div class="doc-section"><h4><span>##</span> Before adding another</h4><p>Check the repository conventions before creating a new primitive.</p></div></div></div><div class="memory-panel" id="memory-lessons" role="tabpanel" aria-labelledby="memory-tab-lessons" tabindex="0" hidden><div class="document-path">docs/60-engineering/LESSONS.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Lessons from the work</h3><p class="doc-intro">What should we avoid relearning?</p><div class="doc-section"><h4><span>##</span> What happened</h4><p>Record the useful lesson from this change.</p></div><div class="doc-section"><h4><span>##</span> What we learned</h4><p>Keep the reasoning that would otherwise stay in the conversation.</p></div><div class="doc-section"><h4><span>##</span> Next time</h4><p>Leave a useful starting point for a future session.</p></div></div></div><div class="memory-panel" id="memory-security" role="tabpanel" aria-labelledby="memory-tab-security" tabindex="0" hidden><div class="document-path">docs/20-security/SECURITY_MODEL.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Security model</h3><p class="doc-intro">Where are the security boundaries?</p><div class="doc-section"><h4><span>##</span> Authentication and authorization</h4><p>Describe how access is controlled.</p></div><div class="doc-section"><h4><span>##</span> Constraints</h4><p>Record the security rules future changes must preserve.</p></div><div class="doc-section"><h4><span>##</span> Related decisions</h4><p>Link the accepted ADRs behind these choices.</p></div></div></div><div class="memory-panel" id="memory-quality" role="tabpanel" aria-labelledby="memory-tab-quality" tabindex="0" hidden><div class="document-path">docs/50-quality/QUALITY_GATES.md</div><div class="document-content"><h3 class="doc-title"><span>#</span> Quality gates</h3><p class="doc-intro">How do we know the work is ready?</p><div class="doc-section"><h4><span>##</span> Required evidence</h4><p>Define what has to be checked before claiming completion.</p></div><div class="doc-section"><h4><span>##</span> Test command</h4><p>Configure a one-shot test command when the project needs a test gate.</p></div><div class="doc-section"><h4><span>##</span> Before a push</h4><p>Require the configured test command to pass.</p></div></div></div></div>
             </div>
-            <div class="ledger-row">
-              <div><span class="hash">adae64b</span>feat: add deterministic template renderer</div>
-              <div><span class="id">ADR-0001</span>Deterministic Placeholder Renderer<span class="status">Accepted</span></div>
-            </div>
-            <div class="ledger-row">
-              <div><span class="hash">26727de</span>feat: generate pre-commit hook on init</div>
-              <div><span class="id">ADR-0002</span>Pre-Commit Hook Generation<span class="status">Accepted</span></div>
-            </div>
-            <div class="ledger-row">
-              <div><span class="hash">028a1b8</span>feat: minimal-by-default repository memory (ADR-0007)</div>
-              <div><span class="id">ADR-0007</span>Minimal By Default Repository Memory<span class="status">Accepted</span></div>
-            </div>
-            <figcaption class="ledger-foot">
-              Three commits from this repository's own history, and the decisions behind them. Persist OS
-              keeps its memory with Persist OS:
-              <a href="https://github.com/Karthick-Ramachandran/persist-os/tree/main/docs/adrs" target="_blank" rel="noopener noreferrer">docs/adrs on GitHub</a>.
-            </figcaption>
+            <div class="memory-browser-foot">Illustrative prompts. The content comes from your team.</div>
+          </div>
+        </div>
+
+        <div class="workflow-cards">
+          <article class="workflow-card">
+            <div class="card-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h4l3 4h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg></div>
+            <h3>Bring an existing repo.</h3>
+            <p>Adopt reads manifests and lockfiles, then writes an adoption report and proposed decisions for you to review.</p>
+            <div class="mini-signal"><span>Detected</span><span class="signal-line"></span><span class="small-tag amber">Proposed</span></div>
+            <code class="card-command">persist adopt</code>
+          </article>
+          <article class="workflow-card">
+            <div class="card-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 7v10M18 7a12 12 0 0 1-12 12"/></svg></div>
+            <h3>Keep the decision trail.</h3>
+            <p>Write down the alternatives and consequences. Accept the decision when you agree; supersede it when things change.</p>
+            <div class="lifecycle-mini"><span>Proposed</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span class="accepted">Accepted</span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg><span>Superseded</span></div>
+            <code class="card-command">persist adr create</code>
+          </article>
+          <article class="workflow-card">
+            <div class="card-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 10 6-10 6L2 9zM2 13l10 6 10-6M2 17l10 6 10-6"/></svg></div>
+            <h3>Hand off the whole feature.</h3>
+            <p>A plan and tasks carry the scope and completion evidence. A test plan is added when a test command is configured.</p>
+            <div class="file-pills"><span>PLAN.md</span><span>TASKS.md</span><span class="conditional">+ TEST_PLAN.md</span></div>
+            <code class="card-command">persist feature create checkout</code>
+          </article>
+          <article class="workflow-card">
+            <div class="card-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></svg></div>
+            <h3>Review an MCP connection.</h3>
+            <p>Record the data, permissions, and risks of a server as proposed memory. Persist OS never connects to the server.</p>
+            <div class="mini-signal"><span class="small-tag">Offline</span><span class="small-tag amber">Human review</span></div>
+            <code class="card-command">persist mcp add &lt;server&gt;</code>
+          </article>
+        </div>
+        <p class="section-footnote">Working across modules? <code>persist module create billing</code> adds ownership, tasks, a test plan, and decisions. Feature and module memory are opt-in.</p>
+      </div>
+    </section>
+
+    <section class="section doctor-section" id="doctor" aria-labelledby="doctor-title">
+      <div class="container">
+        <div class="doctor-layout">
+          <div class="section-copy">
+            <p class="eyebrow"><span>02</span> Check what can be checked</p>
+            <h2 id="doctor-title">Catch stale context<br>before the next commit.</h2>
+            <p>Doctor checks files and Git metadata. Missing source paths, references to unaccepted decisions, empty templates: each finding points to something you can fix.</p>
+            <p>It doesn't ask a model whether your architecture is good. That judgment stays with the people and agents doing the work.</p>
+            <div class="not-evaluated-note"><span class="neutral-status">Not evaluated</span><p>No input or no Git history? The check says why it couldn't run. It doesn't count the missing check as a pass.</p></div>
+            <a class="text-link" href="docs/doctor.html">Read the doctor reference <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a>
+          </div>
+          <figure class="json-terminal">
+            <div class="json-header"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg> persist doctor --json</span><button class="copy-button" type="button" data-copy="persist doctor --json" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+            <pre class="json-code"><code><span class="t-muted">&#123;</span>
+  <span class="t-purple">"schemaVersion"</span>: <span class="t-green">"persist.doctor.v1"</span>,
+  <span class="t-purple">"status"</span>: <span class="t-amber">"warnings"</span>,
+  <span class="t-purple">"exitCode"</span>: <span class="t-amber">1</span>,
+  <span class="t-purple">"summary"</span>: &#123;
+    <span class="t-purple">"errors"</span>: 0, <span class="t-purple">"warnings"</span>: 1, <span class="t-purple">"info"</span>: 0
+  &#125;,
+  <span class="t-purple">"findings"</span>: [&#123;
+    <span class="t-purple">"severity"</span>: <span class="t-amber">"warning"</span>,
+    <span class="t-purple">"check"</span>: <span class="t-green">"drift"</span>,
+    <span class="t-purple">"message"</span>: <span class="t-green">"Memory cites a Proposed ADR."</span>,
+    <span class="t-purple">"path"</span>: <span class="t-green">"docs/00-product/PRODUCT.md"</span>
+  &#125;],
+  <span class="t-purple">"checks"</span>: [&#123; <span class="t-purple">"id"</span>: <span class="t-green">"drift"</span>, <span class="t-purple">"status"</span>: <span class="t-green">"evaluated"</span> &#125;]
+<span class="t-muted">&#125;</span></code></pre>
+            <figcaption>Illustrative JSON report. Findings are available for CI and agent handoffs.</figcaption>
           </figure>
         </div>
-      </section>
 
-      <section class="section" id="problem" aria-labelledby="problem-title">
-        <div class="wrap two-col">
-          <div>
-            <span class="eyebrow">The problem</span>
-            <h2 id="problem-title">The reasoning stays in the chat.</h2>
-            <p class="lede">
-              An AI tool gets a codebase to a working shape quickly. The decisions behind it, which
-              option was picked, what was ruled out, what must not change, mostly stay in the
-              conversation that produced them. The next session starts without them. So does the
-              next teammate.
-            </p>
-            <p class="lede">
-              Persist OS puts that reasoning in the repository as Markdown, next to the code it
-              explains, where it is versioned, reviewed, and read back. It is a small discipline
-              system, not a memory model: the tool writes templates, you accept decisions, a check
-              keeps them honest. Every terminal block on this page is a recorded run of the CLI,
-              trimmed where marked with an ellipsis and otherwise unedited.
-            </p>
-          </div>
-          <div>
-            <p class="eyebrow">What the repository should be able to answer</p>
-            <ul class="questions">
-              <li><span>01</span>What are we building?</li>
-              <li><span>02</span>Why did we decide this?</li>
-              <li><span>03</span>What must not drift?</li>
-              <li><span>04</span>What evidence proves this work is complete?</li>
-            </ul>
-          </div>
+        <div class="exit-codes" aria-label="Doctor exit codes">
+          <div><span class="exit-number green">0</span><p><strong>Healthy</strong><span>No errors or warnings.</span></p><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></div>
+          <div><span class="exit-number amber">1</span><p><strong>Warnings</strong><span>Needs attention. Still non-zero.</span></p><span class="exit-symbol" aria-hidden="true">!</span></div>
+          <div><span class="exit-number red">2</span><p><strong>Errors</strong><span>Required memory or evidence is broken.</span></p><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></div>
         </div>
-      </section>
+        <div class="warning-note"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></svg><p><strong>Warnings advise; errors block.</strong> The generated pre-commit hook prints warnings and proceeds, failing only on errors — so unfilled templates never hold a commit hostage.</p></div>
+        <details class="checks-disclosure">
+          <summary><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></svg> What the 15 checks look for</span><span class="disclosure-label">View checks <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <dl class="check-catalog"><div><dt><code>config</code></dt><dd>The config exists and validates.</dd></div><div><dt><code>required-files</code></dt><dd>Required memory and agent entry files are present.</dd></div><div><dt><code>memory-integrity</code></dt><dd>Referenced documents and ADRs exist.</dd></div><div><dt><code>standards</code></dt><dd>Accepted decisions have alternatives, consequences, and required security links.</dd></div><div><dt><code>content</code></dt><dd>Memory contains more than unedited template prompts.</dd></div><div><dt><code>conventions</code></dt><dd>Repository conventions have been written.</dd></div><div><dt><code>code-references</code></dt><dd>Cited source paths still exist.</dd></div><div><dt><code>staleness</code></dt><dd>Cited code has not moved on long after its memory.</dd></div><div><dt><code>drift</code></dt><dd>Referenced ADRs exist and have been accepted.</dd></div><div><dt><code>superseded</code></dt><dd>Memory no longer relies on superseded decisions.</dd></div><div><dt><code>context-budget</code></dt><dd>The always-loaded context stays within its 24 KB budget.</dd></div><div><dt><code>hook-drift</code></dt><dd>Generated hooks still match their configuration.</dd></div><div><dt><code>retired-skills</code></dt><dd>Retired catalog skills are not left on disk.</dd></div><div><dt><code>duplicate-titles</code></dt><dd>No two accepted decisions share a title.</dd></div><div><dt><code>fence</code></dt><dd>Changed source files have a fence record or an ADR reference.</dd></div></dl>
+        </details>
 
-      <section class="section" id="start" aria-labelledby="start-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Start</span>
-            <h2 id="start-title">Six files in an empty folder. A proposal in a repository that already exists.</h2>
-            <p class="lede">
-              <code>persist init</code> writes product intent, security model, quality gates,
-              engineering standards, conventions, lessons, and a decision directory, plus the
-              entry points each AI tool reads and the hooks that gate commits. Each document is a
-              short template with prompts, not a guess about your stack. In a repository with
-              history, <code>persist adopt</code> reads the manifests and writes a proposal; it
-              accepts nothing on its own.
-            </p>
-          </div>
-          <div class="two-col even">
-            <div class="stack">
-              <span class="block-label">Empty folder</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist init</span>
-Persist OS init complete.
-Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
-Generated repository memory, 12 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
-Created:
-- .persist/config.json
-- AGENTS.md
-- CLAUDE.md
-- .cursor/rules/persist-memory.mdc
-- docs/00-product/PRODUCT.md
-- docs/20-security/SECURITY_MODEL.md
-- docs/50-quality/QUALITY_GATES.md
-- docs/60-engineering/ENGINEERING_STANDARDS.md
-- docs/60-engineering/CONVENTIONS.md
-- docs/60-engineering/LESSONS.md
-- docs/adrs/README.md
-- .github/workflows/persist.yml
-- .persist/hooks/pre-commit
-- .persist/hooks/pre-push
-- .claude/hooks/session-start.sh
-- .claude/settings.json
-<span class="m">  … 24 skill files</span>
-
-Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
-Enable them once per clone: git config core.hooksPath .persist/hooks
-<span class="m">  …</span>
-<span class="ok">[exit 0]</span></pre>
-            </div>
-            <div class="stack">
-              <span class="block-label">Existing Next.js app</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist adopt</span>
-Persist OS adopt complete.
-Inferred signals are proposed and require human review.
-Languages: TypeScript
-Package manager: pnpm
-Frameworks: Next.js
-Created:
-- docs/adopt/ADOPTION_REPORT.md
-- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
-
-Next steps:
-- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
-- Run `persist init` to establish neutral repository memory if it does not exist yet.
-- Accept or reject each proposed ADR under docs/adrs/proposed/.
-<span class="ok">[exit 0]</span></pre>
-              <span class="block-label">The report names its sources</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">sed -n '1,40p' docs/adopt/ADOPTION_REPORT.md</span>
-# Adoption Report
-
-## Status
-
-Proposed. Everything below is inferred from this repository and requires human review. Nothing here
-is accepted repository memory until you accept it.
-
-## Detected Signals
-<span class="m">  …</span>
-- Languages: TypeScript
-- Package manager: pnpm (from `pnpm-lock.yaml`)
-- Frameworks: Next.js (from `package.json`)
-- Tests: detected via `"test"` script in package.json
-<span class="m">  …</span></pre>
-            </div>
-          </div>
+        <div class="gates-heading"><h3>Put the checks where the work happens.</h3><p>Generated hooks are opt-in. Enable them once per clone.</p></div>
+        <div class="gate-flow">
+          <article><span class="gate-label">01 / BEFORE A COMMIT</span><h4>Check the memory.</h4><code><span>$</span> persist doctor</code><p>Catch missing files and stale references before they enter the history.</p></article>
+          <article><span class="gate-label">02 / BEFORE A PUSH</span><h4>Run the test gate.</h4><code><span>$</span> persist test-gate</code><p>Require the configured one-shot test command to pass. An unconfigured gate reports a skip.</p></article>
+          <article><span class="gate-label">03 / IN CI</span><h4>Keep the check in review.</h4><code>.github/workflows/persist.yml</code><p>Init also writes a CI workflow so the gate can run outside a developer's machine.</p></article>
         </div>
-      </section>
-
-      <section class="section" id="features" aria-labelledby="features-title">
-        <div class="wrap two-col">
-          <div>
-            <span class="eyebrow">Features</span>
-            <h2 id="features-title">Two files per feature. Three when something enforces the third.</h2>
-            <p class="lede">
-              A feature gets a plan (approach, boundaries, acceptance criteria) and a task list
-              with a completion-evidence section. A test plan is added only when
-              <code>testCommand</code> is configured, because a scaffold should not ask for a
-              document that nothing checks. Both are opt-in: run the command when the work is big
-              enough to deserve it.
-            </p>
-            <p class="lede">
-              Modules work the same way. <code>persist module create billing</code> writes what
-              the module owns, its tasks, its test plan, and its decisions.
-            </p>
-          </div>
-          <div class="stack">
-            <span class="block-label">No test command configured</span>
-            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
-Persist OS feature create complete.
-Feature: docs/40-features/F-001-checkout
-Created:
-- docs/40-features/F-001-checkout/PLAN.md
-- docs/40-features/F-001-checkout/TASKS.md
-
-Next steps:
-- Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
-- Then TASKS.md before you implement.
-- Run `persist doctor` to check the memory is complete.
-<span class="ok">[exit 0]</span></pre>
-            <span class="block-label">testCommand set to npm run test:run</span>
-            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
-Persist OS feature create complete.
-Feature: docs/40-features/F-001-checkout
-Created:
-- docs/40-features/F-001-checkout/PLAN.md
-- docs/40-features/F-001-checkout/TASKS.md
-- docs/40-features/F-001-checkout/TEST_PLAN.md
-<span class="m">  …</span>
-<span class="ok">[exit 0]</span></pre>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-sunken" id="decisions" aria-labelledby="decisions-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Decisions</span>
-            <h2 id="decisions-title">A decision has a status, and the status is in the file.</h2>
-            <p class="lede">
-              <code>persist adr create</code> writes a Proposed ADR with Context, Decision,
-              Alternatives Considered, and Consequences. <code>persist adr accept</code> promotes
-              it to Accepted; from then on other memory can cite it as source of truth. When the
-              decision changes, <code>persist adr supersede</code> writes a new accepted ADR that
-              links back and marks the old one superseded. Nothing is deleted or edited in place,
-              and the doctor warns about any memory still citing the old decision.
-            </p>
-          </div>
-          <div class="two-col even">
-            <div class="stack">
-              <span class="block-label">Proposed, then accepted</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist adr create "Use PostgreSQL for primary storage"</span>
-Persist OS ADR create complete.
-ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
-<span class="m">  …</span>
-- It is Proposed — set Status to Accepted once the team agrees.
-
-<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
-# ADR-0001: Use PostgreSQL For Primary Storage
-
-## Status
-
-<span class="warn">Proposed</span>
-
-<span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
-Persist OS ADR accept complete.
-Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
-<span class="m">  …</span>
-- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
-- Drift checks now treat references to it as resolved.
-
-<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
-# ADR-0001: Use PostgreSQL For Primary Storage
-
-## Status
-
-<span class="ok">Accepted</span></pre>
-            </div>
-            <div class="stack">
-              <span class="block-label">Changed later, never overwritten</span>
-              <pre class="diff"><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
-
-<span class="file">docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
- ## Status
-<span class="del">-Accepted</span>
-<span class="add">+Accepted — superseded by ADR-0002-use-sqlite-for-primary-storage</span>
-
-<span class="file">docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md  (new file)</span>
-<span class="add">+# ADR-0002: Use SQLite For Primary Storage</span>
-<span class="add">+</span>
-<span class="add">+## Status</span>
-<span class="add">+</span>
-<span class="add">+Accepted</span>
-<span class="add">+</span>
-<span class="add">+## Supersedes</span>
-<span class="add">+</span>
-<span class="add">+- ADR-0001-use-postgresql-for-primary-storage</span></pre>
-              <p class="muted">
-                Proposals from <code>persist adopt</code> and <code>persist mcp add</code> land in
-                <code>docs/adrs/proposed/</code>. Only a human moves them to accepted.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-dark" id="doctor" aria-labelledby="doctor-title">
-        <div class="wrap">
-          <div class="two-col">
-            <div>
-              <span class="eyebrow">The gate</span>
-              <h2 id="doctor-title">Doctor is deterministic on purpose.</h2>
-              <p class="lede">
-                It does not call a model and it does not judge whether your architecture is good.
-                It checks things with a definite answer: is a required file missing, does memory
-                cite a decision that was never accepted, has the always-loaded context outgrown its
-                budget. Same input, same exit code, offline.
-              </p>
-              <p class="lede">
-                This is the report one accepted decision in, before anyone has filled the
-                templates. Every warning names a file and a section.
-              </p>
-            </div>
-            <figure class="terminal" aria-label="A recorded doctor run">
-              <div class="terminal-bar">
-                <span>persist doctor</span>
-                <span>recorded, unedited</span>
-              </div>
-              <pre><span class="p">$</span> <span class="c">persist doctor</span>
-Doctor Report
-
-<span class="warn">WARNING</span>
-- Security model authentication and authorization section is still an unfilled template. <span class="m">(docs/20-security/SECURITY_MODEL.md)</span>
-- Product purpose is still an unfilled template. <span class="m">(docs/00-product/PRODUCT.md)</span>
-- Product users section is still an unfilled template. <span class="m">(docs/00-product/PRODUCT.md)</span>
-- Conventions canonical-primitives section is still an unfilled template. <span class="m">(docs/60-engineering/CONVENTIONS.md)</span>
-
-INFO
-- Persist OS config validates. <span class="m">(.persist/config.json)</span>
-- 0 feature folders detected.
-- 0 module folders detected.
-- 1 ADRs detected.
-
-Result: <span class="warn">WARNINGS</span>
-<span class="warn">[exit 1]</span></pre>
-            </figure>
-          </div>
-
-          <ul class="codes" style="margin-top: var(--s-8)" aria-label="Exit codes">
-            <li class="ok">
-              <span class="n">0</span>
-              <span class="l">Healthy</span>
-              <span class="d">No errors and no warnings.</span>
-            </li>
-            <li class="warn">
-              <span class="n">1</span>
-              <span class="l">Warnings only</span>
-              <span class="d">Something to look at. Still non-zero, so hooks and CI stop on it.</span>
-            </li>
-            <li class="err">
-              <span class="n">2</span>
-              <span class="l">Errors</span>
-              <span class="d">Memory is broken or a claim has no evidence.</span>
-            </li>
-          </ul>
-
-          <ul class="checks" style="margin-top: var(--s-7)" aria-label="What doctor checks">
-            <li>
-              <span class="what">Missing or invalid <code>.persist/config.json</code>, or a required document</span>
-              <span class="sev sev-err">error</span>
-            </li>
-            <li>
-              <span class="what">A feature folder without its plan or tasks, a module folder missing a doc, an ADR missing a section</span>
-              <span class="sev sev-err">error</span>
-            </li>
-            <li>
-              <span class="what">A required document links to a doc path that does not exist</span>
-              <span class="sev sev-err">error</span>
-            </li>
-            <li>
-              <span class="what">An ADR whose Consequences or Alternatives section says nothing (error once accepted)</span>
-              <span class="sev sev-mixed">error / warning</span>
-            </li>
-            <li>
-              <span class="what">A security-sensitive decision with no security document linked</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">Memory cites an ADR that does not exist, or one not yet accepted</span>
-              <span class="sev sev-mixed">error / warning</span>
-            </li>
-            <li>
-              <span class="what">Memory still cites a decision that has been superseded</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">Memory cites a <code>src/</code> or <code>tests/</code> path that no longer exists</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">Memory cites code that changed more than 90 days after the memory did (git only)</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what"><code>CLAUDE.md</code>, <code>AGENTS.md</code>, and the Cursor rule together exceed 24 KiB</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">The product file, security model, or a module doc still holding the template prompts</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what"><code>CONVENTIONS.md</code> still a stub once the repository has real work</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">A generated git hook that disagrees with <code>.persist/config.json</code></span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-            <li>
-              <span class="what">A skill on disk that is not in the built-in catalog, retired or hand-made</span>
-              <span class="sev sev-warn">warning</span>
-            </li>
-          </ul>
-          <p class="muted" style="margin-top: var(--s-5); max-width: 64ch">
-            <a href="docs/doctor.html">Every check, documented.</a>
-          </p>
-        </div>
-      </section>
-
-      <section class="section" id="report" aria-labelledby="report-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Honest reports</span>
-            <h2 id="report-title">Nothing to check is not a pass.</h2>
-            <p class="lede">
-              When a check has no input, or cannot run, the doctor lists it as not evaluated with
-              the reason instead of counting it as passed. A fresh repository outside git gets
-              three such lines. The same report is available as versioned JSON for CI artifacts
-              and agent handoffs.
-            </p>
-          </div>
-          <div class="two-col even">
-            <div class="stack">
-              <span class="block-label">Fresh memory, no git repository</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor</span>
-Doctor Report
-
-INFO
-- Persist OS config validates. (.persist/config.json)
-- 0 feature folders detected.
-- 0 module folders detected.
-- 0 ADRs detected.
-
-<span class="warn">NOT EVALUATED</span>
-- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
-- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
-- staleness: not a git repository, so commit history is unavailable
-
-Result: <span class="ok">PASSED</span>
-<span class="ok">[exit 0]</span></pre>
-            </div>
-            <div class="stack">
-              <span class="block-label">Machine-readable</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor --json</span>
-{
-  "schemaVersion": "persist.doctor.v1",
-  "status": "warnings",
-  "exitCode": 1,
-  "summary": {
-    "errors": 0,
-    "warnings": 4,
-    "info": 4
-  },
-  "findings": [
-<span class="m">    …</span>
-    {
-      "severity": "warning",
-      "check": "content-product",
-      "message": "Product purpose is still an unfilled template.",
-      "path": "docs/00-product/PRODUCT.md"
-    },
-<span class="m">    …</span>
-  ],
-  "checks": [
-    {
-      "id": "config",
-      "status": "evaluated"
-    },
-<span class="m">    …</span>
-  ]
-}
-<span class="warn">[exit 1]</span></pre>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-sunken" id="gates" aria-labelledby="gates-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Hooks</span>
-            <h2 id="gates-title">The hooks say no.</h2>
-            <p class="lede">
-              <code>persist init</code> writes two tracked hooks. Pre-commit runs the doctor.
-              Pre-push runs <code>persist test-gate</code>, the one-shot test command detected from
-              <code>package.json</code>, and only passes when the suite does. Git runs them once you
-              point it at the directory; Persist OS prints the command and never runs it for you.
-            </p>
-          </div>
-          <div class="two-col even">
-            <div class="stack">
-              <span class="block-label">Enable, then commit</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span>
-<span class="p">$</span> <span class="c">git commit -m "Add repository memory"</span>
-Doctor Report
-<span class="m">  …</span>
-Result: <span class="ok">PASSED</span>
-[main (root-commit) d84bda4] Add repository memory
- 40 files changed, 1700 insertions(+)
-<span class="m">  …</span>
-<span class="ok">[exit 0]</span></pre>
-              <span class="block-label">A commit that removes required memory</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
-Doctor Report
-
-<span class="err">ERROR</span>
-- Required file is missing. (docs/00-product/PRODUCT.md)
-<span class="m">  …</span>
-Result: <span class="err">FAILED</span>
-<span class="err">[exit 1]</span></pre>
-              <span class="block-label">Warnings block too: exit 1 is not zero</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
-Doctor Report
-
-<span class="warn">WARNING</span>
-- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
-- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
-<span class="m">  …</span>
-Result: <span class="warn">WARNINGS</span>
-<span class="warn">[exit 1]</span>
-<span class="p">$</span> <span class="c">git log --oneline</span>
-d84bda4 Add repository memory</pre>
-            </div>
-            <div class="stack">
-              <span class="block-label">The test gate, passing</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
-Persist OS test gate <span class="ok">passed</span>: npm run test:run
-
-
-&gt; orders-api@1.4.0 test:run
-&gt; node --test
-
-<span class="ok">✔</span> totals a cart (0.44075ms)
-ℹ tests 1
-ℹ suites 0
-ℹ pass 1
-ℹ fail 0
-<span class="m">  …</span>
-<span class="ok">[exit 0]</span></pre>
-              <span class="block-label">The test gate, failing</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
-Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
-
-
-&gt; orders-api@1.4.0 test:run
-&gt; node --test
-
-<span class="err">✖</span> totals a cart (0.839417ms)
-ℹ tests 1
-ℹ suites 0
-ℹ pass 0
-ℹ fail 1
-<span class="m">  …</span>
-<span class="err">✖</span> failing tests:
-
-test at tests/cart.test.js:5:1
-<span class="err">✖</span> totals a cart (0.839417ms)
-  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-
-  24 !== 29
-<span class="m">  …</span>
-<span class="err">[exit 1]</span></pre>
-              <span class="block-label">Which is what stops a push</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">git push -u origin main</span>
-Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
-<span class="m">  …</span>
-  24 !== 29
-<span class="m">  …</span>
-error: failed to push some refs to '../origin.git'
-<span class="err">[exit 1]</span></pre>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="agents" aria-labelledby="agents-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Agents</span>
-            <h2 id="agents-title">Memory the agent reads without being asked.</h2>
-            <p class="lede">
-              Writing the files only helps if the tool loads them. <code>persist init</code> wires
-              each tool with its own mechanism, and what loads is a map, not a dump: a short index
-              of accepted decisions and modules, with the detail one file away.
-            </p>
-          </div>
-          <div class="two-col">
-            <dl class="defs">
-              <div>
-                <dt>Claude Code</dt>
-                <dd>
-                  <code>CLAUDE.md</code> is loaded automatically and imports <code>AGENTS.md</code>. A
-                  read-only SessionStart hook in <code>.claude/hooks/session-start.sh</code> injects the
-                  list of accepted ADRs and modules at the start of every session.
-                </dd>
-              </div>
-              <div>
-                <dt>Cursor</dt>
-                <dd>
-                  <code>.cursor/rules/persist-memory.mdc</code> is an always-apply rule, so the memory
-                  rules go into every request.
-                </dd>
-              </div>
-              <div>
-                <dt>Codex and others</dt>
-                <dd>
-                  <code>AGENTS.md</code> is always written and is the portable floor. It opens with the
-                  rules: read memory first, reuse what <code>CONVENTIONS.md</code> names, record
-                  lessons, never contradict an accepted ADR, run <code>persist doctor</code> before
-                  claiming done.
-                </dd>
-              </div>
-              <div>
-                <dt>Skills</dt>
-                <dd>
-                  Workflow skills written to both <code>.claude/skills/</code> and
-                  <code>.agents/skills/</code>. They are instructions only; generated skills contain
-                  no scripts.
-                </dd>
-              </div>
-            </dl>
-            <div class="stack">
-              <span class="block-label">The catalog</span>
-              <pre class="transcript"><span class="p">$</span> <span class="c">persist skill list</span>
-Persist OS skill catalog
-
-- create-prd: Create PRD
-- plan-feature: Plan Feature
-- plan-module: Plan Module
-- create-adr: Create ADR
-- implement-task: Implement Task
-- write-tests: Write Tests
-- security-review: Security Review
-- architecture-drift-review: Architecture Drift Review
-- update-module-memory: Update Module Memory
-- completion-report: Completion Report
-- conventions-adherence: Conventions Adherence
-- capture-mcp-context: Capture MCP Context
-<span class="ok">[exit 0]</span></pre>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-sunken" id="commands" aria-labelledby="commands-title">
-        <div class="wrap">
-          <div class="section-head">
-            <span class="eyebrow">Commands</span>
-            <h2 id="commands-title">The whole surface.</h2>
-            <p class="lede">
-              Every command reports what it wrote, where, and what to do next. Commands that write
-              accept <code>--dry-run</code> to preview and <code>--force</code> to overwrite; nothing
-              overwrites by default.
-            </p>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Command</th>
-                  <th scope="col">What it does</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="cmd-cell"><code>persist init</code></td>
-                  <td class="desc">
-                    Write the six memory documents, the decision directory, the agent skills,
-                    pre-commit and pre-push hooks, a CI workflow, the Claude SessionStart hook, and
-                    the Cursor rule. Refuses to overwrite an existing installation without
-                    <code>--force --reinit</code>.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist init --ai-tools &lt;list&gt;</code></td>
-                  <td class="desc">
-                    Generate files only for the tools you use: <code>claude</code>,
-                    <code>codex</code>, <code>cursor</code>, <code>generic</code>.
-                    <code>AGENTS.md</code> is always written.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist init --features --modules</code></td>
-                  <td class="desc">Also create the opt-in feature and module memory indexes.</td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist adopt</code></td>
-                  <td class="desc">
-                    Inspect an existing repository through its manifests and marker files, read-only,
-                    and write a proposed adoption report plus proposed ADRs for review.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist feature create &lt;name&gt;</code></td>
-                  <td class="desc">
-                    Scaffold feature memory: a plan and a task list, plus a test plan when the test
-                    gate is on.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist adr create &lt;title&gt;</code></td>
-                  <td class="desc">Create a Proposed architecture decision record.</td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist adr accept &lt;name&gt;</code></td>
-                  <td class="desc">Promote a Proposed ADR to Accepted. It becomes source of truth.</td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist adr supersede &lt;old&gt; &lt;new-title&gt;</code></td>
-                  <td class="desc">
-                    Record a changed decision: a new accepted ADR that links back, and the old one
-                    marked superseded.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist module create &lt;name&gt;</code></td>
-                  <td class="desc">Scaffold module memory: ownership, tasks, test plan, decisions.</td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist skill create &lt;name&gt;</code></td>
-                  <td class="desc">
-                    Generate an agent skill for Claude Code and the portable Agent Skills layout.
-                    Catalog names get the built-in content; other names get a valid skeleton.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist skill list</code></td>
-                  <td class="desc">List the built-in skill catalog.</td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist mcp add &lt;server&gt;</code></td>
-                  <td class="desc">
-                    Write proposed, offline memory for an MCP server plus a proposed ADR and the
-                    capture skill. Never connects to the server.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist doctor</code></td>
-                  <td class="desc">
-                    Check memory health, evidence, and drift. Exits 0, 1, or 2.
-                    <code>--json</code> for a machine-readable report.
-                  </td>
-                </tr>
-                <tr>
-                  <td class="cmd-cell"><code>persist test-gate</code></td>
-                  <td class="desc">
-                    Run the configured one-shot test command and require it to pass. Skips, and
-                    says so, when none is configured.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="muted" style="margin-top: var(--s-5)">
-            Full reference with options and generated paths in the
-            <a href="docs/commands.html">commands documentation</a>.
-          </p>
-        </div>
-      </section>
-
-      <section class="section" id="guarantees" aria-labelledby="guarantees-title">
-        <div class="wrap two-col">
-          <div>
-            <span class="eyebrow">Boundaries</span>
-            <h2 id="guarantees-title">What it does not do.</h2>
-            <p class="lede">
-              A memory layer and a gate have to be trustworthy, so the runtime is small and the
-              limits are explicit.
-            </p>
-            <p class="lede">
-              And a note on when to skip it: if you are spiking an idea you will delete next week,
-              do not run it. There is no second session to hand off to, so the memory never gets
-              read back. Run <code>persist init</code> when the code is meant to last.
-            </p>
-          </div>
-          <ul class="plain">
-            <li>No network calls at runtime. No telemetry.</li>
-            <li>No AI API calls and no connections to MCP servers.</li>
-            <li>No generated application code. It writes memory, not your product.</li>
-            <li>No architecture opinions in core. It records your decisions; it never makes them.</li>
-            <li>Does not install dependencies into your repository.</li>
-            <li>
-              Does not overwrite existing files without <code>--force</code>, and refuses to write
-              outside the repository root or through a symlink.
-            </li>
-            <li>Does not enable git hooks for you. It prints the command; you run it.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="section section-sunken" id="install" aria-labelledby="install-title">
-        <div class="wrap two-col">
-          <div>
-            <span class="eyebrow">Install</span>
-            <h2 id="install-title">Start in an existing repository or an empty folder.</h2>
-            <p class="lede">
-              Requires Node.js 20 or newer. Run it once with <code>npx</code>, or install the
-              <code>persist</code> binary globally. Either way, the first command is
-              <code>init</code>, and nothing it writes is hidden from review.
-            </p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="docs/index.html">Getting started <span class="arrow" aria-hidden="true">→</span></a>
-              <a class="btn" href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">persist-os on npm</a>
-            </div>
-          </div>
-          <pre class="transcript"><span class="m"># run without installing</span>
-<span class="c">npx persist-os@latest init</span>
-
-<span class="m"># or install the binary</span>
-<span class="c">npm install -g persist-os</span>
-<span class="c">persist init</span>
-
-<span class="m"># enable the generated hooks, once per clone</span>
-<span class="c">git config core.hooksPath .persist/hooks</span>
-
-<span class="m"># check the memory any time</span>
-<span class="c">persist doctor</span></pre>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="wrap">
-        <div>
-          MIT-licensed · built by
-          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
-        </div>
-        <nav aria-label="Footer">
-          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
-            GitHub repo
-          </a>
-          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg>
-            npm package
-          </a>
-          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
-            GitHub profile
-          </a>
-          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-            X
-          </a>
-        </nav>
+        <div class="hook-setup"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg> Enable the generated Git hooks</span><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>git config core.hooksPath .persist/hooks</code><button class="copy-button" type="button" data-copy="git config core.hooksPath .persist/hooks" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div></div>
       </div>
-    </footer>
+    </section>
 
-    <script src="assets/site.js" defer></script>
-  </body>
+    <section class="section agents-section" id="agents" aria-labelledby="agents-title">
+      <div class="container">
+        <div class="agents-layout">
+          <div class="section-copy">
+            <p class="eyebrow"><span>03</span> Ready for the next session</p>
+            <h2 id="agents-title">Your tools.<br>The same set of decisions.</h2>
+            <p>Init writes entry files for the agents you use. They point to the repository memory, so a handoff doesn't depend on someone pasting the right chat transcript.</p>
+            <div class="agent-command"><code>persist init --ai-tools claude</code><button class="copy-button" type="button" data-copy="persist init --ai-tools claude" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+            <p class="small-copy">AGENTS.md is the portable entry point and is always written.</p>
+          </div>
+          <div class="agent-routes">
+            <article><div class="route-heading"><span class="route-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20M5 5l14 14M5 19 14-14"/></svg></span><h3>Claude Code</h3><span class="route-tag">session start</span></div><code>CLAUDE.md <span>→</span> AGENTS.md</code><p>A read-only SessionStart hook injects the accepted-decision, module, and fence index.</p></article>
+            <article><div class="route-heading"><span class="route-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg></span><h3>Codex &amp; other agents</h3><span class="route-tag">portable</span></div><code>AGENTS.md</code><p>Instructions to read memory first, reuse conventions, and check before claiming done.</p></article>
+            <article><div class="route-heading"><span class="route-icon"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 3 16 10-8 1-4 7Z"/></svg></span><h3>Cursor</h3><span class="route-tag">always apply</span></div><code>.cursor/rules/persist-memory.mdc</code><p>An always-apply rule keeps the memory instructions in the request.</p></article>
+          </div>
+        </div>
+        <div class="skills-band"><div><h3>Four built-in skills. Loaded when needed.</h3><p>The name and description stay in context. The procedure loads when the skill triggers.</p></div><div class="skill-tags"><code>plan-feature</code><code>security-review</code><code>conventions-adherence</code><code>chestertons-fence</code></div></div>
+      </div>
+    </section>
+
+    <section class="section reference-section" id="commands" aria-labelledby="commands-title">
+      <div class="container">
+        <div class="reference-heading"><div><p class="eyebrow"><span>04</span> Small command surface</p><h2 id="commands-title">One CLI. Plain files all the way down.</h2></div><a class="text-link" href="docs/commands.html">Full command reference <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+        <details class="command-disclosure">
+          <summary><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg> Browse all 12 commands</span><span class="disclosure-label">Expand <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+          <div class="command-catalog"><article class="command-item" data-command="persist init" data-example="persist init" data-group="Setup"><div class="command-item-top"><span>Setup</span><button class="copy-button" type="button" data-copy="persist init" aria-label="Copy persist init" title="Copy persist init"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist init</code></h3><p>Create repository memory, agent entry files, hooks, and CI. Interactive by default.</p><small>--yes · --dry-run · --ai-tools</small></article><article class="command-item" data-command="persist adopt" data-example="persist adopt" data-group="Setup"><div class="command-item-top"><span>Setup</span><button class="copy-button" type="button" data-copy="persist adopt" aria-label="Copy persist adopt" title="Copy persist adopt"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist adopt</code></h3><p>Inspect the existing repository and write proposals for human review.</p><small>Read manifests and lockfiles</small></article><article class="command-item" data-command="persist feature create &lt;name&gt;" data-example="persist feature create checkout" data-group="Planning"><div class="command-item-top"><span>Planning</span><button class="copy-button" type="button" data-copy="persist feature create checkout" aria-label="Copy persist feature create checkout" title="Copy persist feature create checkout"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist feature create &lt;name&gt;</code></h3><p>Create PLAN.md and TASKS.md. Add TEST_PLAN.md when a test command is configured.</p><small>Features are opt-in</small></article><article class="command-item" data-command="persist adr create &lt;title&gt;" data-example="persist adr create &quot;Use PostgreSQL for primary storage&quot;" data-group="Decisions"><div class="command-item-top"><span>Decisions</span><button class="copy-button" type="button" data-copy="persist adr create &quot;Use PostgreSQL for primary storage&quot;" aria-label="Copy persist adr create &quot;Use PostgreSQL for primary storage&quot;" title="Copy persist adr create &quot;Use PostgreSQL for primary storage&quot;"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist adr create &lt;title&gt;</code></h3><p>Create a Proposed architecture decision record.</p><small>Human review comes next</small></article><article class="command-item" data-command="persist adr accept &lt;name&gt;" data-example="persist adr accept use-postgresql-for-primary-storage" data-group="Decisions"><div class="command-item-top"><span>Decisions</span><button class="copy-button" type="button" data-copy="persist adr accept use-postgresql-for-primary-storage" aria-label="Copy persist adr accept use-postgresql-for-primary-storage" title="Copy persist adr accept use-postgresql-for-primary-storage"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist adr accept &lt;name&gt;</code></h3><p>Promote a reviewed proposal to accepted repository memory.</p><small>Makes the decision authoritative</small></article><article class="command-item" data-command="persist adr supersede &lt;old&gt; &lt;new-title&gt;" data-example="persist adr supersede use-postgresql-for-primary-storage &quot;Use SQLite for primary storage&quot;" data-group="Decisions"><div class="command-item-top"><span>Decisions</span><button class="copy-button" type="button" data-copy="persist adr supersede use-postgresql-for-primary-storage &quot;Use SQLite for primary storage&quot;" aria-label="Copy persist adr supersede use-postgresql-for-primary-storage &quot;Use SQLite for primary storage&quot;" title="Copy persist adr supersede use-postgresql-for-primary-storage &quot;Use SQLite for primary storage&quot;"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist adr supersede &lt;old&gt; &lt;new-title&gt;</code></h3><p>Record a changed decision and preserve the reasoning trail.</p><small>Links old and new decisions</small></article><article class="command-item" data-command="persist module create &lt;name&gt;" data-example="persist module create billing" data-group="Planning"><div class="command-item-top"><span>Planning</span><button class="copy-button" type="button" data-copy="persist module create billing" aria-label="Copy persist module create billing" title="Copy persist module create billing"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist module create &lt;name&gt;</code></h3><p>Create module ownership, tasks, test plan, and decision files.</p><small>Modules are opt-in</small></article><article class="command-item" data-command="persist skill create &lt;name&gt;" data-example="persist skill create plan-feature" data-group="Agents"><div class="command-item-top"><span>Agents</span><button class="copy-button" type="button" data-copy="persist skill create plan-feature" aria-label="Copy persist skill create plan-feature" title="Copy persist skill create plan-feature"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist skill create &lt;name&gt;</code></h3><p>Generate an agent skill for the configured tool layouts.</p><small>Claude and portable Agent Skills layouts</small></article><article class="command-item" data-command="persist skill list" data-example="persist skill list" data-group="Agents"><div class="command-item-top"><span>Agents</span><button class="copy-button" type="button" data-copy="persist skill list" aria-label="Copy persist skill list" title="Copy persist skill list"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist skill list</code></h3><p>List the built-in skill catalog.</p><small>Four built-in skills</small></article><article class="command-item" data-command="persist mcp add &lt;server&gt;" data-example="persist mcp add &lt;server&gt;" data-group="Agents"><div class="command-item-top"><span>Agents</span><button class="copy-button" type="button" data-copy="persist mcp add &lt;server&gt;" aria-label="Copy persist mcp add &lt;server&gt;" title="Copy persist mcp add &lt;server&gt;"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist mcp add &lt;server&gt;</code></h3><p>Write proposed offline MCP context for a human to review.</p><small>Replace &lt;server&gt; with the server name</small></article><article class="command-item" data-command="persist doctor" data-example="persist doctor" data-group="Checks"><div class="command-item-top"><span>Checks</span><button class="copy-button" type="button" data-copy="persist doctor" aria-label="Copy persist doctor" title="Copy persist doctor"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist doctor</code></h3><p>Check memory health, evidence, and drift.</p><small>--json · exits 0, 1, or 2</small></article><article class="command-item" data-command="persist test-gate" data-example="persist test-gate" data-group="Checks"><div class="command-item-top"><span>Checks</span><button class="copy-button" type="button" data-copy="persist test-gate" aria-label="Copy persist test-gate" title="Copy persist test-gate"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><h3><code>persist test-gate</code></h3><p>Run the configured one-shot test command and require it to pass.</p><small>Reports a skip when unconfigured</small></article></div>
+        </details>
+        <div class="trust-strip"><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg> No network calls or telemetry</span><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg> No model calls</span><span><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 10-10 10L2 12zM8 6l8 8M12 10v8"/><circle cx="12" cy="10" r="1.5"/><circle cx="16" cy="14" r="1.5"/></svg> Memory stays in your repository</span><span><svg class="icon " viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.18-3.37-1.18-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.35 1.08 2.93.83.09-.64.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03A9.6 9.6 0 0 1 12 5c.85 0 1.71.11 2.51.34 1.91-1.3 2.75-1.03 2.75-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v3.57c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg> MIT licensed</span></div>
+      </div>
+    </section>
+
+    <section class="section faq-section" aria-labelledby="faq-title">
+      <div class="container faq-layout">
+        <div class="section-copy"><p class="eyebrow">Before you start</p><h2 id="faq-title">A few useful<br>boundaries.</h2><p>Persist OS writes and checks engineering memory. Your team still makes the decisions.</p>
+          <aside class="roadmap-card"><div class="roadmap-label"><span>ADR-0010 · Shipped</span></div><h3>Remember why that odd-looking code exists.</h3><p>Chesterton's Fence captures smaller constraints that never became an ADR, in <code>docs/60-engineering/FENCES.md</code>. The fifth init question enables it; a pre-commit check warns when a change crosses a fence with no record.</p><a class="text-link" href="https://github.com/Karthick-Ramachandran/persist-os/blob/main/docs/adrs/ADR-0010-chestertons-fence.md" target="_blank" rel="noopener noreferrer">Read the decision <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></aside>
+        </div>
+        <div class="faq-list">
+          <details open><summary>Does it decide the architecture for me? <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary><div><p>No. It creates the structure for your decisions and checks things with definite answers. Doctor doesn't judge whether the reasoning is good or prove that an agent has understood it.</p><p>You review the content. An agent handles the semantic review; the gate checks the artifacts.</p></div></details>
+          <details><summary>Can I use it in an existing repository? <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary><div><p>Yes. Run <code>persist adopt</code> for an adoption report and proposed ADRs, then <code>persist init</code> if repository memory is not set up. Review each proposal before accepting it.</p><p>Some raw-text ecosystems can over-detect development-only packages. The results stay proposed so you can reject those signals. There is no doctor baseline yet; existing findings aren't automatically treated as accepted debt.</p></div></details>
+          <details><summary>Will init overwrite my files? <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary><div><p>Not by default. Use <code>--dry-run</code> to inspect the write plan. Reinitializing an existing installation requires <code>--force --reinit</code>.</p><p>Init is interactive by default. <code>--yes</code> takes the defaults; non-interactive stdin does the same and reports it.</p></div></details>
+          <details><summary>Do I need a hosted service or an API key? <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary><div><p>No. Persist OS runs locally with Node.js 20 or newer. The CLI makes no network or model calls and sends no telemetry. Its two runtime dependencies are <code>commander</code> and <code>zod</code>.</p><p>Package installation may need a network connection. The no-network boundary applies to Persist OS itself, not to a test command that you configure.</p></div></details>
+          <details><summary>What's still outside the shipped product? <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary><div><p>Template upgrades, a doctor baseline, standalone tasks and tracker links, branch-policy configuration, and organization-wide memory are not built. This page doesn't treat them as available features.</p></div></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="install-section" id="start" aria-labelledby="start-title">
+      <div class="container">
+        <div class="install-card">
+          <div><div class="install-mark"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 6 6-6 6M13 18h7"/></svg></div><h2 id="start-title">Leave the next session<br>something to work with.</h2><p>Run init in your repository. Fill in the memory, review the decisions, then run doctor before you commit.</p><div class="install-links"><a href="docs/index.html" class="button button-primary">Read the getting-started guide <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div></div>
+          <div class="install-options" data-tabs="install"><div class="install-tabs" role="tablist" aria-label="Installation method"><button type="button" role="tab" id="install-tab-npx" aria-controls="install-npx" aria-selected="true" tabindex="0">Run once</button><button type="button" role="tab" id="install-tab-global" aria-controls="install-global" aria-selected="false" tabindex="-1">Install globally</button></div><div id="install-npx" role="tabpanel" aria-labelledby="install-tab-npx" tabindex="0"><p># From your repository</p><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>npx persist-os@latest init</code><button class="copy-button" type="button" data-copy="npx persist-os@latest init" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><p># Check the memory</p><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>npx persist-os@latest doctor</code><button class="copy-button" type="button" data-copy="npx persist-os@latest doctor" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div></div><div id="install-global" role="tabpanel" aria-labelledby="install-tab-global" tabindex="0" hidden><p># Install the persist binary</p><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>npm install -g persist-os</code><button class="copy-button" type="button" data-copy="npm install -g persist-os" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div><p># Initialize the repository</p><div class="shell-command"><span class="shell-prompt" aria-hidden="true">$</span><code>persist init</code><button class="copy-button" type="button" data-copy="persist init" aria-label="Copy command" title="Copy command"><svg class="icon copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><svg class="icon copied-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div></div><div class="install-meta"><span class="live-dot" aria-hidden="true"></span> Node.js 20+ <span>·</span> MIT licensed <span>·</span> Local-first</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-main"><div><a class="brand" href="#"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M8.5 21V7h6.8a4.7 4.7 0 0 1 0 9.4H8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Persist<span class="brand-os"> OS</span></span></a><p>Engineering memory, checked into Git.</p></div><nav aria-label="Footer navigation"><a href="docs/index.html">Documentation</a><a class="" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a><a class="" href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm <svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></nav><p class="byline">Built by <a class="" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a></p></div><div class="container footer-bottom"><span>Open source. MIT licensed.</span><span>Git tracks what changed. Persist OS tracks why.</span></div></footer>
+
+  <dialog class="command-dialog" aria-labelledby="command-dialog-title"><div class="command-dialog-head"><h2 id="command-dialog-title">Find a command</h2><button type="button" class="icon-button" data-close-commands aria-label="Close command finder"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><label class="command-search"><svg class="icon " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" id="command-search" placeholder="Try doctor, a decision, or a feature…" autocomplete="off" aria-label="Search commands" aria-controls="command-results"></label><p class="command-dialog-hint">Select a command to copy its example. Nothing runs in your repository.</p><div class="command-results" id="command-results" role="region" aria-label="Matching commands"></div><p class="dialog-feedback" id="dialog-feedback" role="status" aria-live="polite"></p><div class="command-dialog-foot"><span id="command-result-count" aria-live="polite"></span><span><kbd>Esc</kbd> to close</span></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
 </html>

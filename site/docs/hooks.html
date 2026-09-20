@@ -7,9 +7,8 @@
     <meta name="description" content="The git hooks persist init generates, how gates are detected and configured, what persist test-gate does, and the generated GitHub Actions workflow." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/hooks" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236955cf'/%3E%3Cpath d='M10 24V8h8a5 5 0 0 1 0 10h-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="../assets/site.css" />
     <script>
       (function () {
@@ -82,7 +81,14 @@
 #   git config core.hooksPath .persist/hooks
 set -e
 
-persist doctor</code></pre>
+# Doctor warnings are advisory: they print but never block the commit.
+# Only errors fail the hook. The set +e pair is deliberate — under set -e
+# the shell would abort before $? can be read.
+set +e
+persist doctor
+status=$?
+set -e
+[ "$status" -le 1 ] || exit "$status"</code></pre>
           <p>
             The pre-push hook is the expensive gate. It runs <code>persist test-gate</code>, then
             each <code>prePushGates</code> entry. The doctor is not repeated here; it already ran on
@@ -137,8 +143,8 @@ NOT EVALUATED
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 
 Result: PASSED
-[main (root-commit) 04dfe77] Add repository memory
- 24 files changed, 650 insertions(+)
+[main (root-commit) 922b092] Add repository memory
+ 26 files changed, 776 insertions(+)
 <span class="m">  …</span></code></pre>
           <p>A commit that deletes a required document is refused with an error:</p>
           <pre><code><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
@@ -156,9 +162,11 @@ INFO
 Result: <span class="err">FAILED</span>
 <span class="err">[exit 1]</span></code></pre>
           <p>
-            Warnings refuse the commit too. The hook runs under <code>set -e</code> and the doctor
-            exits 1 on warnings, so unfilled template sections block until they are written. That
-            is the discipline, not a bug: fill the sections the report names, then commit.
+            Warnings print but never block the commit. The hook reads the doctor's exit code and
+            only fails on errors, so unfilled template sections are visible without holding the
+            commit hostage. A gate that cried wolf over templates would teach everyone to reach
+            for <code>--no-verify</code> — which would also silence the errors that matter. Fill
+            the sections the report names, then commit again:
           </p>
           <pre><code><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
 Doctor Report
@@ -170,9 +178,12 @@ Doctor Report
 - Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
 <span class="m">  …</span>
 Result: <span class="warn">WARNINGS</span>
-<span class="warn">[exit 1]</span>
+[main 37dc89f] Plan the checkout feature
+ 2 files changed, 50 insertions(+)
+<span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-04dfe77 Add repository memory</code></pre>
+37dc89f Plan the checkout feature
+922b092 Add repository memory</code></pre>
           <p>
             Pre-push runs the test gate. With a failing suite the push is refused, and git says so
             after the gate's output:
@@ -184,7 +195,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="err">✖</span> totals a cart (0.875542ms)
+<span class="err">✖</span> totals a cart (0.984209ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
@@ -193,7 +204,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 <span class="err">✖</span> failing tests:
 
 test at tests/cart.test.js:5:1
-<span class="err">✖</span> totals a cart (0.875542ms)
+<span class="err">✖</span> totals a cart (0.984209ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
 
   24 !== 29
@@ -208,7 +219,7 @@ Persist OS test gate <span class="ok">passed</span>: npm run test:run
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="ok">✔</span> totals a cart (0.423041ms)
+<span class="ok">✔</span> totals a cart (0.475583ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -286,7 +297,7 @@ Persist OS test gate <span class="ok">passed</span>: npm run test:run
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="ok">✔</span> totals a cart (0.42975ms)
+<span class="ok">✔</span> totals a cart (0.475875ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 1
@@ -300,7 +311,7 @@ Persist OS test gate <span class="err">failed</span>: npm run test:run exited wi
 &gt; orders-api@1.4.0 test:run
 &gt; node --test
 
-<span class="err">✖</span> totals a cart (0.924125ms)
+<span class="err">✖</span> totals a cart (0.858875ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0

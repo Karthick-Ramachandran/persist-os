@@ -11,6 +11,7 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - staleness: not a git repository, so commit history is unavailable
+- fence: not inside a git work tree, so the staged set is unknown
 
 Result: PASSED
 [exit 0]

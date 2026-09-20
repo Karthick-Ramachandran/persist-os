@@ -5,7 +5,7 @@ Persist OS test gate failed: npm run test:run exited with code 1.
 > orders-api@1.4.0 test:run
 > node --test
 
-✖ totals a cart (0.924125ms)
+✖ totals a cart (0.858875ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
@@ -13,17 +13,17 @@ Persist OS test gate failed: npm run test:run exited with code 1.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 56.615625
+ℹ duration_ms 62.404833
 
 ✖ failing tests:
 
 test at tests/cart.test.js:5:1
-✖ totals a cart (0.924125ms)
+✖ totals a cart (0.858875ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   
   24 !== 29
   
-      at TestContext.<anonymous> (/private/var/folders/28/7n32qdq553q_rj96l03f7klw0000gn/T/tmp.oDBa9dWP7P/orders-api-ts/tests/cart.test.js:6:10)
+      at TestContext.<anonymous> (/private/var/folders/28/7n32qdq553q_rj96l03f7klw0000gn/T/tmp.A6Cna87th9/orders-api-ts/tests/cart.test.js:6:10)
       at Test.runInAsyncScope (node:async_hooks:226:14)
       at Test.run (node:internal/test_runner/test:1402:25)
       at Test.start (node:internal/test_runner/test:1262:17)

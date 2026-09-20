@@ -5,7 +5,10 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**", "examples/**"],
+    // `site/` is static browser assets: not built, not tested, and not shipped in the
+    // package (`files` is dist, README, LICENSE). Linting it with the Node config would
+    // fail on `document` and `window`, which are correct there.
+    ignores: ["dist/**", "coverage/**", "node_modules/**", "examples/**", "site/**"],
   },
   {
     files: ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts", "tsup.config.ts"],

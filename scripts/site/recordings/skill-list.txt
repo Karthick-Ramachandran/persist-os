@@ -4,4 +4,5 @@ Persist OS skill catalog
 - plan-feature: Plan Feature
 - security-review: Security Review
 - conventions-adherence: Conventions Adherence
+- chestertons-fence: Chesterton's Fence
 [exit 0]

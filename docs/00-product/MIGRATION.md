@@ -3,6 +3,16 @@
 Two breaking changes land in 1.0 (see [ADR-0011](../adrs/ADR-0011-one-zero-stability-contract.md)).
 Each names the removal and the exact edit that replaces it.
 
+## Upgrade the global binary first
+
+The generated hooks call `persist` from `PATH`, so a 0.6.x binary still installed globally
+keeps running the old behaviour in every hook — including blocking commits on warnings — until
+it is upgraded. Upgrade before regenerating anything:
+
+```sh
+npm install -g persist-os@latest
+```
+
 One behaviour change is not breaking but changes what a commit does: generated pre-commit hooks
 now treat doctor warnings as advisory and fail only on errors (see
 [ADR-0013](../adrs/ADR-0013-warnings-are-advisory-in-the-generated-pre-commit-hook.md)). Commits

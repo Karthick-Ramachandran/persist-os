@@ -14,4 +14,8 @@ INFO
 - 0 ADRs detected.
 
 Result: WARNINGS
-[exit 1]
+[main 37dc89f] Plan the checkout feature
+ 2 files changed, 50 insertions(+)
+ create mode 100644 docs/40-features/F-001-checkout/PLAN.md
+ create mode 100644 docs/40-features/F-001-checkout/TASKS.md
+[exit 0]
