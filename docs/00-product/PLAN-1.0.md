@@ -9,7 +9,7 @@ Status: **proposed**. Nothing here is built until the ADRs are accepted.
 
 |                              | 0.6.2                      | 1.0                                   |
 | ---------------------------- | -------------------------- | ------------------------------------- |
-| Required documents           | 11 (~60KB)                 | 6 + `docs/adrs/`                      |
+| Required documents           | 14 (~60KB+)                | 6 + `docs/adrs/`                      |
 | Files per feature            | 9                          | 2, or 3 with the test gate            |
 | Catalog skills               | 12                         | 3, all rewritten                      |
 | `Required Reading` in skills | every skill                | removed                               |
