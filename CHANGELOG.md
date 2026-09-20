@@ -2,6 +2,22 @@
 
 ## 1.1.0
 
+### `persist fence add`
+
+The fence could warn but nothing could answer it. Recording a reason meant an agent hand-writing
+markdown in a shape two readers parse — `fence-check` looks for a `` ## `path` `` heading and the
+`Why:` line under it, and the SessionStart hook greps the same two prefixes. Freehand markdown that
+drifts is invisible to both, which makes the fence worthless, and without an agent there was no path
+at all.
+
+```sh
+persist fence add src/billing.ts --why "Four writes are deliberate." --by "Karthick"
+```
+
+A path already fenced keeps its standing reason and gains a dated crossing, because the file is read
+by path. The `chestertons-fence` skill now calls the command instead of writing the file itself —
+the same reason `create-adr` was retired in 1.0.
+
 ### `persist init` explains itself
 
 Every question now says what happens when it is on, what happens when it is off, and marks a

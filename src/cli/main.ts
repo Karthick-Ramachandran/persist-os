@@ -27,6 +27,7 @@ import {
   formatSkillCreateResult,
   SkillCreateError,
 } from "../commands/skill/create.js";
+import { addFence, formatFenceAddResult } from "../commands/fence/add.js";
 import { formatSkillListResult } from "../commands/skill/list.js";
 
 export type CliWritable = {
@@ -286,6 +287,39 @@ export function createCliProgram(
     .action(() => {
       stdout.write(formatSkillListResult());
     });
+
+  const fenceCommand = program
+    .command("fence")
+    .description("Record why code is shaped the way it is.");
+
+  fenceCommand
+    .command("add")
+    .description("Record the human-confirmed reason a path is shaped the way it is.")
+    .argument(
+      "<path>",
+      "Repo-relative path, optionally suffixed with a symbol, e.g. src/a.ts:write.",
+    )
+    .requiredOption("--why <reason>", "One sentence. Why the code is shaped this way.")
+    .option("--by <name>", "Who confirmed the reason.")
+    .option("--adr <link>", "A related decision, when one exists.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .action(
+      async (
+        fencedPath: string,
+        options: { why: string; by?: string; adr?: string; dryRun?: boolean },
+      ) => {
+        const result = await addFence({
+          rootDir: cwd,
+          path: fencedPath,
+          why: options.why,
+          by: options.by,
+          adr: options.adr,
+          dryRun: options.dryRun,
+        });
+
+        stdout.write(formatFenceAddResult(result));
+      },
+    );
 
   return program;
 }
