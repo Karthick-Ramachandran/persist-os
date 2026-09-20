@@ -174,6 +174,16 @@ async function stagedFiles(rootDir: string): Promise<string[] | null> {
   }
 }
 
+/**
+ * The file part of a fence key. A fence may name a symbol — `src/billing.ts:writeLedger` — but a
+ * diff is per-file, so the symbol is there to tell a reader which part of the file the reason is
+ * about. Matching has to happen on the file, or a suffixed fence records fine and never fires.
+ */
+function fenceFileKey(fencePath: string): string {
+  const separator = fencePath.indexOf(":");
+  return separator === -1 ? fencePath : fencePath.slice(0, separator);
+}
+
 /** Map of fenced path to its standing `Why:` reason. A missing FENCES.md means no crossings yet. */
 async function readFences(rootDir: string, fencesPath: string): Promise<Map<string, string>> {
   const fences = new Map<string, string>();
@@ -190,10 +200,10 @@ async function readFences(rootDir: string, fencesPath: string): Promise<Map<stri
       continue;
     }
 
-    if (current !== null && !fences.has(current)) {
+    if (current !== null && !fences.has(fenceFileKey(current))) {
       const why = FENCE_WHY_PATTERN.exec(line);
       if (why !== null) {
-        fences.set(current, (why[1] ?? "").trim());
+        fences.set(fenceFileKey(current), (why[1] ?? "").trim());
       }
     }
   }
