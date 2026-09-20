@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -106,7 +107,7 @@ describe("doctor check outcomes", () => {
     expect(report.checks).toHaveLength(12);
     expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(10);
     expect(report.checks).toContainEqual({
-      check: "hook-drift",
+      id: "hook-drift",
       status: "not-evaluated",
       reason: "no .persist/config.json, so configured paths are unknown",
     });
@@ -121,7 +122,7 @@ describe("doctor check outcomes", () => {
     await rm(path.join(rootDir, ".persist/hooks"), { recursive: true, force: true });
 
     const report = await runDoctor(rootDir);
-    const drift = report.checks.find((check) => check.check === "hook-drift");
+    const drift = report.checks.find((check) => check.id === "hook-drift");
 
     expect(drift?.status).toBe("not-evaluated");
     expect(drift?.reason).toContain(".persist/hooks/pre-commit");
@@ -135,6 +136,16 @@ describe("doctor check outcomes", () => {
   it("evaluates every check with no NOT EVALUATED section on a healthy repo", async () => {
     const rootDir = await createRoot("outcomes-healthy");
     await runInitCommand(rootDir);
+    // staleness needs real commit history, so a "healthy" repo is a git repo with
+    // full history — otherwise it correctly reports not-evaluated.
+    execFileSync("git", ["init"], { cwd: rootDir, stdio: "ignore" });
+    execFileSync("git", ["config", "user.email", "test@example.com"], {
+      cwd: rootDir,
+      stdio: "ignore",
+    });
+    execFileSync("git", ["config", "user.name", "Test"], { cwd: rootDir, stdio: "ignore" });
+    execFileSync("git", ["add", "-A"], { cwd: rootDir, stdio: "ignore" });
+    execFileSync("git", ["commit", "-m", "init"], { cwd: rootDir, stdio: "ignore" });
 
     const report = await runDoctor(rootDir);
 

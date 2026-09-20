@@ -633,6 +633,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: doctor's staleness check compares doc vs code commit times,
+          # which is unmeasurable in a shallow clone.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20

@@ -23,7 +23,12 @@ export type DoctorFinding = {
 export type DoctorCheckStatus = "evaluated" | "not-evaluated";
 
 export type DoctorCheckOutcome = {
-  check: string;
+  /**
+   * The check module's id. Deliberately named `id`, not `check`: a finding's `check` field is a
+   * finer-grained rule id (`feature-memory`, `content-conventions`) owned by one of these modules,
+   * so the two namespaces do not line up and must not look like they do.
+   */
+  id: string;
   status: DoctorCheckStatus;
   reason?: string;
 };
@@ -52,10 +57,6 @@ export type DoctorCheckContext = {
   };
 };
 
-export type DoctorCheck = (
-  context: DoctorCheckContext,
-) => Promise<DoctorFinding[]> | DoctorFinding[];
-
 /**
  * Checks that only run once a validated config is available. When the config is missing or
  * invalid these are recorded as not-evaluated instead of silently dropped, so a partial run
@@ -80,7 +81,7 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const configResult = await checkConfig(rootDir);
 
   findings.push(...configResult.findings);
-  checks.push({ check: "config", status: "evaluated" });
+  checks.push({ id: "config", status: "evaluated" });
 
   const context: DoctorCheckContext = {
     rootDir,
@@ -100,34 +101,37 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   };
 
   findings.push(...(await checkRequiredFiles(context)));
-  checks.push({ check: "required-files", status: "evaluated" });
+  checks.push({ id: "required-files", status: "evaluated" });
 
   if (configResult.config === undefined) {
-    const reason = gatedChecksReason(configResult.findings);
+    const reason =
+      configResult.unavailableReason ?? "the Persist OS config is unusable, so paths are unknown";
     for (const check of CONFIG_GATED_CHECKS) {
-      checks.push({ check, status: "not-evaluated", reason });
+      checks.push({ id: check, status: "not-evaluated", reason });
     }
     return createDoctorReport(findings, checks);
   }
 
   findings.push(...(await checkMemoryIntegrity(context)));
-  checks.push({ check: "memory-integrity", status: "evaluated" });
+  checks.push({ id: "memory-integrity", status: "evaluated" });
   findings.push(...(await checkStandards(context)));
-  checks.push({ check: "standards", status: "evaluated" });
+  checks.push({ id: "standards", status: "evaluated" });
   findings.push(...(await checkDrift(context)));
-  checks.push({ check: "drift", status: "evaluated" });
+  checks.push({ id: "drift", status: "evaluated" });
   findings.push(...(await checkContent(context)));
-  checks.push({ check: "content", status: "evaluated" });
+  checks.push({ id: "content", status: "evaluated" });
   findings.push(...(await checkConventions(context)));
-  checks.push({ check: "conventions", status: "evaluated" });
+  checks.push({ id: "conventions", status: "evaluated" });
   findings.push(...(await checkCodeReferences(context)));
-  checks.push({ check: "code-references", status: "evaluated" });
+  checks.push({ id: "code-references", status: "evaluated" });
   findings.push(...(await checkSuperseded(context)));
-  checks.push({ check: "superseded", status: "evaluated" });
+  checks.push({ id: "superseded", status: "evaluated" });
   findings.push(...(await checkContextBudget(context)));
-  checks.push({ check: "context-budget", status: "evaluated" });
-  findings.push(...(await checkStaleness(context)));
-  checks.push({ check: "staleness", status: "evaluated" });
+  checks.push({ id: "context-budget", status: "evaluated" });
+
+  const staleness = await checkStaleness(context);
+  findings.push(...staleness.findings);
+  checks.push(staleness.outcome);
 
   const hookDrift = await checkHookDrift(context);
   findings.push(...hookDrift.findings);
@@ -136,23 +140,9 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   return createDoctorReport(findings, checks);
 }
 
-function gatedChecksReason(configFindings: DoctorFinding[]): string {
-  const message = configFindings[0]?.message ?? "";
-
-  if (message.includes("not valid JSON")) {
-    return "config .persist/config.json is not valid JSON, so configured paths are unknown";
-  }
-
-  if (message.includes("Missing .persist/config.json")) {
-    return "no .persist/config.json, so configured paths are unknown";
-  }
-
-  return "invalid .persist/config.json, so configured paths are unknown";
-}
-
 export function createDoctorReport(
   findings: DoctorFinding[],
-  checks: DoctorCheckOutcome[] = [],
+  checks: DoctorCheckOutcome[],
 ): DoctorReport {
   return {
     findings,

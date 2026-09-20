@@ -65,13 +65,13 @@ export async function checkHookDrift(context: DoctorCheckContext): Promise<HookD
     }
   }
 
-  return { findings, outcome: { check: "hook-drift", status: "evaluated" } };
+  return { findings, outcome: { id: "hook-drift", status: "evaluated" } };
 }
 
 function notEvaluated(reason: string): HookDriftCheckResult {
   return {
     findings: [],
-    outcome: { check: "hook-drift", status: "not-evaluated", reason },
+    outcome: { id: "hook-drift", status: "not-evaluated", reason },
   };
 }
 

@@ -66,7 +66,7 @@ describe("hook-drift check", () => {
     const { findings, outcome } = await checkHookDrift(context);
 
     expect(findings).toEqual([]);
-    expect(outcome).toEqual({ check: "hook-drift", status: "evaluated" });
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
   });
 
   it("warns naming the hook when a baked-in gate disagrees with config", async () => {
@@ -80,7 +80,7 @@ describe("hook-drift check", () => {
 
     const { findings, outcome } = await checkHookDrift(context);
 
-    expect(outcome).toEqual({ check: "hook-drift", status: "evaluated" });
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({
       severity: "warning",

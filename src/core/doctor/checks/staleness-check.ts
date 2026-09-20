@@ -4,7 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -20,19 +20,32 @@ const placeholderMarkers = /[<>*]|\.\.\./u;
 // it fires when memory is genuinely old and the code it cites moved on long after.
 const STALE_AFTER_SECONDS = 90 * 24 * 60 * 60;
 
+export type StalenessCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
+
 /**
  * Deterministic, read-only staleness heuristic. For current-state memory that cites an existing
  * `src/`/`tests/` file, it compares the memory's last git commit to the file's last commit; if the
  * code changed far more recently, the memory may have drifted. It only runs inside a git repository
- * and skips gracefully otherwise. It is a heuristic nudge (warning) — confirming a real contradiction
- * is the agent's job, not the gate's.
+ * with full history — outside git, or in a shallow clone where every file reports the same commit
+ * time, it reports not-evaluated with the reason instead of an empty pass. It is a heuristic nudge
+ * (warning) — confirming a real contradiction is the agent's job, not the gate's.
  */
-export async function checkStaleness(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export async function checkStaleness(context: DoctorCheckContext): Promise<StalenessCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated(
+      "no validated Persist OS config, so the memory directories to scan are unknown",
+    );
   }
   if (!(await isGitRepository(context.rootDir))) {
-    return [];
+    return notEvaluated("not a git repository, so commit history is unavailable");
+  }
+  if (await isShallowRepository(context.rootDir)) {
+    return notEvaluated(
+      "shallow clone (fetch-depth 1): every file reports the same commit time, so staleness cannot be measured — use fetch-depth: 0",
+    );
   }
 
   const docPaths = await collectDocPaths(context.rootDir, context.config);
@@ -85,7 +98,14 @@ export async function checkStaleness(context: DoctorCheckContext): Promise<Docto
     }
   }
 
-  return findings;
+  return { findings, outcome: { id: "staleness", status: "evaluated" } };
+}
+
+function notEvaluated(reason: string): StalenessCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "staleness", status: "not-evaluated", reason },
+  };
 }
 
 async function collectDocPaths(
@@ -117,6 +137,23 @@ async function isGitRepository(rootDir: string): Promise<boolean> {
   try {
     await execFileAsync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: rootDir });
     return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detect a shallow clone, where every file reports the same single-commit timestamp and the
+ * doc-vs-code time comparison can never produce a gap. An old git without the subcommand fails
+ * here — treat that as full history rather than crashing, since the comparison degrades to its
+ * previous behavior instead of something worse.
+ */
+export async function isShallowRepository(rootDir: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync("git", ["rev-parse", "--is-shallow-repository"], {
+      cwd: rootDir,
+    });
+    return stdout.trim() === "true";
   } catch {
     return false;
   }

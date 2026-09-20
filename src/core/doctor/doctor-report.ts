@@ -59,7 +59,7 @@ export function formatDoctorReport(report: DoctorReport): string {
   if (notEvaluated.length > 0) {
     lines.push("NOT EVALUATED");
     for (const check of notEvaluated) {
-      lines.push(`- ${check.check}: ${check.reason ?? "no reason given"}`);
+      lines.push(`- ${check.id}: ${check.reason ?? "no reason given"}`);
     }
     lines.push("");
   }
