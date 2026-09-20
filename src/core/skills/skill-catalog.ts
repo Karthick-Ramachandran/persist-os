@@ -215,7 +215,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "List which staged files the fence warning names and read the current logic in each.",
       "For each file, state what the logic does today and what simpler shape tempts the change.",
       "Ask the human why the logic is shaped this way; never infer the constraint from the code.",
-      "When the human confirms a real constraint, write the fence entry: a path heading, a one-sentence Why, and an ADR link when one exists.",
+      'When the human confirms a real constraint, record it with `persist fence add <path> --why "<reason>" --by <name>`; never hand-write the entry, because the readers parse an exact shape.',
       "When the behaviour is accidental rather than deliberate, say so and record nothing.",
       "Append the crossing to the entry history with the date, the outcome, and who confirmed it.",
       "Verify the entry against the Verification list and hand back the per-file outcome.",
@@ -229,10 +229,10 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Every staged file the warning named has an outcome: fenced, accidental, or deferred.",
       "Each fence entry names the human who confirmed the reason.",
       "No Why was inferred from code alone; every reason traces to a human answer.",
-      "The entry keeps the greppable shape: path heading, Why line, dated crossing.",
+      "Each entry was written by `persist fence add`, so the shape the readers parse is guaranteed.",
     ],
     resources: [
-      "For the fence file and its format → docs/60-engineering/FENCES.md",
+      "For recorded fences and their history → docs/60-engineering/FENCES.md",
       "For the mechanism, scope, and severity → docs/adrs/ADR-0010-chestertons-fence.md",
     ],
     output: [

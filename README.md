@@ -232,6 +232,7 @@ git config core.hooksPath .persist/hooks
 | `persist mcp add <server>`          | Generate offline, proposed memory for an MCP server.                           |
 | `persist doctor`                    | Validate memory health, evidence, and drift.                                   |
 | `persist test-gate`                 | Run the configured test command and require it to pass.                        |
+| `persist fence add <path> --why`    | Record why a path is shaped the way it is.                                     |
 
 ## What Doctor Checks
 
@@ -301,6 +302,24 @@ When a change touches source with no recorded reason and no ADR reference, Docto
 `chestertons-fence` skill walks an agent through the three questions — what is changing, what logic
 was already there and why, what might break — and a human confirms the answer, because the whole
 premise is that the constraint lives in someone's memory rather than in the code.
+
+When you answer, record it:
+
+```sh
+persist fence add src/billing.ts \
+  --why "Four collection writes are deliberate; ledger and audit trail land in one transaction." \
+  --by "Karthick"
+```
+
+From then on, a change to that path hands the reason back instead of asking again:
+
+```console
+$ persist doctor
+WARNING
+- Change touches a recorded fence: Four collection writes are deliberate; ledger and
+  audit trail land in one transaction. Confirm the reason still holds before changing
+  the logic. (src/billing.ts)
+```
 
 It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config.json`.
 
