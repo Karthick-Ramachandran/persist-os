@@ -55,6 +55,8 @@ export type StyleHelpers = {
   warn(text: string): string;
   err(text: string): string;
   line(text: string): string;
+  /** Bold, uncoloured. For emphasis that must not read as a status. */
+  bold(text: string): string;
   /** Accent headline. */
   heading(text: string): string;
   /** A horizontal rule of box-drawing characters, default 40 wide. */
@@ -73,6 +75,7 @@ export function createStyle(level: ColorLevel): StyleHelpers {
     warn: color("warn"),
     err: color("err"),
     line: color("line"),
+    bold: (text: string) => (level === "none" ? text : `\x1b[1m${text}\x1b[0m`),
     heading: (text: string) =>
       level === "none" ? text : `\x1b[1m${paint(level, PALETTE.accent, text)}\x1b[0m`,
     rule: (width = 40) =>

@@ -19,6 +19,31 @@ function feedFor(lines: string[]): FeedOnPrompt {
 }
 
 describe("cli prompts", () => {
+  it("marks the default without using a status colour", async () => {
+    // The capital letter carries the default. Painting it accent (terracotta) made it read
+    // as an error in a terminal, which a default is not.
+    const feed = feedFor(["y"]);
+    const prompter = createPrompter({ input: feed.input, output: feed });
+    await prompter.askYesNo("Q?", true);
+    prompter.close();
+
+    const accent = createStyle("truecolor").accent("Y");
+    expect(feed.written()).not.toContain(accent);
+    expect(feed.written()).toContain("[Y/n]");
+  });
+
+  it("prints an explanation above the question it belongs to", async () => {
+    const feed = feedFor(["y"]);
+    const prompter = createPrompter({ input: feed.input, output: feed });
+    await prompter.askYesNo("Enable it?", true, "[5/5]", "  On: something. Off: nothing.");
+    prompter.close();
+
+    const written = feed.written();
+    expect(written.indexOf("On: something")).toBeLessThan(written.indexOf("Enable it?"));
+    // A blank line separates it from the previous answer, so it does not read as belonging there.
+    expect(written).toContain("\n  On: something");
+  });
+
   it("askYesNo parses yes/no variants", async () => {
     const yes = feedFor(["y"]);
     const yesPrompter = createPrompter({ input: yes.input, output: yes });

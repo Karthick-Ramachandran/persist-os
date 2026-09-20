@@ -201,10 +201,25 @@ async function resolveInitAnswers(
 
   try {
     const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/5]");
-    const features = await prompter.askYesNo("Track features?", false, "[2/5]");
-    const modules = await prompter.askYesNo("Track modules?", false, "[3/5]");
+    const features = await prompter.askYesNo(
+      "Track features?",
+      false,
+      "[2/5]",
+      "  Adds docs/40-features/ and `persist feature create`, for planning work before building it.\n  Off: nothing is generated and doctor never asks for it.",
+    );
+    const modules = await prompter.askYesNo(
+      "Track modules?",
+      false,
+      "[3/5]",
+      "  Adds docs/30-modules/ for ownership, boundaries and per-module decisions.\n  Off: nothing is generated and doctor never asks for it.",
+    );
     const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/5]");
-    const fenceEnabled = await prompter.askYesNo("Enable the Chesterton fence?", true, "[5/5]");
+    const fenceEnabled = await prompter.askYesNo(
+      "Enable the Chesterton fence?",
+      true,
+      "[5/5]",
+      "  Records why code is shaped the way it is, for reasoning no ADR would ever cover.\n  On: when a change touches source with no recorded reason, doctor asks why before\n  you change it — a warning, never a block. The file starts empty and grows as\n  you answer.\n  Off: nothing is generated and doctor never asks. (recommended on)",
+    );
 
     return {
       aiTools,
@@ -223,9 +238,36 @@ async function resolveInitAnswers(
  * The init masthead: a small wordmark and one line of what is about to happen.
  * Restrained by design — the top of the landing page, not an installer banner.
  */
-export function buildMasthead(): string {
+/** The wordmark, at 54 columns. Drawn once so the shape is obvious in source. */
+const WORDMARK = [
+  "██████  ███████ ██████  ███████ ██ ███████ ████████",
+  "██   ██ ██      ██   ██ ██      ██ ██         ██   ",
+  "██████  █████   ██████  ███████ ██ ███████    ██   ",
+  "██      ██      ██   ██      ██ ██      ██    ██   ",
+  "██      ███████ ██   ██ ███████ ██ ███████    ██   ",
+];
+
+const WORDMARK_WIDTH = 54;
+
+/**
+ * The init masthead. The wordmark needs 54 columns; anything narrower gets the compact
+ * form rather than a broken shape, and so does a pipe, where `columns` is undefined.
+ */
+export function buildMasthead(columns = process.stdout.columns): string {
   const style = getStyle();
-  return `${style.heading("persist")} ${style.muted("repository memory for AI-assisted software work")}\n${style.rule()}`;
+  const compact = `${style.heading("persist")} ${style.muted("repository memory for AI-assisted software work")}\n${style.rule()}`;
+
+  if (columns === undefined || columns < WORDMARK_WIDTH) {
+    return compact;
+  }
+
+  return [
+    ...WORDMARK.map((row) => style.heading(row)),
+    "",
+    `${style.muted("Repository memory for coding agents.")}`,
+    `${style.muted("Git tracks what changed. Persist tracks why.")}`,
+    style.rule(WORDMARK_WIDTH),
+  ].join("\n");
 }
 
 export function formatInitResult(result: InitResult): string {

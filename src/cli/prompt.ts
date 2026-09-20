@@ -16,7 +16,12 @@ const AI_TOOL_CHOICES = aiToolTargetSchema.options;
  * one closes, hanging the next question on a fully-fed stream.
  */
 export type Prompter = {
-  askYesNo(question: string, defaultValue: boolean, progress?: string): Promise<boolean>;
+  askYesNo(
+    question: string,
+    defaultValue: boolean,
+    progress?: string,
+    explain?: string,
+  ): Promise<boolean>;
   askAiTools(defaultValue: AiToolTarget[], progress?: string): Promise<AiToolTarget[]>;
   askTestGate(detectedCommand: string | null, progress?: string): Promise<boolean>;
   close(): void;
@@ -58,8 +63,16 @@ export function createPrompter(streams: PromptStreams, style?: StyleHelpers): Pr
     question: string,
     defaultValue: boolean,
     progress?: string,
+    explain?: string,
   ): Promise<boolean> {
-    const hint = defaultValue ? `[${resolved.accent("Y")}/n]` : `[y/${resolved.accent("N")}]`;
+    if (explain !== undefined) {
+      // Blank line first: without it the explanation butts against the previous answer and
+      // reads as belonging to that question rather than the one below it.
+      streams.output.write(`\n${resolved.muted(explain)}\n`);
+    }
+    // The capital letter already marks the default. Colouring it accent (terracotta) reads as
+    // an error in a terminal, which a default is not — bold carries it without the alarm.
+    const hint = defaultValue ? `[${resolved.bold("Y")}/n]` : `[y/${resolved.bold("N")}]`;
 
     for (;;) {
       const answer = (await askLine(`${tagged(progress)}${resolved.secondary(question)} ${hint} `))
@@ -125,14 +138,20 @@ export function createPrompter(streams: PromptStreams, style?: StyleHelpers): Pr
    */
   async function askTestGate(detectedCommand: string | null, progress?: string): Promise<boolean> {
     if (detectedCommand === null) {
-      streams.output.write(
-        `${resolved.secondary("No one-shot test script detected — the test gate will stay off unless you configure testCommand later.")}\n`,
+      return askYesNo(
+        "Enable the test gate?",
+        false,
+        progress,
+        "  No one-shot test script detected, so the gate stays off. Set testCommand in\n  .persist/config.json later to turn it on.",
       );
-      return askYesNo("Enable the test gate?", false, progress);
     }
 
-    streams.output.write(`  ${resolved.accent(detectedCommand)}\n`);
-    return askYesNo("Enable the test gate?", true, progress);
+    return askYesNo(
+      "Enable the test gate?",
+      true,
+      progress,
+      `  Runs ${resolved.accent(detectedCommand)} before every push and blocks the push if it fails.\n  Off: nothing runs your tests for you. (recommended)`,
+    );
   }
 
   return {
