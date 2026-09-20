@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doctor — Persist OS docs</title>
+    <meta name="description" content="persist doctor is a deterministic, read-only gate for repository memory. Exit codes 0, 1, 2, every check it runs, the JSON report, and where to run it." />
+    <link rel="canonical" href="https://persist-os.pages.dev/docs/doctor" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header is-sticky">
+      <div class="wrap">
+        <a class="brand" href="../index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)" /><path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="index.html" aria-current="page">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg></a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <aside class="docs-side">
+        <nav aria-label="Documentation">
+          <ul class="docs-nav">
+            <li class="group">Start</li>
+            <li><a href="index.html">Getting started</a></li>
+            <li class="group">Reference</li>
+            <li><a href="commands.html">Commands</a></li>
+            <li class="group">Concepts</li>
+            <li><a href="memory.html">Repository memory</a></li>
+            <li><a href="decisions.html">Decisions and ADRs</a></li>
+            <li><a href="doctor.html" aria-current="page">Doctor</a></li>
+            <li><a href="hooks.html">Hooks, test gate, CI</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="main" class="docs-main">
+        <header>
+          <span class="eyebrow">Concepts</span>
+          <h1>Doctor</h1>
+          <p class="lede"><code>persist doctor</code> is the part that makes Persist OS more than a template. It is read-only, deterministic, and offline, and it returns an exit code you can gate on.</p>
+        </header>
+
+        <div class="prose">
+          <p>
+            The doctor does not call a model and does not judge whether your architecture is good.
+            It checks things with a definite answer: required files, required sections, evidence
+            behind a completion claim, references to decisions and code, and a few signals of
+            memory going stale. Same input, same report, every run. That is what lets it sit in a
+            pre-commit hook and in CI without anyone second-guessing it.
+          </p>
+
+          <h2 id="running">Running it</h2>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>          <span class="m"># human-readable report</span>
+<span class="p">$</span> <span class="c">persist doctor --json</span>   <span class="m"># machine-readable, schemaVersion persist.doctor.v1</span></code></pre>
+          <p>
+            The report lists findings grouped by severity, then the checks that could not run and
+            why, then the result. This is a repository right after <code>init</code>, one ADR, and
+            one module:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Module memory purpose is still an unfilled template. (docs/30-modules/billing/MODULE.md)
+- Module memory owns section is still an unfilled template. (docs/30-modules/billing/MODULE.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 1 feature folders detected.
+- 1 module folders detected.
+- 2 ADRs detected.
+
+Result: <span class="warn">WARNINGS</span></code></pre>
+
+          <h2 id="exit-codes">Exit codes</h2>
+          <ul class="codes" aria-label="Exit codes">
+            <li class="ok">
+              <span class="n">0</span>
+              <span class="l">Healthy</span>
+              <span class="d">No errors and no warnings. Result: PASSED.</span>
+            </li>
+            <li class="warn">
+              <span class="n">1</span>
+              <span class="l">Warnings only</span>
+              <span class="d">Something to look at. Result: WARNINGS.</span>
+            </li>
+            <li class="err">
+              <span class="n">2</span>
+              <span class="l">Errors</span>
+              <span class="d">Memory is broken or a claim lacks evidence. Result: FAILED.</span>
+            </li>
+          </ul>
+          <p>
+            Info findings never change the exit code. Exit 1 is still non-zero: the generated
+            pre-commit hook runs the doctor under <code>set -e</code>, and a CI step fails on any
+            non-zero exit, so a warning blocks a commit and a pull request just as an error does
+            until the section it names is filled in. This is a recorded commit attempt right after
+            <code>persist feature create</code>, before any template was filled:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 1 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+Result: <span class="warn">WARNINGS</span>
+<span class="warn">[exit 1]</span>
+<span class="p">$</span> <span class="c">git log --oneline</span>
+d84bda4 Add repository memory</code></pre>
+
+          <h2 id="checks">Every check</h2>
+          <p>
+            Checks run in this order. The first two run always; the rest need a valid
+            <code>.persist/config.json</code>, because they depend on the configured paths.
+          </p>
+          <div class="table-wrap table-wide">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Check</th>
+                  <th scope="col">What it looks for</th>
+                  <th scope="col">Severity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>config</code></td>
+                  <td class="desc"><code>.persist/config.json</code> exists, parses, and validates. Paths must stay inside the repository; a field from an earlier release is reported with the line to delete.</td>
+                  <td class="sev-err">error</td>
+                </tr>
+                <tr>
+                  <td><code>required-files</code></td>
+                  <td class="desc"><code>AGENTS.md</code>, <code>CLAUDE.md</code> when <code>claude</code> is selected, the six required documents, and <code>docs/adrs/README.md</code> exist. A missing Cursor rule when <code>cursor</code> is selected is a warning.</td>
+                  <td class="sev-mixed">error / warning</td>
+                </tr>
+                <tr>
+                  <td><code>memory-integrity</code></td>
+                  <td class="desc">A feature folder has <code>PLAN.md</code> and <code>TASKS.md</code> (and <code>TEST_PLAN.md</code> when a test command is set), a module folder has its docs, and every ADR has its required sections. Doc paths linked from the six required documents resolve, and ADRs they cite exist (error) and are accepted (warning). Also reports the counts as info.</td>
+                  <td class="sev-mixed">error / warning</td>
+                </tr>
+                <tr>
+                  <td><code>standards</code></td>
+                  <td class="desc">An ADR has substance in its Consequences and Alternatives Considered sections (error once accepted, otherwise warning). A decision written in security-sensitive terms links a security document under Related Documents (warning). For feature folders in the earlier nine-file layout, a feature marked complete has a review that is not pending and test and result evidence (error).</td>
+                  <td class="sev-mixed">error / warning</td>
+                </tr>
+                <tr>
+                  <td><code>drift</code></td>
+                  <td class="desc">Feature or module memory cites an ADR that does not exist (error) or is not yet accepted (warning).</td>
+                  <td class="sev-mixed">error / warning</td>
+                </tr>
+                <tr>
+                  <td><code>content</code></td>
+                  <td class="desc">A module doc, or, once the repository has real work, the product file and the security model still contain the template prompts. Older feature PRDs and threat models are checked when present.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>conventions</code></td>
+                  <td class="desc"><code>CONVENTIONS.md</code> is still a stub once the repository has real work.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>code-references</code></td>
+                  <td class="desc">Current-state memory (ADRs, <code>CONVENTIONS.md</code>, and in-progress feature or module docs) cites a <code>src/</code> or <code>tests/</code> path that does not exist. A feature with a completion report counts as history and is skipped.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>superseded</code></td>
+                  <td class="desc">Memory still cites an ADR that has been superseded by a newer decision.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>context-budget</code></td>
+                  <td class="desc"><code>CLAUDE.md</code>, <code>AGENTS.md</code>, and the Cursor rule together exceed 24 KiB. The always-loaded memory should stay a map.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>staleness</code></td>
+                  <td class="desc">Current-state memory cites <code>src/</code> or <code>tests/</code> code whose last commit is more than 90 days after the memory's last commit. Needs git history; otherwise not evaluated.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>hook-drift</code></td>
+                  <td class="desc">The tracked hooks in <code>.persist/hooks/</code> differ from what the current config would generate. Hand edits are allowed, but should be visible.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>retired-skills</code></td>
+                  <td class="desc">A directory under <code>.claude/skills/</code> or <code>.agents/skills/</code> is not in the built-in catalog. It is either a retired skill (the message gives the removal command) or a hand-made one, which is fine to keep.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="not-evaluated">Not evaluated is not a pass</h2>
+          <p>
+            When a check has nothing to look at or cannot run, the report says so instead of
+            silently passing. In a fresh repository with no ADRs, features, or modules,
+            <code>standards</code> and <code>content</code> are listed as not evaluated with the
+            reason. The config-dependent checks are all not evaluated when the config is missing
+            or invalid. <code>staleness</code> is not evaluated outside a git repository or in a
+            shallow clone; <code>hook-drift</code> is not evaluated when a hook file is missing.
+            Each one carries a reason, in both the text report and the JSON.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+NOT EVALUATED
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+
+Result: PASSED</code></pre>
+          <p>The same fresh memory in a folder that is not a git repository adds a third line:</p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+NOT EVALUATED
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- staleness: not a git repository, so commit history is unavailable
+
+Result: PASSED</code></pre>
+
+          <h2 id="json">The JSON report</h2>
+          <p>
+            <code>--json</code> is for CI artifacts, hooks, and agent handoffs. The schema is
+            versioned so tooling can depend on it. Abridged from a real run:
+          </p>
+          <pre><code>{
+  "schemaVersion": "persist.doctor.v1",
+  "status": "warnings",
+  "exitCode": 1,
+  "summary": {
+    "errors": 0,
+    "warnings": 6,
+    "info": 4
+  },
+  "findings": [
+    {
+      "severity": "info",
+      "check": "config",
+      "message": "Persist OS config validates.",
+      "path": ".persist/config.json"
+    },
+    {
+      "severity": "warning",
+      "check": "content-product",
+      "message": "Product purpose is still an unfilled template.",
+      "path": "docs/00-product/PRODUCT.md"
+    }
+  ],
+  "checks": [
+    { "id": "config", "status": "evaluated" },
+    { "id": "staleness", "status": "not-evaluated", "reason": "…" }
+  ]
+}</code></pre>
+          <p>
+            <code>findings[].check</code> is a fine-grained rule id such as
+            <code>content-product</code> or <code>standards-adr-consequences</code>;
+            <code>checks[].id</code> is the check module from the table above. They are different
+            namespaces on purpose.
+          </p>
+
+          <h2 id="where">Where it runs</h2>
+          <dl class="defs">
+            <div>
+              <dt>Pre-commit hook</dt>
+              <dd>
+                <code>.persist/hooks/pre-commit</code> runs <code>persist doctor</code> first, then
+                your <code>preCommitGates</code>. Enable with
+                <code>git config core.hooksPath .persist/hooks</code>.
+              </dd>
+            </div>
+            <div>
+              <dt>CI</dt>
+              <dd>
+                <code>.github/workflows/persist.yml</code> runs
+                <code>npx --yes persist-os@latest doctor</code> on pull requests and pushes to
+                <code>main</code>, with full history so the staleness check can run.
+              </dd>
+            </div>
+            <div>
+              <dt>The completion loop</dt>
+              <dd>
+                The generated agent rules end every piece of work with
+                <code>persist doctor</code>. For a human the same loop is
+                <code>pnpm test:run &amp;&amp; pnpm typecheck &amp;&amp; persist doctor</code>.
+              </dd>
+            </div>
+          </dl>
+
+          <h2 id="limits">What it will not catch</h2>
+          <p>
+            Contradictions in meaning. An accepted ADR that says one thing while the code does
+            another passes every structural check. That judgment is left to the agent through the
+            <code>architecture-drift-review</code> skill, because the moment the gate needs a model
+            to decide whether two documents agree, it stops being something you can trust blindly.
+          </p>
+        </div>
+
+        <nav class="docs-pager" aria-label="Previous and next pages">
+          <a href="decisions.html"><span>Previous</span>Decisions and ADRs</a>
+          <a class="next" href="hooks.html"><span>Next</span>Hooks, test gate, CI</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub repo</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg> npm package</a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub profile</a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> X</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../assets/site.js" defer></script>
+  </body>
+</html>

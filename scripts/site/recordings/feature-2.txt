@@ -1,0 +1,12 @@
+$ persist feature create checkout
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+
+Next steps:
+- Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
+- Then TASKS.md before you implement.
+- Run `persist doctor` to check the memory is complete.
+[exit 0]

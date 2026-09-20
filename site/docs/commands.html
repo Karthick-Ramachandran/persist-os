@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commands — Persist OS docs</title>
+    <meta name="description" content="Reference for every persist command: init, adopt, feature create, adr create, adr accept, adr supersede, module create, doctor, test-gate, mcp add, skill create, skill list." />
+    <link rel="canonical" href="https://persist-os.pages.dev/docs/commands" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header is-sticky">
+      <div class="wrap">
+        <a class="brand" href="../index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)" /><path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="index.html" aria-current="page">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg></a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <aside class="docs-side">
+        <nav aria-label="Documentation">
+          <ul class="docs-nav">
+            <li class="group">Start</li>
+            <li><a href="index.html">Getting started</a></li>
+            <li class="group">Reference</li>
+            <li><a href="commands.html" aria-current="page">Commands</a></li>
+            <li class="group">Concepts</li>
+            <li><a href="memory.html">Repository memory</a></li>
+            <li><a href="decisions.html">Decisions and ADRs</a></li>
+            <li><a href="doctor.html">Doctor</a></li>
+            <li><a href="hooks.html">Hooks, test gate, CI</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="main" class="docs-main">
+        <header>
+          <span class="eyebrow">Reference</span>
+          <h1>Commands</h1>
+          <p class="lede">Everything <code>persist --help</code> lists, with options, what each command writes, and real output.</p>
+        </header>
+
+        <div class="prose">
+          <p>
+            Every command that writes files accepts <code>--dry-run</code> (show planned writes
+            without writing) and <code>--force</code> (overwrite existing files explicitly). Without
+            <code>--force</code> an existing file is skipped and listed under "Skipped". Every
+            command prints what it created, where, and a short "Next steps" list.
+            <code>persist &lt;command&gt; --help</code> prints the options for any command.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Command</th>
+                  <th scope="col">Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="cmd-cell"><a href="#init"><code>persist init</code></a></td><td class="desc">Initialize repository memory.</td></tr>
+                <tr><td class="cmd-cell"><a href="#adopt"><code>persist adopt</code></a></td><td class="desc">Inspect an existing repository and propose reviewable memory.</td></tr>
+                <tr><td class="cmd-cell"><a href="#feature-create"><code>persist feature create &lt;name&gt;</code></a></td><td class="desc">Create feature memory docs.</td></tr>
+                <tr><td class="cmd-cell"><a href="#adr-create"><code>persist adr create &lt;title&gt;</code></a></td><td class="desc">Create a proposed ADR.</td></tr>
+                <tr><td class="cmd-cell"><a href="#adr-accept"><code>persist adr accept &lt;name&gt;</code></a></td><td class="desc">Promote a proposed ADR to accepted repository memory.</td></tr>
+                <tr><td class="cmd-cell"><a href="#adr-supersede"><code>persist adr supersede &lt;old&gt; &lt;new-title&gt;</code></a></td><td class="desc">Record a changed decision.</td></tr>
+                <tr><td class="cmd-cell"><a href="#module-create"><code>persist module create &lt;name&gt;</code></a></td><td class="desc">Create module memory docs.</td></tr>
+                <tr><td class="cmd-cell"><a href="#doctor"><code>persist doctor</code></a></td><td class="desc">Check whether repository memory is healthy.</td></tr>
+                <tr><td class="cmd-cell"><a href="#test-gate"><code>persist test-gate</code></a></td><td class="desc">Run the configured test command and require it to pass.</td></tr>
+                <tr><td class="cmd-cell"><a href="#mcp-add"><code>persist mcp add &lt;server&gt;</code></a></td><td class="desc">Generate proposed, offline memory for an MCP server.</td></tr>
+                <tr><td class="cmd-cell"><a href="#skill-create"><code>persist skill create &lt;name&gt;</code></a></td><td class="desc">Generate an agent skill for Claude Code and the portable Agent Skills target.</td></tr>
+                <tr><td class="cmd-cell"><a href="#skill-list"><code>persist skill list</code></a></td><td class="desc">List built-in catalog skills.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="init">persist init</h2>
+          <pre><code>persist init [--ai-tools &lt;list&gt;] [--features] [--modules] [--dry-run] [--force] [--reinit]</code></pre>
+          <p>
+            Writes the six memory documents and the decision directory under <code>docs/</code>,
+            the agent entry points (<code>AGENTS.md</code>, <code>CLAUDE.md</code>, the Cursor
+            rule), twelve agent skills in both <code>.claude/skills/</code> and
+            <code>.agents/skills/</code>, the pre-commit and pre-push hooks, a GitHub Actions
+            workflow, the Claude SessionStart hook, and <code>.persist/config.json</code>. It works
+            in an empty folder. The full file list is in
+            <a href="memory.html#structure">Repository memory</a>.
+          </p>
+          <dl class="defs">
+            <div>
+              <dt><code>--ai-tools &lt;list&gt;</code></dt>
+              <dd>
+                Comma-separated tools to generate files for: <code>claude</code>, <code>codex</code>,
+                <code>cursor</code>, <code>generic</code>. Default is claude, codex, cursor.
+                <code>AGENTS.md</code> is always written.
+              </dd>
+            </div>
+            <div>
+              <dt><code>--features</code></dt>
+              <dd>Also write the opt-in feature memory index, <code>docs/40-features/README.md</code>.</dd>
+            </div>
+            <div>
+              <dt><code>--modules</code></dt>
+              <dd>Also write the opt-in module memory index, <code>docs/30-modules/README.md</code>.</dd>
+            </div>
+            <div>
+              <dt><code>--dry-run</code></dt>
+              <dd>Show planned writes without writing files.</dd>
+            </div>
+            <div>
+              <dt><code>--force</code></dt>
+              <dd>Overwrite existing files explicitly.</dd>
+            </div>
+            <div>
+              <dt><code>--reinit</code></dt>
+              <dd>
+                Required together with <code>--force</code> when the directory already has
+                <code>.persist/config.json</code>. Without it, <code>--force</code> refuses, so an
+                existing installation is never overwritten by accident.
+              </dd>
+            </div>
+          </dl>
+          <p>
+            Init also reads <code>package.json</code>. A one-shot test script becomes
+            <code>testCommand</code>; <code>typecheck</code> and <code>lint</code> scripts become
+            pre-push gates. When it finds a manifest it also prints what it detected, marked as
+            proposed:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist init --features</span>
+Persist OS init complete.
+Test gate: npm run test:run (saved as testCommand in .persist/config.json).
+<span class="m">  …</span>
+Detected in this repository (proposed — review, nothing was accepted):
+- Languages: JavaScript
+- Package manager: npm (from `package.json`)
+- Frameworks: none detected
+- Tests: detected via `tests/` directory
+If any signal is wrong, correct the source file noted. Run `persist adopt` to record this as proposed memory.
+<span class="m">  …</span></code></pre>
+          <p>See <a href="hooks.html">Hooks, test gate, CI</a> for what the gates do with those values.</p>
+
+          <h2 id="adopt">persist adopt</h2>
+          <pre><code>persist adopt [--dry-run] [--force]</code></pre>
+          <p>
+            Inspects an existing repository through read-only manifest and marker files, then writes
+            a proposed adoption report at <code>docs/adopt/ADOPTION_REPORT.md</code> and proposed
+            framework ADRs under <code>docs/adrs/proposed/</code>. It never executes repository code
+            and never produces accepted memory; every inferred signal names its source and waits
+            for human review.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist adopt</span>
+Persist OS adopt complete.
+Inferred signals are proposed and require human review.
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.</code></pre>
+          <p>
+            That run was in a Next.js app with <code>tsconfig.json</code> and a
+            <code>pnpm-lock.yaml</code>. The report records where each signal came from:
+          </p>
+          <pre><code>- Languages: TypeScript
+- Package manager: pnpm (from `pnpm-lock.yaml`)
+- Frameworks: Next.js (from `package.json`)
+- Tests: detected via `"test"` script in package.json
+- README present: no
+- Docs folder present: no</code></pre>
+
+          <h2 id="feature-create">persist feature create</h2>
+          <pre><code>persist feature create &lt;name&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Creates a numbered feature folder under the configured features directory (default
+            <code>docs/40-features/</code>) with a plan and a task list. When a test command is
+            configured, it also writes a test plan, so the scaffold never outruns the gate that
+            enforces it.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist feature create checkout</span>
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+- docs/40-features/F-001-checkout/TEST_PLAN.md
+
+Next steps:
+- Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
+- Then TASKS.md before you implement.
+- Run `persist doctor` to check the memory is complete.</code></pre>
+          <p>
+            Without a test command the same run creates only <code>PLAN.md</code> and
+            <code>TASKS.md</code>.
+          </p>
+
+          <h2 id="adr-create">persist adr create</h2>
+          <pre><code>persist adr create &lt;title&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Creates a numbered ADR in the configured ADR directory (default <code>docs/adrs/</code>)
+            with Status set to Proposed and sections for Context, Decision, Alternatives Considered,
+            Consequences, and Related Documents.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist adr create "Use PostgreSQL for primary storage"</span>
+Persist OS ADR create complete.
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Created:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Open docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md and fill: Context, Decision, Alternatives, Consequences.
+- It is Proposed — set Status to Accepted once the team agrees.</code></pre>
+
+          <h2 id="adr-accept">persist adr accept</h2>
+          <pre><code>persist adr accept &lt;name&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Promotes a proposed ADR to accepted. <code>&lt;name&gt;</code> is the slug, for example
+            <code>use-postgresql-for-primary-storage</code> or <code>mcp-figma</code>. Two cases:
+          </p>
+          <ul>
+            <li>
+              A proposal at <code>docs/adrs/proposed/ADR-PROPOSED-&lt;slug&gt;.md</code> (as written
+              by <code>adopt</code> or <code>mcp add</code>) becomes the next numbered
+              <code>ADR-####-&lt;slug&gt;.md</code>, and the proposal file is removed.
+            </li>
+            <li>
+              A numbered ADR that is still Proposed (as written by <code>adr create</code>) is
+              accepted in place.
+            </li>
+          </ul>
+          <pre><code><span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.</code></pre>
+
+          <h2 id="adr-supersede">persist adr supersede</h2>
+          <pre><code>persist adr supersede &lt;old&gt; &lt;new-title&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Records a changed decision. <code>&lt;old&gt;</code> must be an accepted ADR (a proposed
+            one has nothing to supersede; accept it first). The command writes a new, accepted ADR
+            with a <code>## Supersedes</code> link back, and rewrites the old ADR's status line to
+            <code>Accepted — superseded by &lt;new&gt;</code>. Nothing is deleted.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
+Persist OS ADR supersede complete.
+Superseded: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md (now marked superseded by ADR-0002-use-sqlite-for-primary-storage)
+New decision: docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md
+Created:
+- docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Fill docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md: Context (what changed), Decision, Alternatives, Consequences.
+- ADR-0001-use-postgresql-for-primary-storage stays in history as superseded; update any memory that still relies on it.
+- Run `persist doctor` — it flags memory that still references the superseded decision.</code></pre>
+
+          <h2 id="module-create">persist module create</h2>
+          <pre><code>persist module create &lt;name&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Creates a module folder under the configured modules directory (default
+            <code>docs/30-modules/</code>) for a responsibility boundary: what it owns, what it does
+            not, its tasks, its test plan, and its decisions.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist module create billing</span>
+Persist OS module create complete.
+Module: docs/30-modules/billing
+Created:
+- docs/30-modules/billing/MODULE.md
+- docs/30-modules/billing/TASKS.md
+- docs/30-modules/billing/TEST_PLAN.md
+- docs/30-modules/billing/DECISIONS.md
+
+Next steps:
+- Open docs/30-modules/billing/MODULE.md and describe what this module owns and does not own.
+- Record durable decisions in DECISIONS.md, or link an ADR.</code></pre>
+
+          <h2 id="doctor">persist doctor</h2>
+          <pre><code>persist doctor [--json]</code></pre>
+          <p>
+            Checks that the memory is structurally healthy, that completion claims have evidence,
+            and that memory references decisions that exist and are accepted. Read-only,
+            deterministic, no network. Exit code 0 means healthy, 1 warnings only, 2 errors.
+            <code>--json</code> emits the same report as machine-readable JSON with
+            <code>schemaVersion: "persist.doctor.v1"</code>. Every check and severity is listed in
+            <a href="doctor.html">Doctor</a>.
+          </p>
+
+          <h2 id="test-gate">persist test-gate</h2>
+          <pre><code>persist test-gate</code></pre>
+          <p>
+            Runs the <code>testCommand</code> from <code>.persist/config.json</code> and exits with
+            that command's exit code. The command is split on whitespace and executed directly,
+            without a shell. When <code>testCommand</code> is null the gate does not pretend to
+            pass; it prints that it was skipped, and why, and exits 0:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate skipped: the gate is off — set testCommand in .persist/config.json to a one-shot test command (e.g. "pnpm run test:run") or re-run `persist init` to detect one.</code></pre>
+          <p>The generated pre-push hook runs this command. Details in <a href="hooks.html">Hooks, test gate, CI</a>.</p>
+
+          <h2 id="mcp-add">persist mcp add</h2>
+          <pre><code>persist mcp add &lt;server&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Writes proposed, offline memory for an MCP server: <code>docs/ai/mcp/&lt;server&gt;.md</code>
+            plus a proposed adoption ADR, and installs the <code>capture-mcp-context</code> skill
+            that tells the agent to record durable context from that server into the file. Persist
+            OS never connects to the server; the agent, which already has the MCP connection, does
+            the recording, and a human reviews it.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist mcp add figma --dry-run</span>
+Persist OS mcp add dry run complete.
+MCP memory: docs/ai/mcp/figma.md (proposed — review before adopting)
+Capture skill installed so agents record durable MCP context into this memory.
+Planned creates:
+- docs/ai/mcp/figma.md
+- docs/adrs/proposed/ADR-PROPOSED-mcp-figma.md
+Skipped:
+- .claude/skills/capture-mcp-context/SKILL.md
+- .agents/skills/capture-mcp-context/SKILL.md</code></pre>
+          <p>
+            The skill files were skipped here because <code>persist init</code> had already written
+            them; nothing is overwritten without <code>--force</code>.
+          </p>
+
+          <h2 id="skill-create">persist skill create</h2>
+          <pre><code>persist skill create &lt;name&gt; [--dry-run] [--force]</code></pre>
+          <p>
+            Writes a <code>SKILL.md</code> to both <code>.claude/skills/&lt;name&gt;/</code> and
+            <code>.agents/skills/&lt;name&gt;/</code>. A catalog name gets the built-in content; any
+            other name gets a valid skeleton to fill in. Generated skills are instructions only and
+            contain no scripts.
+          </p>
+
+          <h2 id="skill-list">persist skill list</h2>
+          <pre><code><span class="p">$</span> <span class="c">persist skill list</span>
+Persist OS skill catalog
+
+- create-prd: Create PRD
+- plan-feature: Plan Feature
+- plan-module: Plan Module
+- create-adr: Create ADR
+- implement-task: Implement Task
+- write-tests: Write Tests
+- security-review: Security Review
+- architecture-drift-review: Architecture Drift Review
+- update-module-memory: Update Module Memory
+- completion-report: Completion Report
+- conventions-adherence: Conventions Adherence
+- capture-mcp-context: Capture MCP Context</code></pre>
+        </div>
+
+        <nav class="docs-pager" aria-label="Previous and next pages">
+          <a href="index.html"><span>Previous</span>Getting started</a>
+          <a class="next" href="memory.html"><span>Next</span>Repository memory</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub repo</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg> npm package</a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub profile</a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> X</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../assets/site.js" defer></script>
+  </body>
+</html>

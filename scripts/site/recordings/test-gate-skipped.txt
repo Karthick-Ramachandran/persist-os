@@ -1,0 +1,3 @@
+$ persist test-gate
+Persist OS test gate skipped: the gate is off — set testCommand in .persist/config.json to a one-shot test command (e.g. "pnpm run test:run") or re-run `persist init` to detect one.
+[exit 0]

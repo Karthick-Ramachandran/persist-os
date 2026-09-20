@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Decisions and ADRs — Persist OS docs</title>
+    <meta name="description" content="The decision lifecycle in Persist OS: proposed, accepted, superseded. What deserves an ADR, how the files are named, and how the doctor treats decisions." />
+    <link rel="canonical" href="https://persist-os.pages.dev/docs/decisions" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f2ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1714" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header is-sticky">
+      <div class="wrap">
+        <a class="brand" href="../index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--accent)" /><path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="index.html" aria-current="page">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg></a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg></button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap docs">
+      <aside class="docs-side">
+        <nav aria-label="Documentation">
+          <ul class="docs-nav">
+            <li class="group">Start</li>
+            <li><a href="index.html">Getting started</a></li>
+            <li class="group">Reference</li>
+            <li><a href="commands.html">Commands</a></li>
+            <li class="group">Concepts</li>
+            <li><a href="memory.html">Repository memory</a></li>
+            <li><a href="decisions.html" aria-current="page">Decisions and ADRs</a></li>
+            <li><a href="doctor.html">Doctor</a></li>
+            <li><a href="hooks.html">Hooks, test gate, CI</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main id="main" class="docs-main">
+        <header>
+          <span class="eyebrow">Concepts</span>
+          <h1>Decisions and ADRs</h1>
+          <p class="lede">A decision is a file with a status. Proposed, then accepted, then, when it changes, superseded by a newer accepted one. The trail is never edited away.</p>
+        </header>
+
+        <div class="prose">
+          <h2 id="what">What deserves an ADR</h2>
+          <p>
+            Not every change. A small fix inside an already-decided area just gets built. An
+            architecture decision record is for the decisions that other work depends on and that
+            an agent must not quietly contradict later:
+          </p>
+          <ul>
+            <li>Architecture style and module boundaries.</li>
+            <li>Dependencies.</li>
+            <li>Auth, secrets, storage, networking, telemetry, or file-write behavior.</li>
+            <li>Security posture.</li>
+            <li>Runtime integrations such as MCP servers.</li>
+          </ul>
+          <p>
+            Persist OS does not judge the content. Supabase, Firebase, Postgres, or an internal
+            system are all equally valid once the repository has accepted them. Drift means
+            mismatch with what the repository accepted, not mismatch with a tool's preference.
+          </p>
+
+          <h2 id="files">Files and naming</h2>
+          <dl class="defs">
+            <div>
+              <dt><code>docs/adrs/ADR-####-&lt;slug&gt;.md</code></dt>
+              <dd>
+                A numbered ADR. <code>persist adr create</code> writes one with Status
+                <code>Proposed</code>; <code>persist adr accept</code> flips it to
+                <code>Accepted</code>. Accepted ADRs sit at the top level of the directory; there
+                is no <code>accepted/</code> subfolder.
+              </dd>
+            </div>
+            <div>
+              <dt><code>docs/adrs/proposed/ADR-PROPOSED-&lt;slug&gt;.md</code></dt>
+              <dd>
+                An unnumbered proposal, as written by <code>persist adopt</code> and
+                <code>persist mcp add</code>. Accepting it assigns the next number, writes the
+                numbered file, and removes the proposal.
+              </dd>
+            </div>
+            <div>
+              <dt><code>docs/adrs/README.md</code></dt>
+              <dd>The index the agent starts from.</dd>
+            </div>
+          </dl>
+
+          <h2 id="template">The template</h2>
+          <p>Every ADR from <code>persist adr create</code> starts as:</p>
+          <pre><code># ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+Proposed
+
+## Context
+
+What decision needs to be made, and why now?
+
+## Decision
+
+What option is proposed?
+
+## Alternatives Considered
+
+What other options were considered?
+
+## Consequences
+
+What improves, what worsens, and what risks remain?
+
+## Related Documents
+
+- PRD:
+- Architecture:
+- Security:
+- Feature:</code></pre>
+          <p>
+            The doctor reads the Consequences and Alternatives Considered sections. If either is
+            empty or still the prompt, that is a warning on a proposed ADR and an error on an
+            accepted one: an accepted decision with no recorded consequences, or no alternatives,
+            is not finished. When the Decision itself is about auth, secrets, or similar, the
+            <code>Security:</code> line under Related Documents must point at something, or the
+            doctor warns.
+          </p>
+
+          <h2 id="lifecycle">The lifecycle</h2>
+          <h3>Proposed</h3>
+          <p>
+            Someone writes the decision down. That can be a person running
+            <code>persist adr create</code>, an agent following the generated
+            <code>create-adr</code> skill, <code>persist adopt</code> inferring a framework from a
+            manifest, or <code>persist mcp add</code> proposing an integration. In every case the
+            status is Proposed and nothing else in the memory may treat it as settled. The doctor
+            warns when a feature or module cites an ADR that is not yet accepted.
+          </p>
+          <h3>Accepted</h3>
+          <p>
+            A human runs <code>persist adr accept &lt;slug&gt;</code>. From then on the ADR is
+            source of truth, ranked first in the source-of-truth order, and the generated agent
+            rules say never to contradict it.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.</code></pre>
+          <h3>Superseded</h3>
+          <p>
+            Decisions change. The wrong way to record that is to edit the accepted file, which
+            erases the fact that the repository once decided otherwise. <code>persist adr
+            supersede &lt;old&gt; &lt;new-title&gt;</code> does it the other way: a new numbered ADR
+            is written as Accepted with a <code>## Supersedes</code> link, and the old ADR's status
+            line is rewritten to say what replaced it. Only an accepted ADR can be superseded; the
+            command refuses otherwise.
+          </p>
+          <pre class="diff"><code><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
+
+<span class="file">docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+ ## Status
+<span class="del">-Accepted</span>
+<span class="add">+Accepted — superseded by ADR-0002-use-sqlite-for-primary-storage</span>
+
+<span class="file">docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md  (new file)</span>
+<span class="add">+# ADR-0002: Use SQLite For Primary Storage</span>
+<span class="add">+</span>
+<span class="add">+## Status</span>
+<span class="add">+</span>
+<span class="add">+Accepted</span>
+<span class="add">+</span>
+<span class="add">+## Supersedes</span>
+<span class="add">+</span>
+<span class="add">+- ADR-0001-use-postgresql-for-primary-storage</span>
+<span class="add">+</span>
+<span class="add">+## Context</span>
+<span class="add">+</span>
+<span class="add">+What changed, and why the previous decision no longer holds?</span></code></pre>
+          <p>
+            The old status keeps the word "Accepted" on purpose. Memory that cites ADR-0001 is
+            still citing a real, once-accepted decision, so it is not a broken reference. It is a
+            reference that needs a look, and that is exactly what the doctor reports:
+          </p>
+          <pre><code>Next steps:
+- Fill docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md: Context (what changed), Decision, Alternatives, Consequences.
+- ADR-0001-use-postgresql-for-primary-storage stays in history as superseded; update any memory that still relies on it.
+- Run `persist doctor` — it flags memory that still references the superseded decision.</code></pre>
+
+          <h2 id="doctor">How the doctor treats decisions</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Situation</th>
+                  <th scope="col">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Feature or module memory cites an ADR that does not exist</td><td class="sev-err">error</td></tr>
+                <tr><td>Memory cites an ADR that is still Proposed</td><td class="sev-warn">warning</td></tr>
+                <tr><td>Memory cites an ADR that has been superseded</td><td class="sev-warn">warning</td></tr>
+                <tr><td>An accepted ADR has no substance in Consequences or Alternatives Considered</td><td class="sev-err">error</td></tr>
+                <tr><td>A proposed ADR has no substance in Consequences or Alternatives Considered</td><td class="sev-warn">warning</td></tr>
+                <tr><td>A decision written in security-sensitive terms has no security document linked under Related Documents</td><td class="sev-warn">warning</td></tr>
+                <tr><td>An ADR is missing a required section</td><td class="sev-err">error</td></tr>
+                <tr><td>One of the six required documents links to a doc path that does not exist, or cites an ADR that does not exist</td><td class="sev-err">error</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="agents">What agents are told</h2>
+          <p>
+            The generated <code>AGENTS.md</code> and Cursor rule carry the commands inline so the
+            agent runs them itself: a real decision means <code>persist adr create</code> then
+            <code>persist adr accept</code>; changing one means confirming with a human and running
+            <code>persist adr supersede</code>, never overwriting an accepted ADR. The SessionStart
+            hook lists the accepted ADRs at the start of every Claude Code session, so a fresh agent
+            knows they exist before it starts work.
+          </p>
+
+          <h2 id="limits">What this does not catch</h2>
+          <p>
+            The doctor checks structure and references, not meaning. If an accepted ADR says
+            PostgreSQL and the code quietly moved to MySQL, the file is still there, the references
+            still resolve, and the doctor passes. Catching that needs reading, so it is left to the
+            agent: the generated <code>architecture-drift-review</code> skill walks the docs and
+            asks whether they still line up. The gate stays deterministic; the model does the
+            reading.
+          </p>
+        </div>
+
+        <nav class="docs-pager" aria-label="Previous and next pages">
+          <a href="memory.html"><span>Previous</span>Repository memory</a>
+          <a class="next" href="doctor.html"><span>Next</span>Doctor</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
+        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub repo</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg> npm package</a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg> GitHub profile</a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg> X</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../assets/site.js" defer></script>
+  </body>
+</html>

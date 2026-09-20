@@ -1,0 +1,10 @@
+$ persist adr accept use-postgresql-for-primary-storage
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.
+[exit 0]

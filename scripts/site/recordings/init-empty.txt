@@ -1,0 +1,58 @@
+$ persist init
+Persist OS init complete.
+Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Generated repository memory, 12 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Created:
+- .persist/config.json
+- AGENTS.md
+- CLAUDE.md
+- .cursor/rules/persist-memory.mdc
+- docs/00-product/PRODUCT.md
+- docs/20-security/SECURITY_MODEL.md
+- docs/50-quality/QUALITY_GATES.md
+- docs/60-engineering/ENGINEERING_STANDARDS.md
+- docs/60-engineering/CONVENTIONS.md
+- docs/60-engineering/LESSONS.md
+- docs/adrs/README.md
+- .github/workflows/persist.yml
+- .persist/hooks/pre-commit
+- .persist/hooks/pre-push
+- .claude/hooks/session-start.sh
+- .claude/settings.json
+- .claude/skills/create-prd/SKILL.md
+- .agents/skills/create-prd/SKILL.md
+- .claude/skills/plan-feature/SKILL.md
+- .agents/skills/plan-feature/SKILL.md
+- .claude/skills/plan-module/SKILL.md
+- .agents/skills/plan-module/SKILL.md
+- .claude/skills/create-adr/SKILL.md
+- .agents/skills/create-adr/SKILL.md
+- .claude/skills/implement-task/SKILL.md
+- .agents/skills/implement-task/SKILL.md
+- .claude/skills/write-tests/SKILL.md
+- .agents/skills/write-tests/SKILL.md
+- .claude/skills/security-review/SKILL.md
+- .agents/skills/security-review/SKILL.md
+- .claude/skills/architecture-drift-review/SKILL.md
+- .agents/skills/architecture-drift-review/SKILL.md
+- .claude/skills/update-module-memory/SKILL.md
+- .agents/skills/update-module-memory/SKILL.md
+- .claude/skills/completion-report/SKILL.md
+- .agents/skills/completion-report/SKILL.md
+- .claude/skills/conventions-adherence/SKILL.md
+- .agents/skills/conventions-adherence/SKILL.md
+- .claude/skills/capture-mcp-context/SKILL.md
+- .agents/skills/capture-mcp-context/SKILL.md
+
+Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
+Enable them once per clone: git config core.hooksPath .persist/hooks
+
+Next steps:
+- Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.
+- AI agent skills are in .claude/skills/ and .agents/skills/ — restart your AI tool to load them.
+- Memory loads automatically per tool: a Claude SessionStart hook (.claude/hooks/session-start.sh), a Cursor rule (.cursor/rules/persist-memory.mdc), and AGENTS.md for Codex.
+- CI is wired in .github/workflows/persist.yml; the pre-commit hook is in .persist/hooks/.
+- Plan your first feature: `persist feature create <name>`.
+- Record a decision: `persist adr create <title>`, then accept it with `persist adr accept`.
+- Check repository memory health anytime: `persist doctor`.
+[exit 0]

@@ -3,841 +3,957 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Persist OS — durable, AI-ready engineering memory for your repository</title>
+    <title>Persist OS — Git tracks what changed. Persist OS tracks why.</title>
     <meta
       name="description"
-      content="Persist OS is a local-first CLI that turns a repository into durable, AI-ready memory of the decisions behind it — and validates that memory with a deterministic persist doctor. Architecture-neutral. No network, no telemetry, no AI API calls."
+      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor. No network calls, no telemetry, no model calls."
     />
-    <link rel="canonical" href="https://github.com/Karthick-Ramachandran/persist-os" />
+    <link rel="canonical" href="https://persist-os.pages.dev/" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#faf7f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171311" media="(prefers-color-scheme: dark)" />
 
-    <!-- Open Graph / Twitter -->
     <meta property="og:type" content="website" />
-    <meta
-      property="og:title"
-      content="Persist OS — durable, AI-ready engineering memory for your repository"
-    />
+    <meta property="og:site_name" content="Persist OS" />
+    <meta property="og:title" content="Persist OS — Git tracks what changed. Persist OS tracks why." />
     <meta
       property="og:description"
-      content="Git tracks what changed. Persist tracks why. A local-first CLI for durable repository memory, validated by a deterministic doctor."
+      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor."
     />
-    <meta
-      property="og:image"
-      content="https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-og.png"
-    />
-    <meta property="og:url" content="https://github.com/Karthick-Ramachandran/persist-os" />
+    <meta property="og:url" content="https://persist-os.pages.dev/" />
+    <meta property="og:image" content="https://persist-os.pages.dev/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Persist OS — durable, AI-ready engineering memory" />
+    <meta name="twitter:title" content="Persist OS — Git tracks what changed. Persist OS tracks why." />
     <meta
       name="twitter:description"
-      content="Git tracks what changed. Persist tracks why. A local-first CLI for durable repository memory, validated by a deterministic doctor."
+      content="A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor."
     />
-    <meta
-      name="twitter:image"
-      content="https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-og.png"
-    />
+    <meta name="twitter:image" content="https://persist-os.pages.dev/assets/og.png" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23b5401a'/%3E%3Cpath d='M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Structured data so search engines and LLMs understand the project -->
+    <link rel="stylesheet" href="assets/site.css" />
+    <script>
+      // Apply a saved theme before first paint so there is no flash. Storage may be unavailable.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") {
+            document.documentElement.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Persist OS",
         "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "macOS, Linux, Windows (Node.js >= 20)",
-        "description": "A local-first CLI that turns a repository into durable, AI-ready engineering memory — the decisions behind the code — and validates that memory with a deterministic persist doctor. Architecture-neutral, with no network calls, telemetry, or AI API usage.",
-        "url": "https://github.com/Karthick-Ramachandran/persist-os",
+        "operatingSystem": "macOS, Linux, Windows (Node.js 20 or newer)",
+        "description": "A local-first CLI that writes the decisions behind your code into plain files in the repository and checks them with a deterministic doctor. No network calls, no telemetry, no model calls.",
+        "url": "https://persist-os.pages.dev/",
         "downloadUrl": "https://www.npmjs.com/package/persist-os",
+        "sameAs": ["https://github.com/Karthick-Ramachandran/persist-os"],
         "license": "https://opensource.org/licenses/MIT",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       }
     </script>
-
-    <style>
-      :root {
-        --bg: #ffffff;
-        --bg-alt: #f7f8fa;
-        --ink: #0f1115;
-        --text: #1c2027;
-        --muted: #5b616e;
-        --faint: #8a909c;
-        --border: #e7e9ee;
-        --border-strong: #d8dbe2;
-        --accent: #4f46e5;
-        --accent-2: #7c3aed;
-        --accent-soft: #eef0fe;
-        --code-bg: #f3f4f7;
-        --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 30px rgba(16, 24, 40, 0.06);
-        --maxw: 1080px;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      html,
-      body {
-        overflow-x: hidden;
-        max-width: 100%;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font-family:
-          "Geist",
-          "Inter",
-          system-ui,
-          -apple-system,
-          Segoe UI,
-          Roboto,
-          sans-serif;
-        line-height: 1.62;
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
-      }
-      .mono {
-        font-family: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-      }
-      a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      .wrap {
-        max-width: var(--maxw);
-        margin: 0 auto;
-        padding: 0 24px;
-      }
-
-      /* Nav */
-      nav {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        backdrop-filter: blur(12px);
-        background: rgba(255, 255, 255, 0.78);
-        border-bottom: 1px solid var(--border);
-      }
-      nav .wrap {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 62px;
-      }
-      .brand {
-        font-weight: 700;
-        font-size: 18px;
-        letter-spacing: -0.02em;
-        color: var(--ink);
-      }
-      .brand span {
-        color: var(--accent);
-      }
-      .nav-links {
-        display: flex;
-        gap: 24px;
-        align-items: center;
-      }
-      .nav-links a {
-        color: var(--muted);
-        font-size: 14.5px;
-        font-weight: 500;
-      }
-      .nav-links a:hover {
-        color: var(--ink);
-        text-decoration: none;
-      }
-
-      /* Hero */
-      header.hero {
-        padding: 92px 0 48px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        background:
-          radial-gradient(
-            620px 320px at 50% -40px,
-            var(--accent-soft) 0%,
-            rgba(238, 240, 254, 0) 70%
-          ),
-          var(--bg);
-      }
-      h1 {
-        font-size: clamp(30px, 7vw, 66px);
-        line-height: 1.05;
-        margin: 0 0 20px;
-        letter-spacing: -0.035em;
-        font-weight: 700;
-        color: var(--ink);
-        overflow-wrap: break-word;
-      }
-      h1 .accent {
-        background: linear-gradient(95deg, var(--accent), var(--accent-2));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .kicker {
-        font-size: 18px;
-        color: var(--ink);
-        font-weight: 500;
-        margin: 0 auto 22px;
-      }
-      .kicker .mono {
-        color: var(--accent);
-        font-weight: 600;
-      }
-      .sub {
-        font-size: clamp(16px, 2.3vw, 20px);
-        color: var(--muted);
-        max-width: 700px;
-        margin: 0 auto 28px;
-      }
-
-      .install {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        margin: 0 auto 18px;
-        background: var(--code-bg);
-        border: 1px solid var(--border-strong);
-        border-radius: 12px;
-        padding: 13px 18px;
-        font-size: 15px;
-        color: var(--ink);
-      }
-      .install .dollar {
-        color: var(--accent);
-      }
-
-      .cta {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-bottom: 24px;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 22px;
-        border-radius: 11px;
-        font-weight: 600;
-        font-size: 15px;
-        border: 1px solid var(--border-strong);
-        color: var(--ink);
-        background: #fff;
-        transition: all 0.15s ease;
-      }
-      .btn:hover {
-        text-decoration: none;
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-      .btn.primary {
-        background: linear-gradient(95deg, var(--accent), var(--accent-2));
-        color: #fff;
-        border: 0;
-        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.28);
-      }
-      .btn.primary:hover {
-        filter: brightness(1.06);
-        color: #fff;
-      }
-
-      .badges {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 10px;
-      }
-      .badge {
-        font-size: 12.5px;
-        color: var(--muted);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 5px 13px;
-        background: #fff;
-      }
-
-      /* Sections */
-      section {
-        padding: 66px 0;
-      }
-      section.alt {
-        background: var(--bg-alt);
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-      }
-      h2 {
-        font-size: clamp(26px, 3.6vw, 36px);
-        margin: 0 0 12px;
-        letter-spacing: -0.025em;
-        color: var(--ink);
-        font-weight: 700;
-      }
-      .lead {
-        color: var(--muted);
-        max-width: 720px;
-        margin: 0 0 32px;
-        font-size: 17.5px;
-      }
-      .center {
-        text-align: center;
-      }
-      .center .lead {
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .shot {
-        width: 100%;
-        border-radius: 16px;
-        border: 1px solid var(--border-strong);
-        background: #0b1021;
-        display: block;
-        box-shadow: var(--shadow);
-      }
-      figure {
-        margin: 0;
-      }
-      figcaption {
-        color: var(--faint);
-        font-size: 13.5px;
-        text-align: center;
-        margin-top: 12px;
-      }
-
-      /* Feature grid */
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 18px;
-      }
-      .card {
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: var(--shadow);
-      }
-      .card h3 {
-        margin: 0 0 8px;
-        font-size: 17px;
-        color: var(--ink);
-      }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 15px;
-      }
-      .card .ic {
-        font-size: 24px;
-        margin-bottom: 10px;
-        display: block;
-      }
-
-      /* Tables */
-      .tablecard {
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        overflow-x: auto;
-        box-shadow: var(--shadow);
-        background: #fff;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14.5px;
-      }
-      th,
-      td {
-        text-align: left;
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
-      }
-      th {
-        color: var(--faint);
-        font-weight: 600;
-        font-size: 11.5px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        background: var(--bg-alt);
-      }
-      tr:last-child td {
-        border-bottom: 0;
-      }
-      td.cmd {
-        white-space: nowrap;
-      }
-      td .mono,
-      .install .mono {
-        color: var(--accent);
-      }
-      td.muted-td {
-        color: var(--muted);
-      }
-
-      /* Footer */
-      footer {
-        border-top: 1px solid var(--border);
-        padding: 36px 0 60px;
-        color: var(--muted);
-        font-size: 14.5px;
-        background: var(--bg-alt);
-      }
-      footer .wrap {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
-      footer a {
-        color: var(--muted);
-      }
-
-      @media (max-width: 760px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-        td.cmd {
-          white-space: normal;
-        }
-        section {
-          padding: 48px 0;
-        }
-        /* The in-page anchors crowd the bar on a phone; the page is a short scroll,
-           so on mobile we keep just the brand and the two CTAs (GitHub, npm). */
-        .nav-sec {
-          display: none;
-        }
-        .nav-links {
-          gap: 18px;
-        }
-        nav .wrap {
-          height: 56px;
-        }
-        .wrap {
-          padding: 0 18px;
-        }
-      }
-    </style>
   </head>
   <body>
-    <nav>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="banner">
+      <a href="docs/index.html">1.0.0 is out — read the docs <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
+
+    <header class="site-header">
       <div class="wrap">
-        <div class="brand">Persist<span>&nbsp;OS</span></div>
-        <div class="nav-links">
-          <a class="nav-sec" href="#demo">Demo</a>
-          <a class="nav-sec" href="#how">How it works</a>
-          <a class="nav-sec" href="#commands">Commands</a>
-          <a class="nav-sec" href="#presets">Presets</a>
-          <a href="https://github.com/Karthick-Ramachandran/persist-os">GitHub</a>
-          <a href="https://www.npmjs.com/package/persist-os">npm</a>
-        </div>
-      </div>
-    </nav>
-
-    <header class="hero">
-      <div class="wrap">
-        <h1>Durable, AI-ready memory<br />for your <span class="accent">repository</span></h1>
-        <p class="kicker">
-          Git tracks <em>what</em> changed. <span class="mono">persist</span> tracks <em>why</em>.
-        </p>
-        <p class="sub">
-          A local-first CLI that writes the decisions, constraints, and standards behind your code
-          into plain files that live next to it — and validates that memory with a deterministic
-          <span class="mono">persist&nbsp;doctor</span>. Architecture-neutral. No network, no
-          telemetry, no AI API calls.
-        </p>
-
-        <div class="install mono">
-          <span class="dollar">$</span><span>npx persist-os@latest init</span>
-        </div>
-        <p class="sub" style="margin: 6px auto 18px; font-size: 14.5px">
-          No install needed — run any command with
-          <span class="mono">npx persist-os &lt;command&gt;</span>, or
-          <span class="mono">npm i -g persist-os</span>.
-        </p>
-
-        <div class="cta">
-          <a class="btn primary" href="https://github.com/Karthick-Ramachandran/persist-os"
-            >★ Star on GitHub</a
-          >
-          <a class="btn" href="https://www.npmjs.com/package/persist-os">View on npm</a>
-          <a class="btn" href="#commands">See the commands</a>
-        </div>
-
-        <div class="badges">
-          <span class="badge">MIT licensed</span>
-          <span class="badge">Local-first</span>
-          <span class="badge">No telemetry</span>
-          <span class="badge">No network calls</span>
-          <span class="badge">Node.js ≥ 20</span>
-        </div>
+        <a class="brand" href="index.html" aria-label="Persist OS home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect width="32" height="32" rx="8" fill="var(--accent)" />
+            <path d="M11 23V9h6.5a4.5 4.5 0 0 1 0 9H11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Persist OS
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="docs/index.html">Docs</a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">npm</a>
+          <span class="sep" aria-hidden="true"></span>
+          <a class="icon-link" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer" aria-label="Persist OS on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+          </a>
+          <a class="icon-link" href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer" aria-label="@imkarthicck on X">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+          </a>
+          <button class="theme-toggle" type="button" aria-label="Switch theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+          </button>
+        </nav>
       </div>
     </header>
 
-    <section id="problem">
-      <div class="wrap">
-        <h2>The reasoning shouldn't live in the chat</h2>
-        <p class="lead">
-          AI gets software to a working shape fast — but most of the <em>why</em> ends up in a chat
-          window that resets every session. When a teammate, a real engineering team, or a fresh
-          agent takes over, they inherit the code without the context. Persist OS keeps that
-          reasoning in the repository, where it survives every session and gets reviewed in pull
-          requests.
-        </p>
-        <div class="grid">
-          <div class="card">
-            <span class="ic">🧠</span>
-            <h3>Memory that outlives the chat</h3>
-            <p>
-              Decisions, ownership, and constraints are committed to the repo — not trapped in a
-              context window.
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="wrap">
+          <div class="hero-copy">
+            <h1 id="hero-title">
+              Git tracks what changed.<br />
+              Persist OS tracks <span class="why">why</span> it changed.
+            </h1>
+            <p class="lede">
+              A local-first CLI that writes the decisions behind your code into plain files in the
+              repository, then checks them with a deterministic doctor. Agents read the files every
+              session. Humans review them in pull requests. No network calls, no telemetry, no model
+              calls.
+            </p>
+            <div class="hero-actions">
+              <div class="cmd">
+                <span class="prompt" aria-hidden="true">$</span>
+                <span class="cmd-text">npx persist-os@latest init</span>
+                <button class="copy" type="button" data-copy="npx persist-os@latest init">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                  <span class="sr-only">Copy command</span>
+                </button>
+              </div>
+              <a class="btn btn-primary" href="docs/index.html">Get started <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn" href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+                Star on GitHub
+              </a>
+            </div>
+            <ul class="hero-meta">
+              <li>MIT licensed</li>
+              <li>Node.js 20 or newer</li>
+              <li>Two runtime dependencies</li>
+            </ul>
+          </div>
+
+          <figure class="ledger" aria-label="What changed next to why it changed, from this repository's own history">
+            <div class="ledger-head">
+              <div>What changed <span class="file">git log --oneline</span></div>
+              <div>Why it changed <span class="file">docs/adrs/</span></div>
+            </div>
+            <div class="ledger-row">
+              <div><span class="hash">adae64b</span>feat: add deterministic template renderer</div>
+              <div><span class="id">ADR-0001</span>Deterministic Placeholder Renderer<span class="status">Accepted</span></div>
+            </div>
+            <div class="ledger-row">
+              <div><span class="hash">26727de</span>feat: generate pre-commit hook on init</div>
+              <div><span class="id">ADR-0002</span>Pre-Commit Hook Generation<span class="status">Accepted</span></div>
+            </div>
+            <div class="ledger-row">
+              <div><span class="hash">028a1b8</span>feat: minimal-by-default repository memory (ADR-0007)</div>
+              <div><span class="id">ADR-0007</span>Minimal By Default Repository Memory<span class="status">Accepted</span></div>
+            </div>
+            <figcaption class="ledger-foot">
+              Three commits from this repository's own history, and the decisions behind them. Persist OS
+              keeps its memory with Persist OS:
+              <a href="https://github.com/Karthick-Ramachandran/persist-os/tree/main/docs/adrs" target="_blank" rel="noopener noreferrer">docs/adrs on GitHub</a>.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="problem" aria-labelledby="problem-title">
+        <div class="wrap two-col">
+          <div>
+            <span class="eyebrow">The problem</span>
+            <h2 id="problem-title">The reasoning stays in the chat.</h2>
+            <p class="lede">
+              An AI tool gets a codebase to a working shape quickly. The decisions behind it, which
+              option was picked, what was ruled out, what must not change, mostly stay in the
+              conversation that produced them. The next session starts without them. So does the
+              next teammate.
+            </p>
+            <p class="lede">
+              Persist OS puts that reasoning in the repository as Markdown, next to the code it
+              explains, where it is versioned, reviewed, and read back. It is a small discipline
+              system, not a memory model: the tool writes templates, you accept decisions, a check
+              keeps them honest. Every terminal block on this page is a recorded run of the CLI,
+              trimmed where marked with an ellipsis and otherwise unedited.
             </p>
           </div>
-          <div class="card">
-            <span class="ic">✅</span>
-            <h3>A gate, not just docs</h3>
-            <p>
-              <span class="mono">persist doctor</span> is deterministic and returns an exit code, so
-              "is this actually done and consistent?" becomes a check you can run.
-            </p>
-          </div>
-          <div class="card">
-            <span class="ic">🧭</span>
-            <h3>It proposes, you decide</h3>
-            <p>
-              Presets, adopt, and MCP capture produce <em>proposed</em> memory. A human accepts it
-              with <span class="mono">persist adr accept</span> — nothing becomes truth silently.
-            </p>
+          <div>
+            <p class="eyebrow">What the repository should be able to answer</p>
+            <ul class="questions">
+              <li><span>01</span>What are we building?</li>
+              <li><span>02</span>Why did we decide this?</li>
+              <li><span>03</span>What must not drift?</li>
+              <li><span>04</span>What evidence proves this work is complete?</li>
+            </ul>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section id="demo" class="center alt">
-      <div class="wrap">
-        <h2>See it in 40 seconds</h2>
-        <p class="lead">
-          Create memory, accept a decision, capture an MCP tool's context, and let the gate flag
-          what's still missing.
-        </p>
-        <figure>
-          <img
-            class="shot"
-            src="assets/persist-demo.gif"
-            alt="Terminal demo of Persist OS: persist init scaffolds repository memory, persist adr accept promotes a proposed decision, persist mcp add figma captures context offline, and persist doctor flags the unfilled threat model."
-            loading="lazy"
-          />
-          <figcaption>
-            A real terminal session —
-            <span class="mono">init → adr accept → mcp add → doctor</span>.
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="how" class="center">
-      <div class="wrap">
-        <h2>How it works</h2>
-        <p class="lead">
-          You capture intent and decisions; Persist writes durable memory that humans review and
-          agents re-read; the doctor validates it for a hook or CI gate.
-        </p>
-        <figure>
-          <img
-            class="shot"
-            src="assets/how-it-works.svg"
-            alt="Flow diagram: intent, decisions, ownership, standards, and security feed persist init / feature / adr / module, which writes durable memory under docs/ and .persist/config.json. Humans review it in pull requests and agents re-read it every session. persist doctor validates it, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate."
-            loading="lazy"
-          />
-        </figure>
-      </div>
-    </section>
-
-    <section id="commands" class="alt">
-      <div class="wrap">
-        <h2>Every command</h2>
-        <p class="lead">
-          Each command guides you — it names the file it created, where it lives, and what to do
-          next.
-        </p>
-        <div class="tablecard">
-          <table>
-            <thead>
-              <tr>
-                <th>Command</th>
-                <th>What it does</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="cmd"><span class="mono">persist init</span></td>
-                <td class="muted-td">
-                  Create neutral repository memory, plus agent skills, pre-commit and pre-push
-                  hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule. Surfaces the
-                  detected stack (proposed).
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist init --preset &lt;id&gt;</span></td>
-                <td class="muted-td">
-                  Add an opinion pack: rich guidance and proposed ADRs for a real stack.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist init --ai-tools &lt;list&gt;</span></td>
-                <td class="muted-td">
-                  Generate files only for the AI tools you use: claude, codex, cursor, generic.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist adopt</span></td>
-                <td class="muted-td">
-                  Inspect an existing repo (read-only) and propose reviewable memory, with the
-                  source each signal was inferred from.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist preset list</span></td>
-                <td class="muted-td">List the built-in opinion packs.</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist feature create &lt;name&gt;</span></td>
-                <td class="muted-td">
-                  Scaffold feature memory: PRD, acceptance, tests, review, completion report.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist adr create &lt;title&gt;</span></td>
-                <td class="muted-td">Create a proposed architecture decision record.</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist adr accept &lt;name&gt;</span></td>
-                <td class="muted-td">Promote a proposed ADR to accepted source-of-truth.</td>
-              </tr>
-              <tr>
-                <td class="cmd">
-                  <span class="mono">persist adr supersede &lt;old&gt; &lt;new&gt;</span>
-                </td>
-                <td class="muted-td">
-                  Record a changed decision: mark the old ADR superseded by a new accepted ADR.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist module create &lt;name&gt;</span></td>
-                <td class="muted-td">
-                  Scaffold module memory: ownership, boundaries, tests, decisions.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist skill create &lt;name&gt;</span></td>
-                <td class="muted-td">
-                  Generate a portable AI agent skill for Claude Code and the Agent Skills format.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist skill list</span></td>
-                <td class="muted-td">List the built-in agent skill catalog.</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist mcp add &lt;server&gt;</span></td>
-                <td class="muted-td">
-                  Generate offline, proposed memory for an MCP server (e.g. Figma) and a capture
-                  skill.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist doctor</span></td>
-                <td class="muted-td">
-                  Validate memory health, completion evidence, drift, and unfilled security docs.
-                  Exit codes 0 / 1 / 2.
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">persist guard --source &lt;dirs&gt;</span></td>
-                <td class="muted-td">
-                  Fail when staged source changed without tests — add it to your gates to enforce
-                  it.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="presets">
-      <div class="wrap">
-        <h2>Opinion packs for real stacks</h2>
-        <p class="lead">
-          Presets propose vetted, stack-specific decisions — always as <em>proposed</em> ADRs you
-          accept or reject. The schema makes a silent acceptance impossible.
-        </p>
-        <div class="tablecard">
-          <table>
-            <thead>
-              <tr>
-                <th>Preset</th>
-                <th>Stack</th>
-                <th>Proposes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="cmd"><span class="mono">laravel-react</span></td>
-                <td>Laravel + React</td>
-                <td class="muted-td">
-                  Inertia + React, Eloquent, Sanctum, Form Requests + Policies, queues, Pest
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">laravel-vue</span></td>
-                <td>Laravel + Vue</td>
-                <td class="muted-td">
-                  Inertia + Vue, Eloquent, Sanctum, Form Requests + Policies, queues, Pest
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">laravel-api</span></td>
-                <td>Laravel (API)</td>
-                <td class="muted-td">
-                  Versioned REST + API Resources, Eloquent, Sanctum, queues, Pest
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">nextjs</span></td>
-                <td>Next.js / TS</td>
-                <td class="muted-td">
-                  App Router, typed data layer, Tailwind, Vitest + Playwright
-                </td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">python-fastapi</span></td>
-                <td>Python / FastAPI</td>
-                <td class="muted-td">FastAPI, PostgreSQL + SQLAlchemy, Pydantic, pytest, Redis</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">kotlin-android</span></td>
-                <td>Kotlin / Android</td>
-                <td class="muted-td">Compose, Coroutines + Flow, Hilt, Room, MVVM</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">ios-swift</span></td>
-                <td>iOS / Swift</td>
-                <td class="muted-td">SwiftUI, async/await + Observation, SwiftData, MVVM</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">flutter</span></td>
-                <td>Flutter</td>
-                <td class="muted-td">Platform and state-management guidance</td>
-              </tr>
-              <tr>
-                <td class="cmd"><span class="mono">generic</span></td>
-                <td>none</td>
-                <td class="muted-td">Architecture-neutral memory</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="agents" class="alt">
-      <div class="wrap">
-        <h2>The memory loads itself, in every tool</h2>
-        <p class="lead">
-          Writing memory only helps if the agent reads it, so
-          <span class="mono">persist init</span> wires each tool with its own native mechanism.
-        </p>
-        <div class="grid">
-          <div class="card">
-            <span class="ic">🟣</span>
-            <h3>Claude Code</h3>
-            <p>
-              <span class="mono">CLAUDE.md</span> auto-loads and imports
-              <span class="mono">AGENTS.md</span>; a SessionStart hook injects a live map of
-              accepted ADRs and modules every session.
+      <section class="section" id="start" aria-labelledby="start-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Start</span>
+            <h2 id="start-title">Six files in an empty folder. A proposal in a repository that already exists.</h2>
+            <p class="lede">
+              <code>persist init</code> writes product intent, security model, quality gates,
+              engineering standards, conventions, lessons, and a decision directory, plus the
+              entry points each AI tool reads and the hooks that gate commits. Each document is a
+              short template with prompts, not a guess about your stack. In a repository with
+              history, <code>persist adopt</code> reads the manifests and writes a proposal; it
+              accepts nothing on its own.
             </p>
           </div>
-          <div class="card">
-            <span class="ic">🟦</span>
-            <h3>Cursor</h3>
-            <p>
-              <span class="mono">.cursor/rules/persist-memory.mdc</span> is an always-apply rule
-              that loads the memory rules into every request.
-            </p>
-          </div>
-          <div class="card">
-            <span class="ic">⚫</span>
-            <h3>Codex &amp; others</h3>
-            <p>
-              <span class="mono">AGENTS.md</span> is auto-discovered — the portable floor that
-              carries the same rules everywhere.
-            </p>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Empty folder</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist init</span>
+Persist OS init complete.
+Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Generated repository memory, 12 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Created:
+- .persist/config.json
+- AGENTS.md
+- CLAUDE.md
+- .cursor/rules/persist-memory.mdc
+- docs/00-product/PRODUCT.md
+- docs/20-security/SECURITY_MODEL.md
+- docs/50-quality/QUALITY_GATES.md
+- docs/60-engineering/ENGINEERING_STANDARDS.md
+- docs/60-engineering/CONVENTIONS.md
+- docs/60-engineering/LESSONS.md
+- docs/adrs/README.md
+- .github/workflows/persist.yml
+- .persist/hooks/pre-commit
+- .persist/hooks/pre-push
+- .claude/hooks/session-start.sh
+- .claude/settings.json
+<span class="m">  … 24 skill files</span>
+
+Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
+Enable them once per clone: git config core.hooksPath .persist/hooks
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Existing Next.js app</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist adopt</span>
+Persist OS adopt complete.
+Inferred signals are proposed and require human review.
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">The report names its sources</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">sed -n '1,40p' docs/adopt/ADOPTION_REPORT.md</span>
+# Adoption Report
+
+## Status
+
+Proposed. Everything below is inferred from this repository and requires human review. Nothing here
+is accepted repository memory until you accept it.
+
+## Detected Signals
+<span class="m">  …</span>
+- Languages: TypeScript
+- Package manager: pnpm (from `pnpm-lock.yaml`)
+- Frameworks: Next.js (from `package.json`)
+- Tests: detected via `"test"` script in package.json
+<span class="m">  …</span></pre>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section id="trust" class="center">
-      <div class="wrap">
-        <h2>Deterministic on purpose</h2>
-        <p class="lead">
-          A memory layer and a quality gate have to be trustworthy. So Persist OS never calls a
-          model to judge your work — it checks structure and evidence with reproducible rules. Same
-          input, same answer, every time. The thinking stays with you and your agent; the
-          proof-of-work stays with the gate.
-        </p>
-        <div class="cta">
-          <a class="btn primary" href="https://github.com/Karthick-Ramachandran/persist-os"
-            >★ Star on GitHub</a
-          >
-          <a class="btn" href="https://www.npmjs.com/package/persist-os"
-            >npm install -g persist-os</a
-          >
+      <section class="section" id="features" aria-labelledby="features-title">
+        <div class="wrap two-col">
+          <div>
+            <span class="eyebrow">Features</span>
+            <h2 id="features-title">Two files per feature. Three when something enforces the third.</h2>
+            <p class="lede">
+              A feature gets a plan (approach, boundaries, acceptance criteria) and a task list
+              with a completion-evidence section. A test plan is added only when
+              <code>testCommand</code> is configured, because a scaffold should not ask for a
+              document that nothing checks. Both are opt-in: run the command when the work is big
+              enough to deserve it.
+            </p>
+            <p class="lede">
+              Modules work the same way. <code>persist module create billing</code> writes what
+              the module owns, its tasks, its test plan, and its decisions.
+            </p>
+          </div>
+          <div class="stack">
+            <span class="block-label">No test command configured</span>
+            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+
+Next steps:
+- Start in docs/40-features/F-001-checkout: fill PLAN.md (approach, boundaries, acceptance criteria).
+- Then TASKS.md before you implement.
+- Run `persist doctor` to check the memory is complete.
+<span class="ok">[exit 0]</span></pre>
+            <span class="block-label">testCommand set to npm run test:run</span>
+            <pre class="transcript"><span class="p">$</span> <span class="c">persist feature create checkout</span>
+Persist OS feature create complete.
+Feature: docs/40-features/F-001-checkout
+Created:
+- docs/40-features/F-001-checkout/PLAN.md
+- docs/40-features/F-001-checkout/TASKS.md
+- docs/40-features/F-001-checkout/TEST_PLAN.md
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <footer>
+      <section class="section section-sunken" id="decisions" aria-labelledby="decisions-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Decisions</span>
+            <h2 id="decisions-title">A decision has a status, and the status is in the file.</h2>
+            <p class="lede">
+              <code>persist adr create</code> writes a Proposed ADR with Context, Decision,
+              Alternatives Considered, and Consequences. <code>persist adr accept</code> promotes
+              it to Accepted; from then on other memory can cite it as source of truth. When the
+              decision changes, <code>persist adr supersede</code> writes a new accepted ADR that
+              links back and marks the old one superseded. Nothing is deleted or edited in place,
+              and the doctor warns about any memory still citing the old decision.
+            </p>
+          </div>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Proposed, then accepted</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist adr create "Use PostgreSQL for primary storage"</span>
+Persist OS ADR create complete.
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+<span class="m">  …</span>
+- It is Proposed — set Status to Accepted once the team agrees.
+
+<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+# ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+<span class="warn">Proposed</span>
+
+<span class="p">$</span> <span class="c">persist adr accept use-postgresql-for-primary-storage</span>
+Persist OS ADR accept complete.
+Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+<span class="m">  …</span>
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md is now Accepted and is repository source of truth.
+- Drift checks now treat references to it as resolved.
+
+<span class="p">$</span> <span class="c">sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+# ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+<span class="ok">Accepted</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Changed later, never overwritten</span>
+              <pre class="diff"><span class="file">$ persist adr supersede use-postgresql-for-primary-storage "Use SQLite for primary storage"</span>
+
+<span class="file">docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md</span>
+ ## Status
+<span class="del">-Accepted</span>
+<span class="add">+Accepted — superseded by ADR-0002-use-sqlite-for-primary-storage</span>
+
+<span class="file">docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md  (new file)</span>
+<span class="add">+# ADR-0002: Use SQLite For Primary Storage</span>
+<span class="add">+</span>
+<span class="add">+## Status</span>
+<span class="add">+</span>
+<span class="add">+Accepted</span>
+<span class="add">+</span>
+<span class="add">+## Supersedes</span>
+<span class="add">+</span>
+<span class="add">+- ADR-0001-use-postgresql-for-primary-storage</span></pre>
+              <p class="muted">
+                Proposals from <code>persist adopt</code> and <code>persist mcp add</code> land in
+                <code>docs/adrs/proposed/</code>. Only a human moves them to accepted.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-dark" id="doctor" aria-labelledby="doctor-title">
+        <div class="wrap">
+          <div class="two-col">
+            <div>
+              <span class="eyebrow">The gate</span>
+              <h2 id="doctor-title">Doctor is deterministic on purpose.</h2>
+              <p class="lede">
+                It does not call a model and it does not judge whether your architecture is good.
+                It checks things with a definite answer: is a required file missing, does memory
+                cite a decision that was never accepted, has the always-loaded context outgrown its
+                budget. Same input, same exit code, offline.
+              </p>
+              <p class="lede">
+                This is the report one accepted decision in, before anyone has filled the
+                templates. Every warning names a file and a section.
+              </p>
+            </div>
+            <figure class="terminal" aria-label="A recorded doctor run">
+              <div class="terminal-bar">
+                <span>persist doctor</span>
+                <span>recorded, unedited</span>
+              </div>
+              <pre><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. <span class="m">(docs/20-security/SECURITY_MODEL.md)</span>
+- Product purpose is still an unfilled template. <span class="m">(docs/00-product/PRODUCT.md)</span>
+- Product users section is still an unfilled template. <span class="m">(docs/00-product/PRODUCT.md)</span>
+- Conventions canonical-primitives section is still an unfilled template. <span class="m">(docs/60-engineering/CONVENTIONS.md)</span>
+
+INFO
+- Persist OS config validates. <span class="m">(.persist/config.json)</span>
+- 0 feature folders detected.
+- 0 module folders detected.
+- 1 ADRs detected.
+
+Result: <span class="warn">WARNINGS</span>
+<span class="warn">[exit 1]</span></pre>
+            </figure>
+          </div>
+
+          <ul class="codes" style="margin-top: var(--s-8)" aria-label="Exit codes">
+            <li class="ok">
+              <span class="n">0</span>
+              <span class="l">Healthy</span>
+              <span class="d">No errors and no warnings.</span>
+            </li>
+            <li class="warn">
+              <span class="n">1</span>
+              <span class="l">Warnings only</span>
+              <span class="d">Something to look at. Still non-zero, so hooks and CI stop on it.</span>
+            </li>
+            <li class="err">
+              <span class="n">2</span>
+              <span class="l">Errors</span>
+              <span class="d">Memory is broken or a claim has no evidence.</span>
+            </li>
+          </ul>
+
+          <ul class="checks" style="margin-top: var(--s-7)" aria-label="What doctor checks">
+            <li>
+              <span class="what">Missing or invalid <code>.persist/config.json</code>, or a required document</span>
+              <span class="sev sev-err">error</span>
+            </li>
+            <li>
+              <span class="what">A feature folder without its plan or tasks, a module folder missing a doc, an ADR missing a section</span>
+              <span class="sev sev-err">error</span>
+            </li>
+            <li>
+              <span class="what">A required document links to a doc path that does not exist</span>
+              <span class="sev sev-err">error</span>
+            </li>
+            <li>
+              <span class="what">An ADR whose Consequences or Alternatives section says nothing (error once accepted)</span>
+              <span class="sev sev-mixed">error / warning</span>
+            </li>
+            <li>
+              <span class="what">A security-sensitive decision with no security document linked</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">Memory cites an ADR that does not exist, or one not yet accepted</span>
+              <span class="sev sev-mixed">error / warning</span>
+            </li>
+            <li>
+              <span class="what">Memory still cites a decision that has been superseded</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">Memory cites a <code>src/</code> or <code>tests/</code> path that no longer exists</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">Memory cites code that changed more than 90 days after the memory did (git only)</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what"><code>CLAUDE.md</code>, <code>AGENTS.md</code>, and the Cursor rule together exceed 24 KiB</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">The product file, security model, or a module doc still holding the template prompts</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what"><code>CONVENTIONS.md</code> still a stub once the repository has real work</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">A generated git hook that disagrees with <code>.persist/config.json</code></span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+            <li>
+              <span class="what">A skill on disk that is not in the built-in catalog, retired or hand-made</span>
+              <span class="sev sev-warn">warning</span>
+            </li>
+          </ul>
+          <p class="muted" style="margin-top: var(--s-5); max-width: 64ch">
+            <a href="docs/doctor.html">Every check, documented.</a>
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="report" aria-labelledby="report-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Honest reports</span>
+            <h2 id="report-title">Nothing to check is not a pass.</h2>
+            <p class="lede">
+              When a check has no input, or cannot run, the doctor lists it as not evaluated with
+              the reason instead of counting it as passed. A fresh repository outside git gets
+              three such lines. The same report is available as versioned JSON for CI artifacts
+              and agent handoffs.
+            </p>
+          </div>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Fresh memory, no git repository</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+<span class="warn">NOT EVALUATED</span>
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- staleness: not a git repository, so commit history is unavailable
+
+Result: <span class="ok">PASSED</span>
+<span class="ok">[exit 0]</span></pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">Machine-readable</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist doctor --json</span>
+{
+  "schemaVersion": "persist.doctor.v1",
+  "status": "warnings",
+  "exitCode": 1,
+  "summary": {
+    "errors": 0,
+    "warnings": 4,
+    "info": 4
+  },
+  "findings": [
+<span class="m">    …</span>
+    {
+      "severity": "warning",
+      "check": "content-product",
+      "message": "Product purpose is still an unfilled template.",
+      "path": "docs/00-product/PRODUCT.md"
+    },
+<span class="m">    …</span>
+  ],
+  "checks": [
+    {
+      "id": "config",
+      "status": "evaluated"
+    },
+<span class="m">    …</span>
+  ]
+}
+<span class="warn">[exit 1]</span></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-sunken" id="gates" aria-labelledby="gates-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Hooks</span>
+            <h2 id="gates-title">The hooks say no.</h2>
+            <p class="lede">
+              <code>persist init</code> writes two tracked hooks. Pre-commit runs the doctor.
+              Pre-push runs <code>persist test-gate</code>, the one-shot test command detected from
+              <code>package.json</code>, and only passes when the suite does. Git runs them once you
+              point it at the directory; Persist OS prints the command and never runs it for you.
+            </p>
+          </div>
+          <div class="two-col even">
+            <div class="stack">
+              <span class="block-label">Enable, then commit</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span>
+<span class="p">$</span> <span class="c">git commit -m "Add repository memory"</span>
+Doctor Report
+<span class="m">  …</span>
+Result: <span class="ok">PASSED</span>
+[main (root-commit) d84bda4] Add repository memory
+ 40 files changed, 1700 insertions(+)
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">A commit that removes required memory</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
+Doctor Report
+
+<span class="err">ERROR</span>
+- Required file is missing. (docs/00-product/PRODUCT.md)
+<span class="m">  …</span>
+Result: <span class="err">FAILED</span>
+<span class="err">[exit 1]</span></pre>
+              <span class="block-label">Warnings block too: exit 1 is not zero</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git commit -m "Plan the checkout feature"</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+<span class="m">  …</span>
+Result: <span class="warn">WARNINGS</span>
+<span class="warn">[exit 1]</span>
+<span class="p">$</span> <span class="c">git log --oneline</span>
+d84bda4 Add repository memory</pre>
+            </div>
+            <div class="stack">
+              <span class="block-label">The test gate, passing</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate <span class="ok">passed</span>: npm run test:run
+
+
+&gt; orders-api@1.4.0 test:run
+&gt; node --test
+
+<span class="ok">✔</span> totals a cart (0.44075ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+<span class="m">  …</span>
+<span class="ok">[exit 0]</span></pre>
+              <span class="block-label">The test gate, failing</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist test-gate</span>
+Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
+
+
+&gt; orders-api@1.4.0 test:run
+&gt; node --test
+
+<span class="err">✖</span> totals a cart (0.839417ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+<span class="m">  …</span>
+<span class="err">✖</span> failing tests:
+
+test at tests/cart.test.js:5:1
+<span class="err">✖</span> totals a cart (0.839417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  24 !== 29
+<span class="m">  …</span>
+<span class="err">[exit 1]</span></pre>
+              <span class="block-label">Which is what stops a push</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">git push -u origin main</span>
+Persist OS test gate <span class="err">failed</span>: npm run test:run exited with code 1.
+<span class="m">  …</span>
+  24 !== 29
+<span class="m">  …</span>
+error: failed to push some refs to '../origin.git'
+<span class="err">[exit 1]</span></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="agents" aria-labelledby="agents-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Agents</span>
+            <h2 id="agents-title">Memory the agent reads without being asked.</h2>
+            <p class="lede">
+              Writing the files only helps if the tool loads them. <code>persist init</code> wires
+              each tool with its own mechanism, and what loads is a map, not a dump: a short index
+              of accepted decisions and modules, with the detail one file away.
+            </p>
+          </div>
+          <div class="two-col">
+            <dl class="defs">
+              <div>
+                <dt>Claude Code</dt>
+                <dd>
+                  <code>CLAUDE.md</code> is loaded automatically and imports <code>AGENTS.md</code>. A
+                  read-only SessionStart hook in <code>.claude/hooks/session-start.sh</code> injects the
+                  list of accepted ADRs and modules at the start of every session.
+                </dd>
+              </div>
+              <div>
+                <dt>Cursor</dt>
+                <dd>
+                  <code>.cursor/rules/persist-memory.mdc</code> is an always-apply rule, so the memory
+                  rules go into every request.
+                </dd>
+              </div>
+              <div>
+                <dt>Codex and others</dt>
+                <dd>
+                  <code>AGENTS.md</code> is always written and is the portable floor. It opens with the
+                  rules: read memory first, reuse what <code>CONVENTIONS.md</code> names, record
+                  lessons, never contradict an accepted ADR, run <code>persist doctor</code> before
+                  claiming done.
+                </dd>
+              </div>
+              <div>
+                <dt>Skills</dt>
+                <dd>
+                  Workflow skills written to both <code>.claude/skills/</code> and
+                  <code>.agents/skills/</code>. They are instructions only; generated skills contain
+                  no scripts.
+                </dd>
+              </div>
+            </dl>
+            <div class="stack">
+              <span class="block-label">The catalog</span>
+              <pre class="transcript"><span class="p">$</span> <span class="c">persist skill list</span>
+Persist OS skill catalog
+
+- create-prd: Create PRD
+- plan-feature: Plan Feature
+- plan-module: Plan Module
+- create-adr: Create ADR
+- implement-task: Implement Task
+- write-tests: Write Tests
+- security-review: Security Review
+- architecture-drift-review: Architecture Drift Review
+- update-module-memory: Update Module Memory
+- completion-report: Completion Report
+- conventions-adherence: Conventions Adherence
+- capture-mcp-context: Capture MCP Context
+<span class="ok">[exit 0]</span></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-sunken" id="commands" aria-labelledby="commands-title">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="eyebrow">Commands</span>
+            <h2 id="commands-title">The whole surface.</h2>
+            <p class="lede">
+              Every command reports what it wrote, where, and what to do next. Commands that write
+              accept <code>--dry-run</code> to preview and <code>--force</code> to overwrite; nothing
+              overwrites by default.
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Command</th>
+                  <th scope="col">What it does</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cmd-cell"><code>persist init</code></td>
+                  <td class="desc">
+                    Write the six memory documents, the decision directory, the agent skills,
+                    pre-commit and pre-push hooks, a CI workflow, the Claude SessionStart hook, and
+                    the Cursor rule. Refuses to overwrite an existing installation without
+                    <code>--force --reinit</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist init --ai-tools &lt;list&gt;</code></td>
+                  <td class="desc">
+                    Generate files only for the tools you use: <code>claude</code>,
+                    <code>codex</code>, <code>cursor</code>, <code>generic</code>.
+                    <code>AGENTS.md</code> is always written.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist init --features --modules</code></td>
+                  <td class="desc">Also create the opt-in feature and module memory indexes.</td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist adopt</code></td>
+                  <td class="desc">
+                    Inspect an existing repository through its manifests and marker files, read-only,
+                    and write a proposed adoption report plus proposed ADRs for review.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist feature create &lt;name&gt;</code></td>
+                  <td class="desc">
+                    Scaffold feature memory: a plan and a task list, plus a test plan when the test
+                    gate is on.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist adr create &lt;title&gt;</code></td>
+                  <td class="desc">Create a Proposed architecture decision record.</td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist adr accept &lt;name&gt;</code></td>
+                  <td class="desc">Promote a Proposed ADR to Accepted. It becomes source of truth.</td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist adr supersede &lt;old&gt; &lt;new-title&gt;</code></td>
+                  <td class="desc">
+                    Record a changed decision: a new accepted ADR that links back, and the old one
+                    marked superseded.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist module create &lt;name&gt;</code></td>
+                  <td class="desc">Scaffold module memory: ownership, tasks, test plan, decisions.</td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist skill create &lt;name&gt;</code></td>
+                  <td class="desc">
+                    Generate an agent skill for Claude Code and the portable Agent Skills layout.
+                    Catalog names get the built-in content; other names get a valid skeleton.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist skill list</code></td>
+                  <td class="desc">List the built-in skill catalog.</td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist mcp add &lt;server&gt;</code></td>
+                  <td class="desc">
+                    Write proposed, offline memory for an MCP server plus a proposed ADR and the
+                    capture skill. Never connects to the server.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist doctor</code></td>
+                  <td class="desc">
+                    Check memory health, evidence, and drift. Exits 0, 1, or 2.
+                    <code>--json</code> for a machine-readable report.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="cmd-cell"><code>persist test-gate</code></td>
+                  <td class="desc">
+                    Run the configured one-shot test command and require it to pass. Skips, and
+                    says so, when none is configured.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin-top: var(--s-5)">
+            Full reference with options and generated paths in the
+            <a href="docs/commands.html">commands documentation</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="guarantees" aria-labelledby="guarantees-title">
+        <div class="wrap two-col">
+          <div>
+            <span class="eyebrow">Boundaries</span>
+            <h2 id="guarantees-title">What it does not do.</h2>
+            <p class="lede">
+              A memory layer and a gate have to be trustworthy, so the runtime is small and the
+              limits are explicit.
+            </p>
+            <p class="lede">
+              And a note on when to skip it: if you are spiking an idea you will delete next week,
+              do not run it. There is no second session to hand off to, so the memory never gets
+              read back. Run <code>persist init</code> when the code is meant to last.
+            </p>
+          </div>
+          <ul class="plain">
+            <li>No network calls at runtime. No telemetry.</li>
+            <li>No AI API calls and no connections to MCP servers.</li>
+            <li>No generated application code. It writes memory, not your product.</li>
+            <li>No architecture opinions in core. It records your decisions; it never makes them.</li>
+            <li>Does not install dependencies into your repository.</li>
+            <li>
+              Does not overwrite existing files without <code>--force</code>, and refuses to write
+              outside the repository root or through a symlink.
+            </li>
+            <li>Does not enable git hooks for you. It prints the command; you run it.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section section-sunken" id="install" aria-labelledby="install-title">
+        <div class="wrap two-col">
+          <div>
+            <span class="eyebrow">Install</span>
+            <h2 id="install-title">Start in an existing repository or an empty folder.</h2>
+            <p class="lede">
+              Requires Node.js 20 or newer. Run it once with <code>npx</code>, or install the
+              <code>persist</code> binary globally. Either way, the first command is
+              <code>init</code>, and nothing it writes is hidden from review.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="docs/index.html">Getting started <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn" href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">persist-os on npm</a>
+            </div>
+          </div>
+          <pre class="transcript"><span class="m"># run without installing</span>
+<span class="c">npx persist-os@latest init</span>
+
+<span class="m"># or install the binary</span>
+<span class="c">npm install -g persist-os</span>
+<span class="c">persist init</span>
+
+<span class="m"># enable the generated hooks, once per clone</span>
+<span class="c">git config core.hooksPath .persist/hooks</span>
+
+<span class="m"># check the memory any time</span>
+<span class="c">persist doctor</span></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
       <div class="wrap">
         <div>
-          Persist OS — local-first repository memory. MIT licensed.<br />
-          Deployed with <a href="https://github.com/Amal-David/pagecast">Pagecast</a> — thank you.
-          💜
+          MIT-licensed · built by
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">@imkarthicck</a>
         </div>
-        <div>
-          <a href="https://github.com/Karthick-Ramachandran/persist-os">GitHub</a> ·
-          <a href="https://www.npmjs.com/package/persist-os">npm</a> ·
-          <a href="https://github.com/Karthick-Ramachandran/persist-os/blob/main/PHILOSOPHY.md"
-            >Philosophy</a
-          >
-        </div>
+        <nav aria-label="Footer">
+          <a href="https://github.com/Karthick-Ramachandran/persist-os" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+            GitHub repo
+          </a>
+          <a href="https://www.npmjs.com/package/persist-os" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0 0h16v16H0zM3 3v10h5V5.5h2.5V13H13V3z" /></svg>
+            npm package
+          </a>
+          <a href="https://github.com/Karthick-Ramachandran" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+            GitHub profile
+          </a>
+          <a href="https://x.com/imkarthicck" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+            X
+          </a>
+        </nav>
       </div>
     </footer>
+
+    <script src="assets/site.js" defer></script>
   </body>
 </html>

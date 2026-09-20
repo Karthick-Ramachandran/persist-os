@@ -1,0 +1,20 @@
+$ persist doctor
+Doctor Report
+
+WARNING
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 1 feature folders detected.
+- 0 module folders detected.
+- 2 ADRs detected.
+
+NOT EVALUATED
+- hook-drift: no generated hook at .persist/hooks/pre-push, so drift cannot be measured — run `persist init` to generate hooks
+
+Result: WARNINGS
+[exit 1]

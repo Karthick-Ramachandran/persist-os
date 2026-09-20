@@ -1,0 +1,2 @@
+$ git config core.hooksPath .persist/hooks
+[exit 0]

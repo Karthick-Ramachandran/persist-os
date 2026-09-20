@@ -1,0 +1,113 @@
+$ persist doctor --json
+{
+  "schemaVersion": "persist.doctor.v1",
+  "status": "warnings",
+  "exitCode": 1,
+  "summary": {
+    "errors": 0,
+    "warnings": 4,
+    "info": 4
+  },
+  "findings": [
+    {
+      "severity": "info",
+      "check": "config",
+      "message": "Persist OS config validates.",
+      "path": ".persist/config.json"
+    },
+    {
+      "severity": "info",
+      "check": "feature-memory",
+      "message": "0 feature folders detected."
+    },
+    {
+      "severity": "info",
+      "check": "module-memory",
+      "message": "0 module folders detected."
+    },
+    {
+      "severity": "info",
+      "check": "adr-memory",
+      "message": "1 ADRs detected."
+    },
+    {
+      "severity": "warning",
+      "check": "content-security",
+      "message": "Security model authentication and authorization section is still an unfilled template.",
+      "path": "docs/20-security/SECURITY_MODEL.md"
+    },
+    {
+      "severity": "warning",
+      "check": "content-product",
+      "message": "Product purpose is still an unfilled template.",
+      "path": "docs/00-product/PRODUCT.md"
+    },
+    {
+      "severity": "warning",
+      "check": "content-product",
+      "message": "Product users section is still an unfilled template.",
+      "path": "docs/00-product/PRODUCT.md"
+    },
+    {
+      "severity": "warning",
+      "check": "content-conventions",
+      "message": "Conventions canonical-primitives section is still an unfilled template.",
+      "path": "docs/60-engineering/CONVENTIONS.md"
+    }
+  ],
+  "checks": [
+    {
+      "id": "config",
+      "status": "evaluated"
+    },
+    {
+      "id": "required-files",
+      "status": "evaluated"
+    },
+    {
+      "id": "memory-integrity",
+      "status": "evaluated"
+    },
+    {
+      "id": "standards",
+      "status": "evaluated"
+    },
+    {
+      "id": "drift",
+      "status": "evaluated"
+    },
+    {
+      "id": "content",
+      "status": "evaluated"
+    },
+    {
+      "id": "conventions",
+      "status": "evaluated"
+    },
+    {
+      "id": "code-references",
+      "status": "evaluated"
+    },
+    {
+      "id": "superseded",
+      "status": "evaluated"
+    },
+    {
+      "id": "context-budget",
+      "status": "evaluated"
+    },
+    {
+      "id": "staleness",
+      "status": "evaluated"
+    },
+    {
+      "id": "hook-drift",
+      "status": "evaluated"
+    },
+    {
+      "id": "retired-skills",
+      "status": "evaluated"
+    }
+  ]
+}
+[exit 1]

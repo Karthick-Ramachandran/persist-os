@@ -1,0 +1,57 @@
+$ git commit -m Add repository memory
+Doctor Report
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 0 feature folders detected.
+- 0 module folders detected.
+- 0 ADRs detected.
+
+NOT EVALUATED
+- standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
+- content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+
+Result: PASSED
+[main (root-commit) d84bda4] Add repository memory
+ 40 files changed, 1700 insertions(+)
+ create mode 100644 .agents/skills/architecture-drift-review/SKILL.md
+ create mode 100644 .agents/skills/capture-mcp-context/SKILL.md
+ create mode 100644 .agents/skills/completion-report/SKILL.md
+ create mode 100644 .agents/skills/conventions-adherence/SKILL.md
+ create mode 100644 .agents/skills/create-adr/SKILL.md
+ create mode 100644 .agents/skills/create-prd/SKILL.md
+ create mode 100644 .agents/skills/implement-task/SKILL.md
+ create mode 100644 .agents/skills/plan-feature/SKILL.md
+ create mode 100644 .agents/skills/plan-module/SKILL.md
+ create mode 100644 .agents/skills/security-review/SKILL.md
+ create mode 100644 .agents/skills/update-module-memory/SKILL.md
+ create mode 100644 .agents/skills/write-tests/SKILL.md
+ create mode 100755 .claude/hooks/session-start.sh
+ create mode 100644 .claude/settings.json
+ create mode 100644 .claude/skills/architecture-drift-review/SKILL.md
+ create mode 100644 .claude/skills/capture-mcp-context/SKILL.md
+ create mode 100644 .claude/skills/completion-report/SKILL.md
+ create mode 100644 .claude/skills/conventions-adherence/SKILL.md
+ create mode 100644 .claude/skills/create-adr/SKILL.md
+ create mode 100644 .claude/skills/create-prd/SKILL.md
+ create mode 100644 .claude/skills/implement-task/SKILL.md
+ create mode 100644 .claude/skills/plan-feature/SKILL.md
+ create mode 100644 .claude/skills/plan-module/SKILL.md
+ create mode 100644 .claude/skills/security-review/SKILL.md
+ create mode 100644 .claude/skills/update-module-memory/SKILL.md
+ create mode 100644 .claude/skills/write-tests/SKILL.md
+ create mode 100644 .cursor/rules/persist-memory.mdc
+ create mode 100644 .github/workflows/persist.yml
+ create mode 100644 .persist/config.json
+ create mode 100755 .persist/hooks/pre-commit
+ create mode 100755 .persist/hooks/pre-push
+ create mode 100644 AGENTS.md
+ create mode 100644 CLAUDE.md
+ create mode 100644 docs/00-product/PRODUCT.md
+ create mode 100644 docs/20-security/SECURITY_MODEL.md
+ create mode 100644 docs/50-quality/QUALITY_GATES.md
+ create mode 100644 docs/60-engineering/CONVENTIONS.md
+ create mode 100644 docs/60-engineering/ENGINEERING_STANDARDS.md
+ create mode 100644 docs/60-engineering/LESSONS.md
+ create mode 100644 docs/adrs/README.md
+[exit 0]
