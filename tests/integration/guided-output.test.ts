@@ -45,7 +45,7 @@ describe("guided command output", () => {
 
     const feature = await runCommand(rootDir, ["feature", "create", "checkout"]);
     expect(feature.stdout).toContain("Next steps:");
-    expect(feature.stdout).toContain("PRD.md");
+    expect(feature.stdout).toContain("PLAN.md");
 
     const module = await runCommand(rootDir, ["module", "create", "billing"]);
     expect(module.stdout).toContain("Next steps:");

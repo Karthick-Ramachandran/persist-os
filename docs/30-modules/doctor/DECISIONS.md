@@ -63,3 +63,10 @@ Every doctor run records a per-check outcome (`evaluated` / `not-evaluated` with
 checks, rendered as a NOT EVALUATED text section and a JSON `checks` array. Not-evaluated is a
 property of a check, not a fourth severity; it never moves the exit code. Added because the
 config-gated checks were silently dropped without a config, reading as a full pass.
+
+## Minimal-By-Default Inputs (ADR-0007)
+
+The five checks that read optional memory (memory-integrity, standards, content, code-references,
+staleness) report not-evaluated with a specific reason when their inputs are absent — no
+feature/module folders, no ADRs — instead of matching nothing and passing. Verdict logic is
+otherwise untouched; the rewrite against the surviving memory is a later module.

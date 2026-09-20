@@ -9,6 +9,9 @@ export type GenerateFeatureFilesOptions = {
   featuresDir: string;
   featureId: string;
   featureName: string;
+  /** Include TEST_PLAN.md. True only when the test gate is enabled — the scaffold never
+   * outruns the gate that enforces it. */
+  testGate: boolean;
 };
 
 type FeatureTemplate = {
@@ -16,61 +19,12 @@ type FeatureTemplate = {
   content: string;
 };
 
+/**
+ * Minimal feature scaffold (ADR-0007): PLAN.md and TASKS.md, with acceptance criteria folded
+ * into PLAN and completion evidence folded into TASKS. TEST_PLAN.md exists only when the test
+ * gate is enabled.
+ */
 const featureTemplates: FeatureTemplate[] = [
-  {
-    fileName: "PRD.md",
-    content: `# PRD: {{title}}
-
-## Purpose
-
-Describe why this feature exists and what user or business problem it solves.
-
-## In Scope
-
-- TBD
-
-## Non-Goals
-
-- TBD
-`,
-  },
-  {
-    fileName: "ACCEPTANCE.md",
-    content: `# Acceptance Criteria: {{title}}
-
-## Criteria
-
-- TBD
-
-## Out Of Scope
-
-- TBD
-`,
-  },
-  {
-    fileName: "ARCHITECTURE_IMPACT.md",
-    content: `# Architecture Impact: {{title}}
-
-## Affected Modules
-
-- TBD
-
-## ADR Impact
-
-State whether this feature needs a new or updated ADR.
-
-## Security Impact
-
-State whether auth, secrets, storage, networking, telemetry, file writes, or dependencies change.
-`,
-  },
-  {
-    fileName: "CHANGE_REQUESTS.md",
-    content: `# Change Requests: {{title}}
-
-Record accepted changes to the feature requirements here.
-`,
-  },
   {
     fileName: "PLAN.md",
     content: `# Plan: {{title}}
@@ -82,6 +36,10 @@ TBD
 ## Boundaries
 
 TBD
+
+## Acceptance Criteria
+
+- TBD
 `,
   },
   {
@@ -104,14 +62,32 @@ Tests:
 
 - TBD
 
-Do Not:
+## Completion Evidence
 
-- Start implementation before PRD, acceptance, architecture impact, and test plan are clear.
+Status: Pending.
+
+Files Changed:
+
+- TBD
+
+Tests Run:
+
+- TBD
+
+Results:
+
+- TBD
+
+Remaining Risks:
+
+- TBD
 `,
   },
-  {
-    fileName: "TEST_PLAN.md",
-    content: `# Test Plan: {{title}}
+];
+
+const testPlanTemplate: FeatureTemplate = {
+  fileName: "TEST_PLAN.md",
+  content: `# Test Plan: {{title}}
 
 ## Unit Tests
 
@@ -125,46 +101,7 @@ Do Not:
 
 - TBD
 `,
-  },
-  {
-    fileName: "REVIEW.md",
-    content: `# Review: {{title}}
-
-## Status
-
-Pending review.
-
-## Findings
-
-- TBD
-`,
-  },
-  {
-    fileName: "COMPLETION_REPORT.md",
-    content: `# Completion Report: {{title}}
-
-## Status
-
-Pending.
-
-## Files Changed
-
-- TBD
-
-## Tests Run
-
-- TBD
-
-## Results
-
-- TBD
-
-## Remaining Risks
-
-- TBD
-`,
-  },
-];
+};
 
 export function generateFeatureFiles(options: GenerateFeatureFilesOptions): WriteFileInput[] {
   const slug = slugify(options.featureName);
@@ -175,8 +112,9 @@ export function generateFeatureFiles(options: GenerateFeatureFilesOptions): Writ
     slug,
     title,
   });
+  const templates = options.testGate ? [...featureTemplates, testPlanTemplate] : featureTemplates;
 
-  return featureTemplates.map((template) => ({
+  return templates.map((template) => ({
     path: path.posix.join(featureDir, template.fileName),
     content: renderTemplate(template.content, context),
   }));

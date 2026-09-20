@@ -74,7 +74,7 @@ describe("doctor content checks", () => {
     const rootDir = await createRoot("content-security-bare");
     await writeSecurityDocs(rootDir, UNFILLED_AUTH, UNFILLED_ASSETS);
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
@@ -84,7 +84,7 @@ describe("doctor content checks", () => {
     await writeSecurityDocs(rootDir, UNFILLED_AUTH, UNFILLED_ASSETS);
     await writeAcceptedAdr(rootDir);
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toContainEqual(
       expect.objectContaining({
@@ -110,7 +110,7 @@ describe("doctor content checks", () => {
     );
     await writeAcceptedAdr(rootDir);
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
@@ -119,7 +119,7 @@ describe("doctor content checks", () => {
     const rootDir = await createRoot("content-module-unfilled");
     await writeModule(rootDir, "Describe what this module owns and why it exists.", "- TBD");
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toContainEqual(
       expect.objectContaining({
@@ -145,7 +145,7 @@ describe("doctor content checks", () => {
       "- The SQLite schema and the typed repository.",
     );
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
@@ -158,7 +158,7 @@ describe("doctor content checks", () => {
       "- TBD",
     );
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toContainEqual(
       expect.objectContaining({
@@ -183,8 +183,22 @@ describe("doctor content checks", () => {
       "- Token-bucket limiter on the public API.",
     );
 
-    const findings = await checkContent({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkContent({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
+  });
+
+  it("reports not-evaluated when no features, modules, or ADRs exist", async () => {
+    const rootDir = await createRoot("content-empty");
+
+    const { findings, outcome } = await checkContent({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "content",
+      status: "not-evaluated",
+      reason:
+        "no feature folders, module folders, or ADRs exist, so there is no memory content to check",
+    });
   });
 });

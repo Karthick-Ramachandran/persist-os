@@ -60,7 +60,7 @@ describe("init --ai-tools selection", () => {
     const files = await listRelativeFiles(rootDir);
 
     expect(files).toContain(".persist/config.json");
-    expect(files).toContain("docs/00-product/PRD.md");
+    expect(files).toContain("docs/00-product/PRODUCT.md");
     expect(files).toContain(".github/workflows/persist.yml");
     expect(files).toContain(".cursor/rules/persist-memory.mdc");
   });

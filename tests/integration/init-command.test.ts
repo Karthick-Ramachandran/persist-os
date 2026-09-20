@@ -36,10 +36,11 @@ describe("init command", () => {
     expect(result.stdout).toContain("Created:");
 
     const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
-    expect(config.preset).toBeNull();
+    expect(config.testCommand).toBeNull();
+    expect(config.prePushGates).toEqual([]);
     expect(await readGeneratedFile(rootDir, "AGENTS.md")).toContain("repository memory");
-    expect(await readGeneratedFile(rootDir, "docs/10-architecture/ARCHITECTURE.md")).toContain(
-      "No architecture decisions are accepted yet.",
+    expect(await readGeneratedFile(rootDir, "docs/00-product/PRODUCT.md")).toContain(
+      "Describe what this repository is building",
     );
   });
 
@@ -152,34 +153,23 @@ describe("init command", () => {
     expect(await readFile(path.join(rootDir, "AGENTS.md"), "utf8")).toContain("Agent Instructions");
   });
 
-  it("fails clearly for unknown presets and writes nothing", async () => {
-    const rootDir = await createRoot("init-unknown-preset");
-    const result = await runInitCommand(rootDir, ["--preset", "unknown"]);
+  it("generates opt-in scaffolding only with --features and --modules", async () => {
+    const rootDir = await createRoot("init-optin");
+    const plain = await runInitCommand(rootDir);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain('Unknown preset "unknown".');
-    expect(await listRelativeFiles(rootDir)).toEqual([]);
-  });
+    expect(plain.exitCode).toBe(0);
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/40-features/README.md");
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/30-modules/README.md");
 
-  it("applies preset guidance and proposed decisions without accepting them", async () => {
-    const rootDir = await createRoot("init-preset");
-    const result = await runInitCommand(rootDir, ["--preset", "nextjs"]);
+    const opted = await runInitCommand(rootDir, ["--features", "--modules", "--force", "--reinit"]);
 
-    expect(result.exitCode).toBe(0);
-
-    const config = await readGeneratedJson<PersistConfig>(rootDir, ".persist/config.json");
-    expect(config.preset).toBe("nextjs");
-    expect(await readGeneratedFile(rootDir, "docs/ai/presets/nextjs-guidance.md")).toContain(
-      "proposed guidance",
+    expect(opted.exitCode).toBe(0);
+    expect(await readGeneratedFile(rootDir, "docs/40-features/README.md")).toContain(
+      "TEST_PLAN.md",
     );
-
-    const proposedDecision = await readGeneratedFile(
-      rootDir,
-      "docs/adrs/proposed/ADR-PROPOSED-nextjs-framework.md",
+    expect(await readGeneratedFile(rootDir, "docs/30-modules/README.md")).toContain(
+      "Module Memory",
     );
-    expect(proposedDecision).toContain("## Status\n\nProposed");
-    expect(proposedDecision).not.toContain("## Status\n\nAccepted");
   });
 
   it("initializes inside existing app folders without requiring framework files", async () => {
@@ -191,6 +181,8 @@ describe("init command", () => {
 
     expect(result.exitCode).toBe(0);
     expect(await readFile(path.join(rootDir, "src", "index.ts"), "utf8")).toBe("export {};\n");
-    expect(await readGeneratedFile(rootDir, ".persist/config.json")).toContain('"preset": null');
+    expect(await readGeneratedFile(rootDir, ".persist/config.json")).toContain(
+      '"testCommand": null',
+    );
   });
 });

@@ -5,9 +5,7 @@ import {
   ensureRequiredAdrSections,
 } from "../../../src/core/adr/adr-sections.js";
 import { generateAdoptionFiles } from "../../../src/core/adopt/generate-adoption.js";
-import { generateInitFiles } from "../../../src/core/generator/generate-init.js";
 import { generateMcpFiles } from "../../../src/core/mcp/generate-mcp.js";
-import { listPresets } from "../../../src/core/presets/preset-registry.js";
 
 /**
  * Regression: a proposed ADR that stops at "## Consequences" fails `persist doctor` the moment a
@@ -64,15 +62,5 @@ describe("generated proposed ADRs contain every required section", () => {
     const adr = files.find((file) => isProposedAdr(file.path));
     expect(adr).toBeDefined();
     expectAllRequiredSections(adr!.content);
-  });
-
-  it("covers every preset's proposed decisions", () => {
-    for (const preset of listPresets()) {
-      const files = generateInitFiles({ rootDir: "/tmp/example-repo", preset });
-      const proposedAdrs = files.filter((file) => isProposedAdr(file.path));
-      for (const adr of proposedAdrs) {
-        expectAllRequiredSections(adr.content);
-      }
-    }
   });
 });

@@ -48,6 +48,19 @@ export async function checkStaleness(context: DoctorCheckContext): Promise<Stale
     );
   }
 
+  const featureEntries = await readDirIfExists(context.rootDir, context.config.featuresDir);
+  const hasFeatures = featureEntries.some(
+    (folder) => folder.isDirectory() && featureFolderPattern.test(folder.name),
+  );
+  const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
+  const hasModules = moduleEntries.some((folder) => folder.isDirectory());
+
+  if (!hasFeatures && !hasModules) {
+    return notEvaluated(
+      "no feature or module folders exist, so there is no memory to compare against code history",
+    );
+  }
+
   const docPaths = await collectDocPaths(context.rootDir, context.config);
   const commitTimes = new Map<string, number | null>();
 

@@ -25,15 +25,16 @@ Initialize neutral repository memory.
 
 Options:
 
-- `--preset <id>`: apply optional preset guidance and proposed decisions.
+- `--features`: generate opt-in feature workflow scaffolding.
+- `--modules`: generate opt-in module workflow scaffolding.
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
 - `--reinit`: required with `--force` to overwrite an existing Persist OS installation (a directory
   that already has `.persist/config.json`). Without it, `--force` refuses, protecting existing
   repository memory.
 
-Init also generates a tracked pre-commit hook at `.persist/hooks/pre-commit` that runs
-`persist doctor` plus any `preCommitGates` in `.persist/config.json`. Init proposes, but does not
+Init also generates tracked hooks at `.persist/hooks/`: pre-commit runs `persist doctor` plus any
+`preCommitGates`; pre-push runs `persist test-gate` plus `prePushGates`. Init proposes, but does not
 run, the activation command `git config core.hooksPath .persist/hooks`.
 
 ### `persist adopt`
@@ -74,10 +75,6 @@ Options:
 
 - `--dry-run`: show planned writes without writing files.
 - `--force`: overwrite existing files explicitly.
-
-### `persist preset list`
-
-List built-in presets.
 
 ### `persist feature create <name>`
 

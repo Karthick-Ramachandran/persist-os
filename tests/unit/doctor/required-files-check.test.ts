@@ -71,20 +71,12 @@ describe("checkRequiredFiles honors aiTools", () => {
 
   async function writeRequiredDocs(rootDir: string): Promise<void> {
     const docs = [
-      "docs/00-product/PRD.md",
-      "docs/00-product/BRD.md",
-      "docs/10-architecture/ARCHITECTURE.md",
-      "docs/10-architecture/MEMORY_ENGINE.md",
-      "docs/10-architecture/FILE_WRITE_POLICY.md",
+      "docs/00-product/PRODUCT.md",
       "docs/20-security/SECURITY_MODEL.md",
-      "docs/20-security/THREAT_MODEL.md",
-      "docs/50-quality/TESTING_STRATEGY.md",
       "docs/50-quality/QUALITY_GATES.md",
       "docs/60-engineering/ENGINEERING_STANDARDS.md",
-      "docs/60-engineering/AI_AGENT_RULES.md",
-      "docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md",
-      "docs/ai/MCP_STRATEGY.md",
-      "docs/ai/PERSIST_COMMANDS.md",
+      "docs/60-engineering/CONVENTIONS.md",
+      "docs/60-engineering/LESSONS.md",
       "docs/adrs/README.md",
     ];
 

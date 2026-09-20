@@ -50,6 +50,7 @@ export async function createFeature(options: FeatureCreateOptions): Promise<Feat
     featuresDir: config.featuresDir,
     featureId: featureFolder.id,
     featureName: options.name,
+    testGate: config.testCommand !== null,
   });
   const plan = createWritePlan({
     rootDir: options.rootDir,
@@ -94,8 +95,8 @@ export function formatFeatureCreateResult(result: FeatureCreateResult): string {
 
   if (!result.dryRun) {
     appendNextSteps(lines, [
-      `Start in ${result.featurePath}: write PRD.md (why) and ACCEPTANCE.md (how you will know it works).`,
-      "Then PLAN.md, TASKS.md, and TEST_PLAN.md before you implement.",
+      `Start in ${result.featurePath}: fill PLAN.md (approach, boundaries, acceptance criteria).`,
+      "Then TASKS.md before you implement.",
       "Run `persist doctor` to check the memory is complete.",
     ]);
   }

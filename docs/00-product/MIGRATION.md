@@ -15,7 +15,12 @@ proxy; `persist test-gate` runs your test command and requires it to pass.
 - Regenerate the hooks so pre-commit runs doctor and pre-push runs the test gate:
   `persist init --force --reinit` (review the diff first — `--force` overwrites).
 
-## `preset` removal from config — pending its own module
+## `preset` config field and `persist preset list` removed
 
-The second 1.0 breaking change (removing `preset` from `.persist/config.json`) ships with a later
-module and will be documented here when it lands.
+Presets (opinion packs: `src/presets/`, `persist preset list`, `persist init --preset`) are retired.
+Architecture stays neutral; stack guidance now lives in hand-written ADRs.
+
+- Delete the `"preset"` line from `.persist/config.json`. A config that still contains it fails to
+  parse with an error naming the field — that error is the migration prompt, not a bug: remove the
+  line and re-run `persist doctor`.
+- Delete any generated `docs/ai/presets/` output. Future `persist init` runs no longer create it.

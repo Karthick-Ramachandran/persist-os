@@ -164,4 +164,22 @@ describe("doctor staleness check", () => {
       reason: "not a git repository, so commit history is unavailable",
     });
   });
+
+  it("reports not-evaluated when no feature or module folders exist", async () => {
+    const rootDir = await createRoot("stale-nofolders");
+    await initRepo(rootDir);
+
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "staleness",
+      status: "not-evaluated",
+      reason:
+        "no feature or module folders exist, so there is no memory to compare against code history",
+    });
+  });
 });

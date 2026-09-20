@@ -11,7 +11,7 @@ import {
 } from "../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
 import { inspectRepo, summarizeSignals, type RepoSignals } from "../core/adopt/inspect-repo.js";
-import { generateInitFiles } from "../core/generator/generate-init.js";
+import { generateInitFiles, generateOptInFiles } from "../core/generator/generate-init.js";
 import { detectPrePushGates, detectTestCommand } from "../core/hooks/detect-gates.js";
 import {
   CLAUDE_SETTINGS_PATH,
@@ -24,8 +24,6 @@ import {
   renderPrePushHook,
   renderSessionStartHook,
 } from "../core/hooks/generate-hook.js";
-import { getPreset } from "../core/presets/preset-registry.js";
-import type { Preset } from "../core/presets/preset-schema.js";
 import { generateSkillFiles } from "../core/skills/generate-skill.js";
 import { keepPathForTools } from "../core/aitools/tool-paths.js";
 import { listCatalogSkillNames } from "../core/skills/skill-catalog.js";
@@ -33,15 +31,15 @@ import { appendNextSteps, appendWriteSummary } from "./write-summary.js";
 
 export type InitOptions = {
   rootDir: string;
-  preset?: string;
   aiTools?: string[];
+  features?: boolean;
+  modules?: boolean;
   dryRun?: boolean;
   force?: boolean;
   reinit?: boolean;
 };
 
 export type InitResult = {
-  preset: string | null;
   dryRun: boolean;
   plan: WritePlan;
   writeResult: WriteResult;
@@ -52,11 +50,7 @@ export type InitResult = {
   testCommand: string | null;
 };
 
-export type InitErrorCode =
-  | "UNKNOWN_PRESET"
-  | "INVALID_AI_TOOL"
-  | "WRITE_PLAN_ERROR"
-  | "EXISTING_INSTALLATION";
+export type InitErrorCode = "INVALID_AI_TOOL" | "WRITE_PLAN_ERROR" | "EXISTING_INSTALLATION";
 
 export class InitError extends Error {
   readonly code: InitErrorCode;
@@ -89,7 +83,6 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
 
   validateAiTools(options.aiTools);
 
-  const preset = resolvePreset(options.preset);
   // Read-only inspection of the existing repository so init can surface the detected stack (proposed,
   // never accepted) — run before writes so it reflects the user's repo, not our generated scaffold.
   const detected = await inspectRepo(options.rootDir);
@@ -98,13 +91,15 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   const testCommand = await detectTestCommand(options.rootDir);
   const prePushGates = await detectPrePushGates(options.rootDir);
   const config = createDefaultConfig({
-    preset: preset?.id ?? null,
     preCommitGates: [],
     prePushGates,
     testCommand,
     ...(options.aiTools !== undefined ? { aiTools: options.aiTools } : {}),
   });
-  const files = createInitWriteFiles(options.rootDir, config, preset);
+  const files = createInitWriteFiles(options.rootDir, config, {
+    features: options.features ?? false,
+    modules: options.modules ?? false,
+  });
   const plan = createWritePlan({
     rootDir: options.rootDir,
     files,
@@ -124,7 +119,6 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   const writeResult = await executeWritePlan(plan, { dryRun: options.dryRun });
 
   return {
-    preset: preset?.id ?? null,
     dryRun: options.dryRun ?? false,
     plan,
     writeResult,
@@ -137,7 +131,6 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
 export function formatInitResult(result: InitResult): string {
   const lines = [
     result.dryRun ? "Persist OS init dry run complete." : "Persist OS init complete.",
-    `Preset: ${result.preset ?? "none"}`,
     result.testCommand === null
       ? "Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`)."
       : `Test gate: ${result.testCommand} (saved as testCommand in .persist/config.json).`,
@@ -368,31 +361,23 @@ function validateAiTools(
   }
 }
 
-function resolvePreset(presetId: string | undefined): Preset | null {
-  if (presetId === undefined) {
-    return null;
-  }
-
-  const preset = getPreset(presetId);
-
-  if (preset === undefined) {
-    throw new InitError("UNKNOWN_PRESET", `Unknown preset "${presetId}".`);
-  }
-
-  return preset;
-}
-
 function createInitWriteFiles(
   rootDir: string,
   config: ReturnType<typeof createDefaultConfig>,
-  preset: Preset | null,
+  optIn: { features: boolean; modules: boolean },
 ): WriteFileInput[] {
   const files: WriteFileInput[] = [
     {
       path: CONFIG_PATH,
       content: `${JSON.stringify(config, null, 2)}\n`,
     },
-    ...generateInitFiles({ rootDir, preset }),
+    ...generateInitFiles({ rootDir }),
+    ...generateOptInFiles({
+      featuresDir: config.featuresDir,
+      modulesDir: config.modulesDir,
+      features: optIn.features,
+      modules: optIn.modules,
+    }),
     {
       path: PRE_COMMIT_HOOK_PATH,
       content: renderPreCommitHook(config.preCommitGates),
