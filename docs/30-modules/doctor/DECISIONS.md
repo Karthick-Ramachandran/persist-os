@@ -70,3 +70,21 @@ The five checks that read optional memory (memory-integrity, standards, content,
 staleness) report not-evaluated with a specific reason when their inputs are absent — no
 feature/module folders, no ADRs — instead of matching nothing and passing. Verdict logic is
 otherwise untouched; the rewrite against the surviving memory is a later module.
+
+## Re-pointed Checks (F-034)
+
+The five checks now read the memory that survives (required documents, ADRs, conventions) in
+addition to feature and module documents, so minimal repositories get a real gate:
+
+- memory-integrity validates cross-references between the six required documents and their ADR
+  references (missing targets error, proposed references warn);
+- standards requires substantive Alternatives Considered (accepted errors, proposed warns) and warns
+  on security-sensitive decisions without security notes — always a warning, so the heuristic never
+  breaks a build or forces edits to accepted history;
+- content flags unfilled PRODUCT templates once the repository has work (CONVENTIONS stays owned by
+  the conventions check: one gap, one warning);
+- code-reference and staleness scan ADRs and conventions, and skip planning docs of features
+  carrying a completion report (history, not current state).
+
+Not-evaluated is now reserved for genuine inability: missing config, no scannable memory at all, or
+(staleness) non-git and shallow-clone repositories.

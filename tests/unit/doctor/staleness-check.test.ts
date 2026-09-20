@@ -165,6 +165,98 @@ describe("doctor staleness check", () => {
     });
   });
 
+  it("warns when code cited by an ADR changed long after", async () => {
+    const rootDir = await createRoot("stale-adr-old");
+    await initRepo(rootDir);
+    await write(rootDir, "docs/adrs/ADR-0001-x.md", "# ADR-0001\n\nUses `src/foo.ts`.\n");
+    await write(rootDir, "src/foo.ts", "export const a = 1;\n");
+    gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "init");
+
+    await write(rootDir, "src/foo.ts", "export const a = 2;\n");
+    gitAt(rootDir, "2024-12-01T00:00:00", "add", "src/foo.ts");
+    gitAt(rootDir, "2024-12-01T00:00:00", "commit", "-m", "change code months later");
+
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "staleness", status: "evaluated" });
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "staleness",
+        path: "docs/adrs/ADR-0001-x.md",
+      }),
+    );
+  });
+
+  it("is quiet when an ADR and code were committed together", async () => {
+    const rootDir = await createRoot("stale-adr-fresh");
+    await initRepo(rootDir);
+    await write(rootDir, "docs/adrs/ADR-0001-x.md", "# ADR-0001\n\nUses `src/foo.ts`.\n");
+    await write(rootDir, "src/foo.ts", "export const a = 1;\n");
+    gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "init together");
+
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "staleness", status: "evaluated" });
+    expect(findings).toEqual([]);
+  });
+
+  it("treats a completed feature's docs as history", async () => {
+    const rootDir = await createRoot("stale-history");
+    await initRepo(rootDir);
+    await write(rootDir, "docs/40-features/F-001-x/PRD.md", "# PRD\n\nBuilt `src/foo.ts`.\n");
+    await write(rootDir, "docs/40-features/F-001-x/COMPLETION_REPORT.md", "# Done\n");
+    await write(rootDir, "src/foo.ts", "export const a = 1;\n");
+    gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "init");
+
+    await write(rootDir, "src/foo.ts", "export const a = 2;\n");
+    gitAt(rootDir, "2024-12-01T00:00:00", "add", "src/foo.ts");
+    gitAt(rootDir, "2024-12-01T00:00:00", "commit", "-m", "change code months later");
+
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "staleness", status: "evaluated" });
+    expect(findings).toEqual([]);
+  });
+
+  it("still flags an in-progress feature's docs", async () => {
+    const rootDir = await createRoot("stale-inprogress");
+    await initRepo(rootDir);
+    await write(rootDir, "docs/40-features/F-001-x/PRD.md", "# PRD\n\nBuilds `src/foo.ts`.\n");
+    await write(rootDir, "src/foo.ts", "export const a = 1;\n");
+    gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "init");
+
+    await write(rootDir, "src/foo.ts", "export const a = 2;\n");
+    gitAt(rootDir, "2024-12-01T00:00:00", "add", "src/foo.ts");
+    gitAt(rootDir, "2024-12-01T00:00:00", "commit", "-m", "change code months later");
+
+    const { findings } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "staleness",
+        path: "docs/40-features/F-001-x/PRD.md",
+      }),
+    );
+  });
+
   it("reports not-evaluated when no feature or module folders exist", async () => {
     const rootDir = await createRoot("stale-nofolders");
     await initRepo(rootDir);
@@ -179,7 +271,7 @@ describe("doctor staleness check", () => {
       id: "staleness",
       status: "not-evaluated",
       reason:
-        "no feature or module folders exist, so there is no memory to compare against code history",
+        "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to compare against code history",
     });
   });
 });

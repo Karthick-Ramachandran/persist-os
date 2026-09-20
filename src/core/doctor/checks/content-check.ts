@@ -8,6 +8,7 @@ const acceptedAdrPattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 
 const SECURITY_MODEL_PATH = "docs/20-security/SECURITY_MODEL.md";
 const THREAT_MODEL_PATH = "docs/20-security/THREAT_MODEL.md";
+const PRODUCT_DOC = "00-product/PRODUCT.md";
 
 /**
  * Content-completeness check.
@@ -80,6 +81,7 @@ export async function checkContent(context: DoctorCheckContext): Promise<Content
 
   if (hasWork) {
     findings.push(...(await checkSecurityDoc(context.rootDir)));
+    findings.push(...(await checkProductDoc(context.rootDir, context.config.docsDir)));
   }
 
   for (const folder of moduleFolders) {
@@ -146,6 +148,41 @@ async function checkSecurityDoc(rootDir: string): Promise<DoctorFinding[]> {
   return findings;
 }
 
+/**
+ * The required product file, once the repository has work. CONVENTIONS.md is deliberately not
+ * repeated here: the conventions check already owns its template detection, and one gap should
+ * produce one warning, not two.
+ */
+async function checkProductDoc(rootDir: string, docsDir: string): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const productPath = path.posix.join(docsDir, PRODUCT_DOC);
+  const product = await readFileIfExists(rootDir, productPath);
+
+  if (product === undefined) {
+    return findings;
+  }
+
+  if (sectionIsUnfilled(product, "Purpose")) {
+    findings.push({
+      severity: "warning",
+      check: "content-product",
+      message: "Product purpose is still an unfilled template.",
+      path: productPath,
+    });
+  }
+
+  if (sectionIsUnfilled(product, "Users")) {
+    findings.push({
+      severity: "warning",
+      check: "content-product",
+      message: "Product users section is still an unfilled template.",
+      path: productPath,
+    });
+  }
+
+  return findings;
+}
+
 function sectionIsUnfilled(content: string, heading: string): boolean {
   const section = getSection(content, heading);
   return section !== undefined && isUnfilled(section);
@@ -177,7 +214,9 @@ function isUnfilled(value: string): boolean {
     normalized.includes("describe why this feature exists") ||
     normalized.includes("describe what this module owns") ||
     normalized.includes("describe how this repository authenticates") ||
-    normalized.includes("describe what this repository must protect")
+    normalized.includes("describe what this repository must protect") ||
+    normalized.includes("describe what this repository is building and why") ||
+    normalized.includes("describe who this is for")
   );
 }
 

@@ -26,6 +26,28 @@ describe("doctor code-reference checks", () => {
     await writeFile(path.join(moduleDir, "MODULE.md"), `# Module\n\n${body}\n`, "utf8");
   }
 
+  async function writeAdr(rootDir: string, body: string): Promise<void> {
+    const adrDir = path.join(rootDir, "docs/adrs");
+    await mkdir(adrDir, { recursive: true });
+    await writeFile(path.join(adrDir, "ADR-0001-example.md"), `# ADR-0001\n\n${body}\n`, "utf8");
+  }
+
+  async function writeSource(rootDir: string, relativePath: string): Promise<void> {
+    const full = path.join(rootDir, relativePath);
+    await mkdir(path.dirname(full), { recursive: true });
+    await writeFile(full, "export {};\n", "utf8");
+  }
+
+  async function writeFeatureDoc(
+    rootDir: string,
+    fileName: string,
+    content: string,
+  ): Promise<void> {
+    const featureDir = path.join(rootDir, "docs/40-features/F-001-x");
+    await mkdir(featureDir, { recursive: true });
+    await writeFile(path.join(featureDir, fileName), content, "utf8");
+  }
+
   it("flags a module that references a source path which does not exist", async () => {
     const rootDir = await createRoot("coderef-missing");
     await mkdir(path.join(rootDir, "src/lib"), { recursive: true });
@@ -62,7 +84,93 @@ describe("doctor code-reference checks", () => {
     expect(findings).toEqual([]);
   });
 
-  it("reports not-evaluated when no feature or module folders exist", async () => {
+  it("flags an ADR that references a source path which does not exist", async () => {
+    const rootDir = await createRoot("coderef-adr-missing");
+    await writeSource(rootDir, "src/lib/store.ts");
+    await writeAdr(rootDir, "Owns `src/lib/store.ts` and `src/does/not/exist.ts`.");
+
+    const { findings, outcome } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "code-references", status: "evaluated" });
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "drift-code-reference",
+        message: "Repository memory references src/does/not/exist.ts, which does not exist.",
+        path: "docs/adrs/ADR-0001-example.md",
+      }),
+    );
+    expect(findings).not.toContainEqual(
+      expect.objectContaining({ message: expect.stringContaining("src/lib/store.ts") }),
+    );
+  });
+
+  it("stays quiet on healthy ADRs and conventions", async () => {
+    const rootDir = await createRoot("coderef-healthy");
+    await writeSource(rootDir, "src/lib/store.ts");
+    await writeAdr(rootDir, "Owns `src/lib/store.ts`.");
+    const conventionsDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(conventionsDir, { recursive: true });
+    await writeFile(
+      path.join(conventionsDir, "CONVENTIONS.md"),
+      "# Conventions\n\nReuse `src/lib/store.ts`.\n",
+      "utf8",
+    );
+
+    const { findings, outcome } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "code-references", status: "evaluated" });
+    expect(findings).toEqual([]);
+  });
+
+  it("treats a completed feature's docs as history", async () => {
+    const rootDir = await createRoot("coderef-history");
+    await writeFeatureDoc(
+      rootDir,
+      "ARCHITECTURE_IMPACT.md",
+      "# Architecture Impact\n\nBuilt `src/lib/removed.ts`.\n",
+    );
+    await writeFeatureDoc(rootDir, "COMPLETION_REPORT.md", "# Completion Report\n");
+
+    const { findings, outcome } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "code-references", status: "evaluated" });
+    expect(findings).toEqual([]);
+  });
+
+  it("still flags an in-progress feature's docs", async () => {
+    const rootDir = await createRoot("coderef-inprogress");
+    await writeFeatureDoc(
+      rootDir,
+      "ARCHITECTURE_IMPACT.md",
+      "# Architecture Impact\n\nBuilds `src/lib/removed.ts`.\n",
+    );
+
+    const { findings } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "drift-code-reference",
+        message: "Repository memory references src/lib/removed.ts, which does not exist.",
+        path: "docs/40-features/F-001-x/ARCHITECTURE_IMPACT.md",
+      }),
+    );
+  });
+
+  it("reports not-evaluated when no scannable memory exists", async () => {
     const rootDir = await createRoot("coderef-empty");
 
     const { findings, outcome } = await checkCodeReferences({
@@ -75,7 +183,7 @@ describe("doctor code-reference checks", () => {
       id: "code-references",
       status: "not-evaluated",
       reason:
-        "no feature or module folders exist, so there is no memory to scan for code references",
+        "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to scan for code references",
     });
   });
 });

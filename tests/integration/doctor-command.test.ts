@@ -324,7 +324,9 @@ Example consequence text.
     expect(parsed.schemaVersion).toBe("persist.doctor.v1");
     expect(parsed.status).toBe("passed");
     expect(parsed.exitCode).toBe(0);
-    expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0, info: 1 });
-    expect(parsed.findings).toHaveLength(1);
+    // One config info plus the three memory-integrity count infos (features, modules,
+    // ADRs), which now evaluate on a bare init instead of abstaining.
+    expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0, info: 4 });
+    expect(parsed.findings).toHaveLength(4);
   });
 });

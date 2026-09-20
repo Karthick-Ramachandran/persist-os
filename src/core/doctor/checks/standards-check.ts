@@ -37,6 +37,8 @@ export async function checkStandards(context: DoctorCheckContext): Promise<Stand
 
   findings.push(...(await checkFeatureStandards(rootDir, config.featuresDir)));
   findings.push(...(await checkAdrStandards(rootDir, config.adrDir)));
+  findings.push(...(await checkAdrAlternatives(rootDir, config.adrDir)));
+  findings.push(...(await checkAdrSecurityNotes(rootDir, config.adrDir)));
 
   return { findings, outcome: { id: "standards", status: "evaluated" } };
 }
@@ -136,6 +138,101 @@ async function checkAdrStandards(rootDir: string, adrDir: string): Promise<Docto
   }
 
   return findings;
+}
+
+/**
+ * A decision without alternatives: the Alternatives Considered section must carry substance,
+ * not just exist (presence alone is memory-integrity's check). Severity mirrors the
+ * consequences rule — an accepted ADR with a placeholder here is an error, a proposed one
+ * a warning.
+ */
+async function checkAdrAlternatives(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const entries = await readDirIfExists(rootDir, adrDir);
+  const adrFiles = entries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+
+  for (const adrFile of adrFiles) {
+    const adrPath = path.posix.join(adrDir, adrFile.name);
+    const content = await readFile(path.join(rootDir, adrPath), "utf8");
+    const isAccepted = sectionContains(content, "Status", /\baccepted\b/iu);
+
+    if (!hasMeaningfulSection(content, "Alternatives Considered")) {
+      findings.push({
+        severity: isAccepted ? "error" : "warning",
+        check: "standards-adr-alternatives",
+        message: "ADR decision evidence is incomplete.",
+        path: adrPath,
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Security-sensitive decisions without security notes: when the Decision section itself uses
+ * security-sensitive language, the ADR must point its `Security:` entry under
+ * `## Related Documents` at something.
+ *
+ * That entry is the right anchor because `generate-adr.ts` already emits it in every ADR, so the
+ * check asks for a field the tool creates rather than a `## Security` heading it has never
+ * produced. Requiring a heading warned on every correctly-written ADR forever; requiring the
+ * security prose itself would be circular, since the same vocabulary that marks a decision as
+ * security-sensitive would also satisfy the check, and the rule could never fire.
+ *
+ * Always a warning — erroring would break builds over a heuristic and force edits to accepted
+ * history (see F-034 PRD). It confirms the author linked the security memory they considered; a
+ * pasted path satisfies it. Judging whether the reasoning is any good is the agent's job.
+ */
+async function checkAdrSecurityNotes(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
+  const findings: DoctorFinding[] = [];
+  const entries = await readDirIfExists(rootDir, adrDir);
+  const adrFiles = entries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+
+  for (const adrFile of adrFiles) {
+    const adrPath = path.posix.join(adrDir, adrFile.name);
+    const content = await readFile(path.join(rootDir, adrPath), "utf8");
+    const decision = getSection(content, "Decision");
+
+    if (decision === undefined || !securitySensitivePattern.test(decision)) {
+      continue;
+    }
+
+    if (!hasMeaningfulSecurityNotes(content)) {
+      findings.push({
+        severity: "warning",
+        check: "standards-adr-security-notes",
+        message:
+          "Security-sensitive ADR decision does not link security memory. Fill the `Security:` entry under `## Related Documents`.",
+        path: adrPath,
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * True when the ADR's `Security:` entry under `## Related Documents` points at something.
+ * A missing section, a missing entry, or an entry left as the generated empty placeholder all
+ * count as unlinked.
+ */
+function hasMeaningfulSecurityNotes(content: string): boolean {
+  const related = getSection(content, "Related Documents");
+
+  if (related === undefined) {
+    return false;
+  }
+
+  const entry = /^\s*[-*]\s*Security:\s*(.*)$/imu.exec(related);
+
+  if (entry === null) {
+    return false;
+  }
+
+  const value = (entry[1] ?? "").trim();
+
+  return value.length > 0 && !isPlaceholder(value);
 }
 
 function checkSecurityImpactEvidence(

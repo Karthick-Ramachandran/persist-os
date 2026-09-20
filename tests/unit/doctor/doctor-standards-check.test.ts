@@ -174,6 +174,114 @@ describe("doctor standards checks", () => {
     );
   });
 
+  it("reports accepted ADRs with placeholder alternatives as errors", async () => {
+    const rootDir = await createRoot("doctor-standards-alternatives");
+    await writeAdrFull(rootDir, {
+      status: "Accepted",
+      alternatives: "TBD",
+      consequences: "Real consequence text.",
+    });
+
+    const { findings } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "error",
+        check: "standards-adr-alternatives",
+        message: "ADR decision evidence is incomplete.",
+      }),
+    );
+    expect(findings).not.toContainEqual(
+      expect.objectContaining({ check: "standards-adr-consequences" }),
+    );
+  });
+
+  it("warns on proposed ADRs with placeholder alternatives", async () => {
+    const rootDir = await createRoot("doctor-standards-proposed-alternatives");
+    await writeAdrFull(rootDir, {
+      status: "Proposed",
+      alternatives: "TBD",
+      consequences: "Real consequence text.",
+    });
+
+    const { findings } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "standards-adr-alternatives",
+      }),
+    );
+    expect(findings.filter((finding) => finding.severity === "error")).toEqual([]);
+  });
+
+  it("warns when a security-sensitive decision links no security memory", async () => {
+    const rootDir = await createRoot("doctor-standards-security-notes");
+    await writeAdrFull(rootDir, {
+      status: "Accepted",
+      decision: "Route authentication through the MCP gateway with network retries.",
+      alternatives: "Real alternative text.",
+      consequences: "Real consequence text.",
+    });
+
+    const { findings } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "standards-adr-security-notes",
+        message:
+          "Security-sensitive ADR decision does not link security memory. Fill the `Security:` entry under `## Related Documents`.",
+      }),
+    );
+    expect(findings.filter((finding) => finding.severity === "error")).toEqual([]);
+  });
+
+  it("stays quiet when the Security entry under Related Documents is filled", async () => {
+    const rootDir = await createRoot("doctor-standards-security-noted");
+    await writeAdrFull(rootDir, {
+      status: "Accepted",
+      decision: "Route authentication through the MCP gateway with network retries.",
+      alternatives: "Real alternative text.",
+      consequences: "Real consequence text.",
+      securityNotes: "`docs/20-security/SECURITY_MODEL.md`",
+    });
+
+    const { findings } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("stays quiet on a healthy ADR", async () => {
+    const rootDir = await createRoot("doctor-standards-healthy");
+    await writeAdrFull(rootDir, {
+      status: "Accepted",
+      decision: "Record the choice in a new ADR file.",
+      alternatives: "Real alternative text.",
+      consequences: "Real consequence text.",
+    });
+
+    const { findings, outcome } = await checkStandards({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(outcome).toEqual({ id: "standards", status: "evaluated" });
+    expect(findings).toEqual([]);
+  });
+
   it("reports not-evaluated when no features or ADRs exist", async () => {
     const rootDir = await createRoot("standards-empty");
 
@@ -247,6 +355,51 @@ ${options.reviewStatus}
 ## Security Impact
 
 - No security impact.
+`,
+    "utf8",
+  );
+}
+
+async function writeAdrFull(
+  rootDir: string,
+  options: {
+    status: string;
+    decision?: string;
+    alternatives?: string;
+    consequences?: string;
+    securityNotes?: string;
+  },
+): Promise<void> {
+  const adrDir = path.join(rootDir, "docs/adrs");
+  await mkdir(adrDir, { recursive: true });
+  await writeFile(
+    path.join(adrDir, "ADR-0001-example.md"),
+    `# ADR-0001: Example
+
+## Status
+
+${options.status}
+
+## Context
+
+Example context.
+
+## Decision
+
+${options.decision ?? "Example decision."}
+
+## Alternatives Considered
+
+${options.alternatives ?? "Example alternative."}
+
+## Consequences
+
+${options.consequences ?? "Example consequence."}
+
+## Related Documents
+
+- Example.
+- Security:${options.securityNotes === undefined ? "" : ` ${options.securityNotes}`}
 `,
     "utf8",
   );

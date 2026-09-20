@@ -36,6 +36,21 @@ async function fillScaffoldDocs(rootDir: string): Promise<void> {
     ),
     "utf8",
   );
+  const productPath = path.join(rootDir, "docs/00-product/PRODUCT.md");
+  const product = await readFile(productPath, "utf8");
+  await writeFile(
+    productPath,
+    product
+      .replace(
+        "Describe what this repository is building and why.",
+        "A billing ledger service. Replaces the template sentence:",
+      )
+      .replace(
+        "Describe who this is for and what success looks like for them.",
+        "Operators who need auditable invoices. Replaces the template sentence:",
+      ),
+    "utf8",
+  );
 }
 
 function git(rootDir: string, ...args: string[]): void {
@@ -55,7 +70,7 @@ describe("minimal-by-default memory", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("passes doctor on a minimal repo with inapplicable checks not-evaluated", async () => {
+  it("evaluates the re-pointed checks on a minimal repo", async () => {
     const rootDir = await createRoot("minimal-doctor");
     await runInitCommand(rootDir);
     git(rootDir, "init");
@@ -64,10 +79,19 @@ describe("minimal-by-default memory", () => {
 
     const report = await runDoctor(rootDir);
 
-    for (const id of FIVE_CHECKS) {
+    // The re-pointed checks evaluate the surviving memory: required docs exist, so
+    // memory-integrity evaluates; conventions exist, so code-references evaluates; the
+    // uncommitted docs have no history to compare, so staleness evaluates quietly.
+    for (const id of ["memory-integrity", "code-references", "staleness"]) {
+      expect(report.checks.find((check) => check.id === id)?.status, id).toBe("evaluated");
+    }
+    expect(report.findings.filter((finding) => finding.severity === "error")).toEqual([]);
+
+    // Standards and content still abstain: no features, ADRs, or work exist to judge.
+    for (const id of ["standards", "content"]) {
       const outcome = report.checks.find((check) => check.id === id);
       expect(outcome?.status, id).toBe("not-evaluated");
-      expect(outcome?.reason, id).toMatch(/no .* exist|not a git repository/);
+      expect(outcome?.reason, id).toMatch(/no .* exist/);
     }
 
     const result = await runCommand(rootDir, ["doctor"]);

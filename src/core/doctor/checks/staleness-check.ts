@@ -9,6 +9,14 @@ import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../d
 const execFileAsync = promisify(execFile);
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
+
+const CONVENTIONS_DOC = "60-engineering/CONVENTIONS.md";
+const COMPLETION_REPORT = "COMPLETION_REPORT.md";
+
+// Planning docs of a feature folder containing a completion report are history, not
+// current-state memory: they describe what was built at the time and are skipped, the same
+// classification the code-reference check applies.
 const FEATURE_DOCS = ["PRD.md", "ARCHITECTURE_IMPACT.md"];
 const MODULE_DOCS = ["MODULE.md", "DECISIONS.md"];
 
@@ -26,11 +34,12 @@ export type StalenessCheckResult = {
 };
 
 /**
- * Deterministic, read-only staleness heuristic. For current-state memory that cites an existing
- * `src/`/`tests/` file, it compares the memory's last git commit to the file's last commit; if the
- * code changed far more recently, the memory may have drifted. It only runs inside a git repository
- * with full history — outside git, or in a shallow clone where every file reports the same commit
- * time, it reports not-evaluated with the reason instead of an empty pass. It is a heuristic nudge
+ * Deterministic, read-only staleness heuristic. For current-state memory (ADRs, conventions,
+ * and in-progress feature and module docs) that cites an existing `src/`/`tests/` file, it
+ * compares the memory's last git commit to the file's last commit; if the code changed far
+ * more recently, the memory may have drifted. It only runs inside a git repository with full
+ * history — outside git, or in a shallow clone where every file reports the same commit time,
+ * it reports not-evaluated with the reason instead of an empty pass. It is a heuristic nudge
  * (warning) — confirming a real contradiction is the agent's job, not the gate's.
  */
 export async function checkStaleness(context: DoctorCheckContext): Promise<StalenessCheckResult> {
@@ -54,10 +63,16 @@ export async function checkStaleness(context: DoctorCheckContext): Promise<Stale
   );
   const moduleEntries = await readDirIfExists(context.rootDir, context.config.modulesDir);
   const hasModules = moduleEntries.some((folder) => folder.isDirectory());
+  const adrEntries = await readDirIfExists(context.rootDir, context.config.adrDir);
+  const hasAdrs = adrEntries.some((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+  const conventions = await readFileIfExists(
+    context.rootDir,
+    path.posix.join(context.config.docsDir, CONVENTIONS_DOC),
+  );
 
-  if (!hasFeatures && !hasModules) {
+  if (!hasFeatures && !hasModules && !hasAdrs && conventions === undefined) {
     return notEvaluated(
-      "no feature or module folders exist, so there is no memory to compare against code history",
+      "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to compare against code history",
     );
   }
 
@@ -127,10 +142,25 @@ async function collectDocPaths(
 ): Promise<string[]> {
   const paths: string[] = [];
 
+  for (const entry of await readDirIfExists(rootDir, config.adrDir)) {
+    if (entry.isFile() && adrFilePattern.test(entry.name)) {
+      paths.push(path.posix.join(config.adrDir, entry.name));
+    }
+  }
+
+  const conventionsPath = path.posix.join(config.docsDir, CONVENTIONS_DOC);
+  if ((await readFileIfExists(rootDir, conventionsPath)) !== undefined) {
+    paths.push(conventionsPath);
+  }
+
   for (const folder of await readDirIfExists(rootDir, config.featuresDir)) {
     if (folder.isDirectory() && featureFolderPattern.test(folder.name)) {
+      const featureDir = path.posix.join(config.featuresDir, folder.name);
+      if (await isCompletedFeature(rootDir, featureDir)) {
+        continue;
+      }
       for (const doc of FEATURE_DOCS) {
-        paths.push(path.posix.join(config.featuresDir, folder.name, doc));
+        paths.push(path.posix.join(featureDir, doc));
       }
     }
   }
@@ -144,6 +174,12 @@ async function collectDocPaths(
   }
 
   return paths;
+}
+
+async function isCompletedFeature(rootDir: string, featureDir: string): Promise<boolean> {
+  return (
+    (await readFileIfExists(rootDir, path.posix.join(featureDir, COMPLETION_REPORT))) !== undefined
+  );
 }
 
 async function isGitRepository(rootDir: string): Promise<boolean> {

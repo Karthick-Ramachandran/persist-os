@@ -47,6 +47,21 @@ async function fillScaffoldDocs(rootDir: string): Promise<void> {
     ),
     "utf8",
   );
+  const productPath = path.join(rootDir, "docs/00-product/PRODUCT.md");
+  const product = await readFile(productPath, "utf8");
+  await writeFile(
+    productPath,
+    product
+      .replace(
+        "Describe what this repository is building and why.",
+        "A billing ledger service. Replaces the template sentence:",
+      )
+      .replace(
+        "Describe who this is for and what success looks like for them.",
+        "Operators who need auditable invoices. Replaces the template sentence:",
+      ),
+    "utf8",
+  );
 }
 
 async function fillModuleDoc(rootDir: string, name: string): Promise<void> {
