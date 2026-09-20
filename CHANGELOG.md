@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.1.0
+
+### `persist init` explains itself
+
+Every question now says what happens when it is on, what happens when it is off, and marks a
+recommendation where there is one. "Enable the Chesterton fence? [Y/n]" asked people to decide on a
+feature they had never heard of.
+
+The detected test command used to print as a bare indented line above its question, reading as
+output from whatever came before. Explanations are part of the prompt now, separated from the
+previous answer so they group with the question below them.
+
+### Defaults no longer look like errors
+
+The default letter in `[Y/n]` was painted with the accent colour — terracotta, which in a terminal
+reads as red. It is bold and uncoloured now. The capital already carries the meaning; the colour was
+adding alarm.
+
+### A wordmark on init
+
+`persist init` draws the Persist OS wordmark when the terminal is at least 54 columns. Narrower
+terminals, and pipes where the width is unknown, keep the compact masthead — a broken wordmark is
+worse than none.
+
+### Fixed
+
+**`superseded-check` was flagging history.** A feature folder containing a completion report
+describes what was built at the time; its citation of a decision later superseded is accurate rather
+than stale. `code-reference` and `staleness` already knew this; `superseded` did not, so every
+finished feature citing a replaced decision warned forever. On this repository that was seven of
+nine warnings.
+
 ## 1.0.1
 
 Documentation only. No code changes.
