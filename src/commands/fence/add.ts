@@ -1,14 +1,16 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { getStyle } from "../../cli/style.js";
 import { ConfigValidationError } from "../../core/config/config-schema.js";
-import { createDefaultConfig } from "../../core/config/default-config.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
 import {
   FENCES_FILE,
   FenceValidationError,
   addFenceEntry,
+  fenceFileKey,
+  normalizeFencePath,
 } from "../../core/fence/generate-fence.js";
 import { executeWritePlan, type WriteResult } from "../../core/filesystem/write-file-safe.js";
 import { createWritePlan, type WritePlan } from "../../core/filesystem/write-plan.js";
@@ -33,7 +35,7 @@ export type FenceAddResult = {
   writeResult: WriteResult;
 };
 
-export type FenceAddErrorCode = "INVALID_FENCE" | "WRITE_PLAN_ERROR";
+export type FenceAddErrorCode = "INVALID_FENCE" | "WRITE_PLAN_ERROR" | "NOT_INITIALIZED";
 
 export class FenceAddError extends Error {
   readonly code: FenceAddErrorCode;
@@ -59,7 +61,12 @@ export class FenceAddError extends Error {
  * because the file is read by path and two headings for one path would make the reason ambiguous.
  */
 export async function addFence(options: FenceAddOptions): Promise<FenceAddResult> {
-  const config = await loadConfigOrDefault(options.rootDir);
+  const config = await loadRepoConfig(options.rootDir);
+  const fencedPath = normalizeFenceOption(options.path);
+  // A fence on a missing path records cleanly and then warns on every doctor run — the
+  // command contradicting the gate on the next invocation. Check the recorded file part
+  // (a `:symbol` suffix names no file) before anything is written, dry runs included.
+  assertFenceTargetExists(options.rootDir, fencedPath);
   const fencesPath = path.posix.join(config.docsDir, FENCES_FILE);
   const existing = await readFileIfExists(options.rootDir, fencesPath);
 
@@ -143,12 +150,44 @@ async function readFileIfExists(
   }
 }
 
-async function loadConfigOrDefault(rootDir: string) {
+/**
+ * Normalize the requested path once, so existence is checked against what gets recorded
+ * rather than the raw input. Shape errors surface here with the same code as below.
+ */
+function normalizeFenceOption(raw: string): string {
+  try {
+    return normalizeFencePath(raw);
+  } catch (error) {
+    if (error instanceof FenceValidationError) {
+      throw new FenceAddError("INVALID_FENCE", error.message);
+    }
+    throw error;
+  }
+}
+
+function assertFenceTargetExists(rootDir: string, fencedPath: string): void {
+  const target = fenceFileKey(fencedPath);
+  if (!existsSync(path.join(rootDir, target))) {
+    throw new FenceAddError(
+      "INVALID_FENCE",
+      `\`${target}\` does not exist in this repository — fix the path; a fence on a missing file warns on every doctor run.`,
+    );
+  }
+}
+
+// Fence add requires an initialized repository, unlike the generators (skill create, mcp
+// add) and adopt: those bootstrap a repo or emit standalone files, while a fence entry is
+// only ever read by its own repository's loop — SessionStart index, fence warning, doctor.
+// The default-config fallback scattered dead FENCES.md files into bare directories.
+async function loadRepoConfig(rootDir: string) {
   try {
     return await loadConfig(rootDir);
   } catch (error) {
     if (error instanceof ConfigLoadError || error instanceof ConfigValidationError) {
-      return createDefaultConfig();
+      throw new FenceAddError(
+        "NOT_INITIALIZED",
+        "No Persist OS config found — run `persist init` in this repository first. A fence is only read inside its own repository, so one recorded outside it is never loaded.",
+      );
     }
 
     throw error;

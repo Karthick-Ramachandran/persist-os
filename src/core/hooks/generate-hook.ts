@@ -7,6 +7,29 @@ export const SESSION_START_HOOK_PATH = ".claude/hooks/session-start.sh";
 export const CLAUDE_SETTINGS_PATH = ".claude/settings.json";
 
 /**
+ * The always-loaded budget both the SessionStart hook and the doctor context-budget check
+ * measure against. One constant, two readers: the hook truncates the fence index to what
+ * fits inside it, and the check warns when the index no longer fits at all.
+ */
+export const ALWAYS_LOADED_BUDGET_BYTES = 24 * 1024;
+
+/**
+ * The base context the SessionStart hook injects before the fence index. Exported (rather
+ * than embedded in the shell template) so the budget check subtracts the exact same bytes
+ * the hook emits — `${...}` here is shell, not interpolation.
+ */
+export const SESSION_START_BASE_CONTEXT =
+  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): ${adrs:-none yet}. Modules (docs/30-modules/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself; do not web-search them. Run 'persist doctor' before claiming work complete.";
+
+/** The label the hook places between the base context and the fence index. */
+export const FENCE_INDEX_LABEL =
+  " Chesterton fence index (recorded rationale; full history in docs/60-engineering/FENCES.md): ";
+
+/** Marker the hook appends when the fence index is truncated to the budget. */
+export const FENCE_INDEX_TRUNCATION_MARKER =
+  "... (fence index truncated to the context budget; read docs/60-engineering/FENCES.md)";
+
+/**
  * Render a deterministic POSIX `sh` Claude Code SessionStart hook.
  *
  * Claude Code runs this before the first prompt of every session and injects its stdout
@@ -34,14 +57,14 @@ modules=$(ls -d docs/30-modules/*/ 2>/dev/null | sed 's|docs/30-modules/||;s|/$|
 # Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.
 # A missing file means no fence crossed yet (FENCES.md is never required), and an empty index
 # injects nothing — silence is the correct signal in both cases.
-base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (docs/adrs/): \${adrs:-none yet}. Modules (docs/30-modules/): \${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself; do not web-search them. Run 'persist doctor' before claiming work complete."
+base="${SESSION_START_BASE_CONTEXT}"
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' docs/60-engineering/FENCES.md 2>/dev/null | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
 if [ -n "$full" ]; then
-  label=" Chesterton fence index (recorded rationale; full history in docs/60-engineering/FENCES.md): "
+  label="${FENCE_INDEX_LABEL}"
   loaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
-  room=$((24576 - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ')))
-  marker="... (fence index truncated to the context budget; read docs/60-engineering/FENCES.md)"
+  room=$((${ALWAYS_LOADED_BUDGET_BYTES} - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ')))
+  marker="${FENCE_INDEX_TRUNCATION_MARKER}"
   m=$(printf '%s' "$marker" | wc -c | tr -d ' ')
   if [ "$room" -le 0 ]; then
     fences="$marker"

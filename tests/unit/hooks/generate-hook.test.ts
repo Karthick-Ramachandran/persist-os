@@ -6,9 +6,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ALWAYS_LOADED_BUDGET_BYTES,
+  FENCE_INDEX_LABEL,
+  FENCE_INDEX_TRUNCATION_MARKER,
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
+  SESSION_START_BASE_CONTEXT,
   SESSION_START_HOOK_PATH,
   renderClaudeSettings,
   renderPreCommitHook,
@@ -213,6 +217,19 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
     expect(context).toContain("four collections deliberately");
     expect(context).not.toContain("Crossings");
     expect(context).not.toContain("constraint confirmed by H.");
+  });
+
+  it("exposes the exact strings the budget check measures against", () => {
+    // The doctor context-budget check subtracts these constants from the budget. If the
+    // rendered hook ever stopped emitting them verbatim, the check would measure a fiction —
+    // so the constants are asserted against the rendered output, not just imported.
+    const hook = renderSessionStartHook();
+
+    expect(ALWAYS_LOADED_BUDGET_BYTES).toBe(24 * 1024);
+    expect(hook).toContain(`base="${SESSION_START_BASE_CONTEXT}"`);
+    expect(hook).toContain(`label="${FENCE_INDEX_LABEL}"`);
+    expect(hook).toContain(`marker="${FENCE_INDEX_TRUNCATION_MARKER}"`);
+    expect(hook).toContain(`room=$((${ALWAYS_LOADED_BUDGET_BYTES} - loaded`);
   });
 
   it("truncates a large FENCES.md to the budget with a marker", async () => {

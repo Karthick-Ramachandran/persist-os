@@ -45,6 +45,48 @@ describe("doctor context-budget check", () => {
     );
   });
 
+  it("stays silent for a fence index that fits the budget", async () => {
+    const rootDir = await createRoot("budget-fences-fit");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "# Agents\n\nShort floor.\n", "utf8");
+    const fencesDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(fencesDir, { recursive: true });
+    await writeFile(
+      path.join(fencesDir, "FENCES.md"),
+      ["# Fences", "", "## `src/billing.ts`", "Why: four writes are deliberate.", ""].join("\n"),
+      "utf8",
+    );
+
+    const findings = await checkContextBudget({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("warns when the fence index outgrows its share of the budget", async () => {
+    // The SessionStart hook injects the fence index into every session, so it is
+    // always-loaded weight — but truncation hid its growth from this check entirely.
+    const rootDir = await createRoot("budget-fences-over");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "# Agents\n", "utf8");
+    const lines = ["# Fences", ""];
+    for (let i = 0; i < 1500; i += 1) {
+      lines.push(`## \`src/mod/file${String(i).padStart(4, "0")}.ts\``);
+      lines.push(`Why: reason number ${i}; do not merge the handlers.`);
+      lines.push("");
+    }
+    const fencesDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(fencesDir, { recursive: true });
+    await writeFile(path.join(fencesDir, "FENCES.md"), lines.join("\n"), "utf8");
+
+    const findings = await checkContextBudget({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "context-budget",
+        message: expect.stringContaining("fence"),
+      }),
+    );
+  });
+
   it("counts a Cursor rule toward the budget", async () => {
     const rootDir = await createRoot("budget-cursor");
     const cursorDir = path.join(rootDir, ".cursor/rules");
