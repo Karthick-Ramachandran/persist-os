@@ -1,6 +1,12 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  extractAdrTitle,
+  isLiveAcceptedAdr,
+  isSupersededAdr,
+  normalizeAdrTitle,
+} from "../../core/adr/adr-titles.js";
 import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
 import { resolveSafePath } from "../../core/filesystem/safe-path.js";
@@ -36,6 +42,7 @@ export type AdrSupersedeErrorCode =
   | "INVALID_ADR_NAME"
   | "NOT_FOUND"
   | "NOT_ACCEPTED"
+  | "DUPLICATE_TITLE"
   | "WRITE_PLAN_ERROR";
 
 export class AdrSupersedeError extends Error {
@@ -60,6 +67,22 @@ export async function supersedeAdr(options: AdrSupersedeOptions): Promise<AdrSup
   const old = await findAcceptedAdr(adrDirAbsolute, oldSlug);
   const next = await getNextAdrNumber(adrDirAbsolute);
   const oldRef = old.fileName.replace(/\.md$/u, "");
+
+  // Prevent the drift rather than report it afterwards: refuse a replacement title that a
+  // live decision (or another proposal) already holds. The superseded old file itself is
+  // excluded — its title vacates — as are superseded records, which are history.
+  const collision = await findTitleCollision(adrDirAbsolute, options.newTitle, old.fileName);
+  if (collision !== null) {
+    throw new AdrSupersedeError(
+      "DUPLICATE_TITLE",
+      `An ADR titled "${collision.title}" already exists (${collision.file}).`,
+      [
+        collision.live
+          ? "Retitle the new decision, or supersede the existing one instead of paralleling it."
+          : "Retitle the new decision, or resolve the proposal first (accept, retitle, or remove it).",
+      ],
+    );
+  }
 
   // The new, accepted decision that records why the old one changed.
   const superseding = generateSupersedingAdr({
@@ -96,6 +119,57 @@ export async function supersedeAdr(options: AdrSupersedeOptions): Promise<AdrSup
       dryRun: options.dryRun ?? false,
     },
   };
+}
+
+/**
+ * A replacement title colliding with a live decision (or another proposal) recreates the
+ * duplicate-title drift the doctor check reports — refuse it and point at the existing file.
+ * The file being superseded is excluded, and superseded records are history.
+ */
+async function findTitleCollision(
+  adrDirAbsolute: string,
+  newTitle: string,
+  oldFileName: string,
+): Promise<{ file: string; title: string; live: boolean } | null> {
+  const wanted = normalizeAdrTitle(newTitle);
+
+  let entries;
+  try {
+    entries = await readdir(adrDirAbsolute, { withFileTypes: true });
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+
+  const files = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== oldFileName)
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+
+  for (const file of files) {
+    let content: string;
+    try {
+      content = await readFile(path.join(adrDirAbsolute, file), "utf8");
+    } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === "ENOENT") {
+        continue;
+      }
+      throw error;
+    }
+
+    const title = extractAdrTitle(content);
+    if (title === null || normalizeAdrTitle(title) !== wanted || isSupersededAdr(content)) {
+      continue;
+    }
+
+    return { file, title, live: isLiveAcceptedAdr(content) };
+  }
+
+  return null;
 }
 
 async function findAcceptedAdr(

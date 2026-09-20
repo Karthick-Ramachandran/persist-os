@@ -8,6 +8,7 @@ import { checkFence } from "./checks/fence-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
+import { checkDuplicateTitles } from "./checks/duplicate-titles-check.js";
 import { checkRetiredSkills } from "./checks/retired-skills-check.js";
 import { checkStaleness } from "./checks/staleness-check.js";
 import { checkStandards } from "./checks/standards-check.js";
@@ -78,6 +79,7 @@ const CONFIG_GATED_CHECKS = [
   "staleness",
   "hook-drift",
   "retired-skills",
+  "duplicate-titles",
   "fence",
 ] as const;
 
@@ -151,6 +153,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const retiredSkills = await checkRetiredSkills(context);
   findings.push(...retiredSkills.findings);
   checks.push(retiredSkills.outcome);
+
+  const duplicateTitles = await checkDuplicateTitles(context);
+  findings.push(...duplicateTitles.findings);
+  checks.push(duplicateTitles.outcome);
 
   const fence = await checkFence(context);
   findings.push(...fence.findings);

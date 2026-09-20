@@ -4,7 +4,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createDefaultConfig } from "../../../src/core/config/default-config.js";
-import { checkRetiredSkills } from "../../../src/core/doctor/checks/retired-skills-check.js";
+import {
+  RETIRED_SKILL_NAMES,
+  checkRetiredSkills,
+} from "../../../src/core/doctor/checks/retired-skills-check.js";
 import { createTempRoot, removeTempRoot } from "../../helpers/init-test-helpers.js";
 
 describe("retired-skills check", () => {
@@ -30,10 +33,11 @@ describe("retired-skills check", () => {
     return { rootDir, config: createDefaultConfig() };
   }
 
-  it("warns with the removal command for a non-catalog skill", async () => {
+  it("warns with the removal command for a retired skill and stays silent for custom ones", async () => {
     const rootDir = await createRoot("retired-present");
     await writeSkill(rootDir, ".agents/skills", "plan-feature");
-    await writeSkill(rootDir, ".agents/skills", "old-custom-skill");
+    await writeSkill(rootDir, ".agents/skills", "write-tests");
+    await writeSkill(rootDir, ".agents/skills", "my-team-review");
 
     const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
 
@@ -42,25 +46,17 @@ describe("retired-skills check", () => {
     expect(findings[0]).toMatchObject({
       severity: "warning",
       check: "retired-skills",
-      path: ".agents/skills/old-custom-skill/SKILL.md",
+      path: ".agents/skills/write-tests/SKILL.md",
     });
-    expect(findings[0]?.message).toContain('"old-custom-skill"');
-    expect(findings[0]?.message).toContain("rm -rf .agents/skills/old-custom-skill");
+    expect(findings[0]?.message).toContain('"write-tests"');
+    expect(findings[0]?.message).toContain("rm -rf .agents/skills/write-tests");
+    expect(findings[0]?.message).not.toContain("hand-made");
   });
 
-  it("warns on each of the nine retired catalog ids", async () => {
+  it("warns on each of the nine retired skill names", async () => {
     const rootDir = await createRoot("retired-nine");
-    const retired = [
-      "create-prd",
-      "create-adr",
-      "plan-module",
-      "implement-task",
-      "write-tests",
-      "update-module-memory",
-      "completion-report",
-      "capture-mcp-context",
-      "architecture-drift-review",
-    ];
+    const retired = [...RETIRED_SKILL_NAMES];
+    expect(retired).toHaveLength(9);
     for (const name of retired) {
       await writeSkill(rootDir, ".agents/skills", name);
     }
@@ -95,13 +91,14 @@ describe("retired-skills check", () => {
     expect(findings).toEqual([]);
   });
 
-  it("stays quiet when the skills directories are absent", async () => {
+  it("reports not-evaluated with reason when the skills directories are absent", async () => {
     const rootDir = await createRoot("retired-absent");
 
     const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
 
-    expect(outcome).toEqual({ id: "retired-skills", status: "evaluated" });
     expect(findings).toEqual([]);
+    expect(outcome.status).toBe("not-evaluated");
+    expect(outcome.reason).toContain("no skills directories exist");
   });
 
   it("ignores stray files and directories without a SKILL.md", async () => {

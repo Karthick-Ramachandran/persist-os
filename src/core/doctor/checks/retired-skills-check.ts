@@ -1,10 +1,28 @@
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { listCatalogSkillNames } from "../../skills/skill-catalog.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 const SKILL_DIRS = [".claude/skills", ".agents/skills"] as const;
+
+/**
+ * Skills retired in 1.0 (ADR-0007). Warn only on these explicit names: "not in the catalog"
+ * conflates a skill we retired with a skill the user wrote, and a gate that permanently
+ * complains about `skill create` — a supported workflow — stops being read. Anything on disk
+ * but not on this list is custom and stays silent. Append here when a future release retires
+ * more; do not build a migration framework for it.
+ */
+export const RETIRED_SKILL_NAMES: ReadonlySet<string> = new Set([
+  "create-prd",
+  "create-adr",
+  "plan-module",
+  "implement-task",
+  "write-tests",
+  "update-module-memory",
+  "completion-report",
+  "capture-mcp-context",
+  "architecture-drift-review",
+]);
 
 export type RetiredSkillsCheckResult = {
   findings: DoctorFinding[];
@@ -12,43 +30,57 @@ export type RetiredSkillsCheckResult = {
 };
 
 /**
- * Migration-loosening check (ADR-0007): report on-disk skills that are no longer in the
- * built-in catalog. The catalog is the only history available, so a non-catalog skill is
- * either retired or hand-made — the message says so, names it, and gives the removal command,
- * and the user decides when to delete. Warning, never error: custom skills are legitimate.
- * Skills directories are generated output, not config, so absent directories mean a clean
- * repo and evaluate quietly.
+ * Migration-loosening check (ADR-0007): report on-disk skills we retired. The message knows
+ * the skill is retired, so it says so and gives the removal command without hedging. Warning,
+ * never error: the user decides when to delete. When neither skills directory exists there is
+ * nothing to compare, so the check reports not-evaluated instead of passing.
  */
 export async function checkRetiredSkills(
   context: DoctorCheckContext,
 ): Promise<RetiredSkillsCheckResult> {
-  const catalog = new Set(listCatalogSkillNames());
   const findings: DoctorFinding[] = [];
+  let sawDirectory = false;
 
   for (const skillsDir of SKILL_DIRS) {
-    for (const name of await listSkillNames(context.rootDir, skillsDir)) {
-      if (!catalog.has(name)) {
-        findings.push({
-          severity: "warning",
-          check: "retired-skills",
-          message: `Skill "${name}" is not in the built-in skill catalog (a retired skill or a hand-made custom skill). If retired, remove it with \`rm -rf ${skillsDir}/${name}\`; leave custom skills in place.`,
-          path: `${skillsDir}/${name}/SKILL.md`,
-        });
+    const names = await listSkillNames(context.rootDir, skillsDir);
+    if (names !== null) {
+      sawDirectory = true;
+      for (const name of names) {
+        if (RETIRED_SKILL_NAMES.has(name)) {
+          findings.push({
+            severity: "warning",
+            check: "retired-skills",
+            message: `Skill "${name}" was retired in 1.0 — remove it with \`rm -rf ${skillsDir}/${name}\`.`,
+            path: `${skillsDir}/${name}/SKILL.md`,
+          });
+        }
       }
     }
+  }
+
+  if (!sawDirectory) {
+    return {
+      findings,
+      outcome: {
+        id: "retired-skills",
+        status: "not-evaluated",
+        reason:
+          "no skills directories exist, so retired-skill detection cannot run — run `persist init` to generate skills",
+      },
+    };
   }
 
   return { findings, outcome: { id: "retired-skills", status: "evaluated" } };
 }
 
-async function listSkillNames(rootDir: string, skillsDir: string): Promise<string[]> {
+async function listSkillNames(rootDir: string, skillsDir: string): Promise<string[] | null> {
   let entries;
   try {
     entries = await readdir(path.join(rootDir, skillsDir), { withFileTypes: true });
   } catch (error) {
     const nodeError = error as NodeJS.ErrnoException;
     if (nodeError.code === "ENOENT") {
-      return [];
+      return null;
     }
     throw error;
   }

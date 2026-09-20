@@ -25,6 +25,13 @@ describe("inspectRepo", () => {
     await writeFile(full, content, "utf8");
   }
 
+  async function frameworksOf(rootDir: string, files: Record<string, string>): Promise<string[]> {
+    for (const [relativePath, content] of Object.entries(files)) {
+      await write(rootDir, relativePath, content);
+    }
+    return (await inspectRepo(rootDir)).frameworks;
+  }
+
   it("ignores devDependencies as framework signals", async () => {
     // A library that tests against Express is not an Express app. adopt's report is the first
     // thing a maintainer reads, so a test-only package must not become a proposed decision.
@@ -135,5 +142,111 @@ describe("inspectRepo", () => {
     expect(signals.frameworks).toEqual([]);
     expect(signals.hasTests).toBe(false);
     expect(signals.hasReadme).toBe(false);
+  });
+
+  it("detects Axum from Cargo dependencies but not dev-dependencies", async () => {
+    const rootDir = await createRoot("inspect-cargo-runtime");
+    const runtime = await frameworksOf(rootDir, {
+      "Cargo.toml": '[package]\nname = "api"\n\n[dependencies]\naxum = "0.7"\n',
+    });
+    expect(runtime).toContain("Axum");
+
+    const devOnly = await frameworksOf(await createRoot("inspect-cargo-dev"), {
+      "Cargo.toml":
+        '[package]\nname = "lib"\n\n[dependencies]\nserde = "1"\n\n[dev-dependencies]\naxum = "0.7"\n',
+    });
+    expect(devOnly).not.toContain("Axum");
+    expect(devOnly).toEqual([]);
+  });
+
+  it("detects Symfony from composer require but not require-dev", async () => {
+    const rootDir = await createRoot("inspect-composer-runtime");
+    const runtime = await frameworksOf(rootDir, {
+      "composer.json": JSON.stringify({ require: { "symfony/http-kernel": "^7.0" } }),
+    });
+    expect(runtime).toContain("Symfony");
+
+    const devOnly = await frameworksOf(await createRoot("inspect-composer-dev"), {
+      "composer.json": JSON.stringify({
+        require: {},
+        "require-dev": { "symfony/phpunit-bridge": "^7.0" },
+      }),
+    });
+    expect(devOnly).toEqual([]);
+  });
+
+  it("detects Rails from a Gemfile but not from development or test groups", async () => {
+    const rootDir = await createRoot("inspect-gemfile-runtime");
+    const runtime = await frameworksOf(rootDir, {
+      Gemfile: 'source "https://rubygems.org"\n\ngem "rails", "~> 8.0"\n',
+    });
+    expect(runtime).toContain("Ruby on Rails");
+
+    const grouped = await frameworksOf(await createRoot("inspect-gemfile-dev"), {
+      Gemfile: [
+        'source "https://rubygems.org"',
+        "",
+        "group :development do",
+        '  gem "rails", "~> 8.0"',
+        "end",
+        "",
+        "group :development, :test do",
+        '  gem "rake"',
+        "end",
+        "",
+        'gem "puma"',
+        "",
+      ].join("\n"),
+    });
+    expect(grouped).toEqual([]);
+  });
+
+  it("still detects tests from a pytest-only dev table", async () => {
+    // Framework matching excludes dev tables, but test detection keeps the full text: a
+    // pytest declared only for development still means the repo has tests.
+    const rootDir = await createRoot("inspect-python-dev-tests");
+    await write(
+      rootDir,
+      "pyproject.toml",
+      [
+        "[tool.poetry.dependencies]",
+        'python = "^3.12"',
+        "",
+        "[tool.poetry.group.dev.dependencies]",
+        'pytest = "^8.0"',
+        "",
+      ].join("\n"),
+    );
+
+    const signals = await inspectRepo(rootDir);
+
+    expect(signals.frameworks).toEqual([]);
+    expect(signals.hasTests).toBe(true);
+  });
+
+  it("detects Flask from runtime Python but not Poetry dev groups or extras", async () => {
+    const rootDir = await createRoot("inspect-python-runtime");
+    const runtime = await frameworksOf(rootDir, {
+      "requirements.txt": "flask==3.0\n",
+    });
+    expect(runtime).toContain("Flask");
+
+    const poetryDev = await frameworksOf(await createRoot("inspect-python-dev"), {
+      "pyproject.toml": [
+        "[tool.poetry]",
+        'name = "lib"',
+        "",
+        "[tool.poetry.dependencies]",
+        'python = "^3.12"',
+        "",
+        "[tool.poetry.group.dev.dependencies]",
+        'flask = "^3.0"',
+        "",
+        "[project.optional-dependencies]",
+        'test = ["django>=5.0"]',
+        "",
+      ].join("\n"),
+    });
+    expect(poetryDev).toEqual([]);
   });
 });

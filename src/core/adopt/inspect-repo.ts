@@ -58,13 +58,20 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
   }
 
   let pythonText = "";
+  let pythonFrameworkText = "";
   if (has("pyproject.toml")) {
     languages.add("Python");
-    pythonText += await readText(rootDir, "pyproject.toml");
+    const pyproject = await readText(rootDir, "pyproject.toml");
+    pythonText += pyproject;
+    pythonFrameworkText += stripPyprojectDevSections(pyproject);
   }
   if (has("requirements.txt")) {
     languages.add("Python");
-    pythonText += await readText(rootDir, "requirements.txt");
+    const requirements = await readText(rootDir, "requirements.txt");
+    pythonText += requirements;
+    // requirements.txt is the runtime set — requirements-dev.txt is never read, so dev-only
+    // packages already yield no signal and need no exclusion here.
+    pythonFrameworkText += requirements;
   }
 
   if (has("go.mod")) {
@@ -86,7 +93,7 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
 
   if (has("composer.json")) {
     languages.add("PHP");
-    const composer = (await readText(rootDir, "composer.json")).toLowerCase();
+    const composer = await readComposerRuntimeText(rootDir);
     if (composer.includes("laravel/framework")) {
       frameworks.add("Laravel");
     } else if (composer.includes("symfony/")) {
@@ -96,7 +103,7 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
 
   if (has("Gemfile")) {
     languages.add("Ruby");
-    const gemfile = (await readText(rootDir, "Gemfile")).toLowerCase();
+    const gemfile = stripGemfileDevGroups(await readText(rootDir, "Gemfile")).toLowerCase();
     if (gemfile.includes("rails")) {
       frameworks.add("Ruby on Rails");
     }
@@ -114,7 +121,7 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
     frameworks.add("Express");
   }
 
-  const python = pythonText.toLowerCase();
+  const python = pythonFrameworkText.toLowerCase();
   if (python.includes("fastapi")) {
     frameworks.add("FastAPI");
   } else if (python.includes("flask")) {
@@ -143,7 +150,10 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
   }
 
   if (has("Cargo.toml")) {
-    const cargo = (await readText(rootDir, "Cargo.toml")).toLowerCase();
+    const cargo = stripTomlSections(
+      await readText(rootDir, "Cargo.toml"),
+      (section) => section === "dev-dependencies",
+    ).toLowerCase();
     if (cargo.includes("actix-web")) {
       frameworks.add("Actix Web");
     } else if (cargo.includes("axum")) {
@@ -156,7 +166,8 @@ export async function inspectRepo(rootDir: string): Promise<RepoSignals> {
   const [packageManager, packageManagerSource] = detectPackageManager(has);
 
   const scripts = pkg !== null && isRecord(pkg.scripts) ? pkg.scripts : {};
-  const testsEvidence = await detectTestsEvidence(rootDir, has, "test" in scripts, python);
+  // Test detection keeps the full text: a pytest-only dev table still means tests exist.
+  const testsEvidence = await detectTestsEvidence(rootDir, has, "test" in scripts, pythonText);
 
   return {
     languages: [...languages],
@@ -345,6 +356,102 @@ function collectDependencies(pkg: Record<string, unknown> | null): Record<string
   // that tests against Express is not an Express app, and adopt's report is the first thing a
   // maintainer reads.
   return isRecord(pkg.dependencies) ? pkg.dependencies : {};
+}
+
+/**
+ * Drop TOML lines under dev-only tables so test-only packages never become framework signals.
+ * Parsed by `[section]` headers rather than a TOML parser (no new dependencies). Only exact
+ * table names passed by the caller are excluded; anything else — including target-specific
+ * `[target.'cfg(...)'.dev-dependencies]` tables — still matches, and stays reviewable noise.
+ */
+function stripTomlSections(text: string, isDevSection: (section: string) => boolean): string {
+  const kept: string[] = [];
+  let inDev = false;
+
+  for (const line of text.split("\n")) {
+    const section = /^\s*\[([^\]]+)\]/.exec(line)?.[1]?.trim();
+    if (section !== undefined) {
+      inDev = isDevSection(section);
+    }
+    if (!inDev) {
+      kept.push(line);
+    }
+  }
+
+  return kept.join("\n");
+}
+
+/**
+ * pyproject dev tables excluded from framework matching: legacy Poetry dev-dependencies, any
+ * Poetry dependency group, and optional (extra) dependencies. `[project] dependencies` and
+ * `[tool.poetry.dependencies]` are runtime and stay.
+ */
+function stripPyprojectDevSections(pyproject: string): string {
+  return stripTomlSections(
+    pyproject,
+    (section) =>
+      section === "tool.poetry.dev-dependencies" ||
+      section === "project.optional-dependencies" ||
+      section.startsWith("tool.poetry.group."),
+  );
+}
+
+/**
+ * composer.json is structured: match against the `require` table so `require-dev` packages
+ * never become signals. A manifest that fails to parse falls back to the whole file — a
+ * broken manifest still deserves its best-effort signal, still proposed.
+ */
+async function readComposerRuntimeText(rootDir: string): Promise<string> {
+  const raw = await readText(rootDir, "composer.json");
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isRecord(parsed) && isRecord(parsed.require)) {
+      return JSON.stringify(parsed.require).toLowerCase();
+    }
+  } catch {
+    // Fall through to the whole-file match below.
+  }
+
+  return raw.toLowerCase();
+}
+
+/**
+ * Gemfiles are Ruby and cannot be parsed properly — excluding `group :development do ... end`
+ * (and `:test`, including combined `group :development, :test do`) blocks by pattern is the
+ * honest ceiling. Full-line comments never open or close a block. It misses: inline
+ * `gem "x", group: :development`, `%i[...]` group syntax, and nested `do...end` inside a
+ * group block, which skews the depth count. Misses stay reviewable noise: every signal is
+ * proposed.
+ */
+function stripGemfileDevGroups(gemfile: string): string {
+  const kept: string[] = [];
+  let skipDepth = 0;
+
+  for (const line of gemfile.split("\n")) {
+    const code = line.trimStart().startsWith("#") ? "" : line;
+
+    if (skipDepth === 0) {
+      if (/^\s*group\b.*\bdo\b/.test(code) && /:(development|test)\b/.test(code)) {
+        skipDepth = 1;
+        continue;
+      }
+      kept.push(line);
+      continue;
+    }
+
+    // Count block keywords outside string literals so a gem like "x-do" cannot skew depth.
+    const countable = code.replace(/"[^"]*"/gu, '""').replace(/'[^']*'/gu, "''");
+    skipDepth += (countable.match(/\bdo\b/gu) ?? []).length;
+    if (/^\s*end(\s|$|;)/.test(countable)) {
+      skipDepth -= 1;
+    }
+    if (skipDepth <= 0) {
+      skipDepth = 0;
+    }
+  }
+
+  return kept.join("\n");
 }
 
 async function readJson(

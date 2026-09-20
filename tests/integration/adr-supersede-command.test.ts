@@ -73,6 +73,38 @@ describe("adr supersede command", () => {
     expect(result.stderr).toContain('No accepted ADR found for "nonexistent".');
   });
 
+  it("refuses a replacement title that a live ADR already holds", async () => {
+    const rootDir = await createRoot("adr-supersede-collision");
+    await runInitCommand(rootDir);
+    await acceptedAdr(rootDir, "Use Postgres", "use-postgres");
+    await acceptedAdr(rootDir, "Use SQLite", "use-sqlite");
+
+    const result = await runCommand(rootDir, ["adr", "supersede", "use-sqlite", "Use Postgres"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain('An ADR titled "Use Postgres" already exists');
+    expect(result.stderr).toContain("ADR-0001-use-postgres.md");
+    expect(result.stderr).toContain("supersede the existing one instead of paralleling it");
+
+    const files = await listRelativeFiles(rootDir);
+    expect(files).not.toContain("docs/adrs/ADR-0003-use-postgres.md");
+    const oldAdr = await readFile(path.join(rootDir, "docs/adrs/ADR-0002-use-sqlite.md"), "utf8");
+    expect(oldAdr).not.toContain("superseded by");
+  });
+
+  it("allows a replacement title held only by a superseded record", async () => {
+    const rootDir = await createRoot("adr-supersede-succession");
+    await runInitCommand(rootDir);
+    await acceptedAdr(rootDir, "Use Postgres", "use-postgres");
+    await runCommand(rootDir, ["adr", "supersede", "use-postgres", "Use SQLite"]);
+    await acceptedAdr(rootDir, "Use MySQL", "use-mysql");
+
+    const result = await runCommand(rootDir, ["adr", "supersede", "use-mysql", "Use Postgres"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("ADR-0004-use-postgres");
+  });
+
   it("writes nothing on a dry run", async () => {
     const rootDir = await createRoot("adr-supersede-dry-run");
     await runInitCommand(rootDir);
