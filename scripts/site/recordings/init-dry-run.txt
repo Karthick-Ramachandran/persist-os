@@ -1,0 +1,48 @@
+$ persist init --dry-run
+Persist OS init dry run complete.
+Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
+Planned creates:
+- .persist/config.json
+- AGENTS.md
+- CLAUDE.md
+- .cursor/rules/persist-memory.mdc
+- docs/00-product/PRODUCT.md
+- docs/20-security/SECURITY_MODEL.md
+- docs/50-quality/QUALITY_GATES.md
+- docs/60-engineering/ENGINEERING_STANDARDS.md
+- docs/60-engineering/CONVENTIONS.md
+- docs/60-engineering/LESSONS.md
+- docs/adrs/README.md
+- .github/workflows/persist.yml
+- .persist/hooks/pre-commit
+- .persist/hooks/pre-push
+- .claude/hooks/session-start.sh
+- .claude/settings.json
+- .claude/skills/create-prd/SKILL.md
+- .agents/skills/create-prd/SKILL.md
+- .claude/skills/plan-feature/SKILL.md
+- .agents/skills/plan-feature/SKILL.md
+- .claude/skills/plan-module/SKILL.md
+- .agents/skills/plan-module/SKILL.md
+- .claude/skills/create-adr/SKILL.md
+- .agents/skills/create-adr/SKILL.md
+- .claude/skills/implement-task/SKILL.md
+- .agents/skills/implement-task/SKILL.md
+- .claude/skills/write-tests/SKILL.md
+- .agents/skills/write-tests/SKILL.md
+- .claude/skills/security-review/SKILL.md
+- .agents/skills/security-review/SKILL.md
+- .claude/skills/architecture-drift-review/SKILL.md
+- .agents/skills/architecture-drift-review/SKILL.md
+- .claude/skills/update-module-memory/SKILL.md
+- .agents/skills/update-module-memory/SKILL.md
+- .claude/skills/completion-report/SKILL.md
+- .agents/skills/completion-report/SKILL.md
+- .claude/skills/conventions-adherence/SKILL.md
+- .agents/skills/conventions-adherence/SKILL.md
+- .claude/skills/capture-mcp-context/SKILL.md
+- .agents/skills/capture-mcp-context/SKILL.md
+
+Pre-commit and pre-push hooks will be written to .persist/hooks/.
+Enable them once per clone: git config core.hooksPath .persist/hooks
+[exit 0]

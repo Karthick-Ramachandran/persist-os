@@ -1,0 +1,13 @@
+$ persist module create billing
+Persist OS module create complete.
+Module: docs/30-modules/billing
+Created:
+- docs/30-modules/billing/MODULE.md
+- docs/30-modules/billing/TASKS.md
+- docs/30-modules/billing/TEST_PLAN.md
+- docs/30-modules/billing/DECISIONS.md
+
+Next steps:
+- Open docs/30-modules/billing/MODULE.md and describe what this module owns and does not own.
+- Record durable decisions in DECISIONS.md, or link an ADR.
+[exit 0]

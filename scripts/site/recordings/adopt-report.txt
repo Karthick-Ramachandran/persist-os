@@ -1,0 +1,37 @@
+$ sed -n '1,40p' docs/adopt/ADOPTION_REPORT.md
+# Adoption Report
+
+## Status
+
+Proposed. Everything below is inferred from this repository and requires human review. Nothing here
+is accepted repository memory until you accept it.
+
+## Detected Signals
+
+Each signal notes the file it was inferred from. If one is wrong, correct the source or edit this
+report — nothing here is accepted.
+
+- Languages: TypeScript
+- Package manager: pnpm (from `pnpm-lock.yaml`)
+- Frameworks: Next.js (from `package.json`)
+- Tests: detected via `"test"` script in package.json
+- README present: no
+- Docs folder present: no
+
+## Proposed Decisions
+
+- Proposed: record **Next.js** as an architecture decision (see `docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md`). Requires review.
+
+## Review Checklist
+
+- [ ] Confirm the detected languages and package manager (and the source each was read from).
+- [ ] Confirm where tests were detected, or point Persist at the right location if it is wrong.
+- [ ] Accept or reject each proposed framework ADR under `docs/adrs/proposed/`.
+- [ ] Run `persist init` to establish neutral repository memory if it does not exist yet.
+- [ ] Record any decision you accept with `persist adr create` or by accepting the proposed ADR.
+
+## Notes
+
+This report was produced by `persist adopt` through read-only inspection of manifest and marker
+files. No repository code was executed and no decision was accepted automatically.
+[exit 0]

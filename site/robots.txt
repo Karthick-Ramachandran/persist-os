@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://persist-os.pages.dev/sitemap.xml

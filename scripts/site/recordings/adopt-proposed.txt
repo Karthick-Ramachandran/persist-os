@@ -1,0 +1,3 @@
+$ ls docs/adrs/proposed
+ADR-PROPOSED-adopt-nextjs.md
+[exit 0]

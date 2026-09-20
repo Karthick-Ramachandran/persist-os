@@ -1,0 +1,10 @@
+$ persist adr create Use PostgreSQL for primary storage
+Persist OS ADR create complete.
+ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+Created:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Open docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md and fill: Context, Decision, Alternatives, Consequences.
+- It is Proposed — set Status to Accepted once the team agrees.
+[exit 0]

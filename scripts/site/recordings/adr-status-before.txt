@@ -1,0 +1,7 @@
+$ sed -n '1,5p' docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+# ADR-0001: Use PostgreSQL For Primary Storage
+
+## Status
+
+Proposed
+[exit 0]

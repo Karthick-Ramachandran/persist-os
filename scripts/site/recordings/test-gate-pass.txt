@@ -1,0 +1,17 @@
+$ persist test-gate
+Persist OS test gate passed: npm run test:run
+
+
+> orders-api@1.4.0 test:run
+> node --test
+
+✔ totals a cart (0.44075ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55.788375
+[exit 0]

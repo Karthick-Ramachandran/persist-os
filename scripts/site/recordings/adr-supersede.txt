@@ -1,0 +1,14 @@
+$ persist adr supersede use-postgresql-for-primary-storage Use SQLite for primary storage
+Persist OS ADR supersede complete.
+Superseded: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md (now marked superseded by ADR-0002-use-sqlite-for-primary-storage)
+New decision: docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md
+Created:
+- docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md
+Overwritten:
+- docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
+
+Next steps:
+- Fill docs/adrs/ADR-0002-use-sqlite-for-primary-storage.md: Context (what changed), Decision, Alternatives, Consequences.
+- ADR-0001-use-postgresql-for-primary-storage stays in history as superseded; update any memory that still relies on it.
+- Run `persist doctor` — it flags memory that still references the superseded decision.
+[exit 0]

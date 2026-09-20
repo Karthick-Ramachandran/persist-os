@@ -1,0 +1,3 @@
+$ git log --oneline
+d84bda4 Add repository memory
+[exit 0]

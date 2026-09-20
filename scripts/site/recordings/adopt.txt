@@ -1,0 +1,15 @@
+$ persist adopt
+Persist OS adopt complete.
+Inferred signals are proposed and require human review.
+Languages: TypeScript
+Package manager: pnpm
+Frameworks: Next.js
+Created:
+- docs/adopt/ADOPTION_REPORT.md
+- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
+
+Next steps:
+- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
+- Run `persist init` to establish neutral repository memory if it does not exist yet.
+- Accept or reject each proposed ADR under docs/adrs/proposed/.
+[exit 0]

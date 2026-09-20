@@ -1,0 +1,19 @@
+$ persist doctor
+Doctor Report
+
+WARNING
+- Security model authentication and authorization section is still an unfilled template. (docs/20-security/SECURITY_MODEL.md)
+- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Product users section is still an unfilled template. (docs/00-product/PRODUCT.md)
+- Module memory purpose is still an unfilled template. (docs/30-modules/billing/MODULE.md)
+- Module memory owns section is still an unfilled template. (docs/30-modules/billing/MODULE.md)
+- Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
+
+INFO
+- Persist OS config validates. (.persist/config.json)
+- 1 feature folders detected.
+- 1 module folders detected.
+- 2 ADRs detected.
+
+Result: WARNINGS
+[exit 1]

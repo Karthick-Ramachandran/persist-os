@@ -1,0 +1,11 @@
+$ persist mcp add figma --dry-run
+Persist OS mcp add dry run complete.
+MCP memory: docs/ai/mcp/figma.md (proposed — review before adopting)
+Capture skill installed so agents record durable MCP context into this memory.
+Planned creates:
+- docs/ai/mcp/figma.md
+- docs/adrs/proposed/ADR-PROPOSED-mcp-figma.md
+Skipped:
+- .claude/skills/capture-mcp-context/SKILL.md
+- .agents/skills/capture-mcp-context/SKILL.md
+[exit 0]
