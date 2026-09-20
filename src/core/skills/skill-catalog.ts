@@ -80,7 +80,7 @@ exit 1
 /**
  * Built-in catalog of Persist OS workflow skills (ADR-0008).
  *
- * Three skills, rewritten from scratch against the progressive-disclosure shape: no
+ * Four skills, rewritten from scratch against the progressive-disclosure shape: no
  * `Required Reading`, resources as one-hop links, earned sections, and explicit
  * verification and output. Descriptions carry WHAT and WHEN with trigger language so
  * agents invoke them at the right moment.
@@ -199,6 +199,45 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     output: [
       "Finding list citing primitives or rules, or an explicit all-clear.",
       "Proposed CONVENTIONS.md update when one earned it.",
+    ],
+  },
+  {
+    name: "chestertons-fence",
+    title: "Chesterton's Fence",
+    description:
+      "Reason about a fence crossing — a change to source logic with no recorded reason for its current shape. Use when a Chesterton fence warning fires on a staged change, when a diff touches logic that looks deliberate but unexplained, or when writing the human-confirmed reason to FENCES.md. Skip for planning work, security reviews, and convention checks.",
+    goal: "Decide whether the existing logic is deliberate and record the human-confirmed reason in FENCES.md.",
+    inputs: [
+      "The staged change or diff the fence warning named.",
+      "Access to the human who knows the constraint; name them in the record.",
+    ],
+    workflow: [
+      "List which staged files the fence warning names and read the current logic in each.",
+      "For each file, state what the logic does today and what simpler shape tempts the change.",
+      "Ask the human why the logic is shaped this way; never infer the constraint from the code.",
+      "When the human confirms a real constraint, write the fence entry: a path heading, a one-sentence Why, and an ADR link when one exists.",
+      "When the behaviour is accidental rather than deliberate, say so and record nothing.",
+      "Append the crossing to the entry history with the date, the outcome, and who confirmed it.",
+      "Verify the entry against the Verification list and hand back the per-file outcome.",
+    ],
+    decisions: [
+      "If the change is a bug fix → answer one question only: was this behaviour intentional?",
+      "If the human does not know or will not confirm → record nothing; a confident guess is worse than an empty file.",
+      "If the logic is accidental, not deliberate → say so plainly; no fence entry.",
+    ],
+    verification: [
+      "Every staged file the warning named has an outcome: fenced, accidental, or deferred.",
+      "Each fence entry names the human who confirmed the reason.",
+      "No Why was inferred from code alone; every reason traces to a human answer.",
+      "The entry keeps the greppable shape: path heading, Why line, dated crossing.",
+    ],
+    resources: [
+      "For the fence file and its format → docs/60-engineering/FENCES.md",
+      "For the mechanism, scope, and severity → docs/adrs/ADR-0010-chestertons-fence.md",
+    ],
+    output: [
+      "Outcome per file: fence recorded, accidental (no record), or deferred to a human.",
+      "The FENCES.md entry written, or an explicit statement that nothing was recorded.",
     ],
   },
 ];

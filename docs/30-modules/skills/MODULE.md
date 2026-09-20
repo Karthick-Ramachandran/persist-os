@@ -6,7 +6,7 @@ Skills owns generation of portable AI agent skills for a repository.
 
 ## Owns
 
-- The built-in skill catalog (three rewritten workflow skills).
+- The built-in skill catalog (four rewritten workflow skills).
 - Rendering a skill definition into a valid Agent Skills SKILL.md with earned sections only.
 - Dual-target generation to `.claude/skills/` and `.agents/skills/`, including optional
   skill `scripts/` through the safe write pipeline.

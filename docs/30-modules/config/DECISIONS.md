@@ -41,3 +41,10 @@ loading; this spends no breaking-change budget. `testCommand` shares the gate va
 The `preset` config field is removed (1.0 breaking change, budgeted by ADR-0011). A config that
 still contains it fails to parse with an error naming the field and the one-line fix (delete the
 line) — neither a zod unrecognized-key dump nor silent acceptance.
+
+## Fence Toggle (F-037)
+
+`fenceEnabled` (default true) records whether the Chesterton fence is active. Optional on read
+via zod default so existing configs keep loading; this spends no breaking-change budget. No
+strictness knob exists anywhere by decision (ADR-0013): one good default, with `preCommitGates`
+as the escape hatch.

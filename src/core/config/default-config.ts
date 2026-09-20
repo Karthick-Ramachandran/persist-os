@@ -12,6 +12,7 @@ const DEFAULT_CONFIG = {
   preCommitGates: [],
   prePushGates: [],
   testCommand: null,
+  fenceEnabled: true,
 } satisfies PersistConfig;
 
 export function createDefaultConfig(overrides: Partial<PersistConfig> = {}): PersistConfig {

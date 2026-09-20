@@ -13,3 +13,10 @@ memory.
 
 The existing file is reused, and the filesystem write policy determines whether it is skipped or
 explicitly overwritten.
+
+## F-037: Fence Reminder on Create and Supersede
+
+`adr create` and `adr supersede` append a Chesterton-fence reminder to their next steps when the
+fence is enabled — the zero-cost trigger that fires before the change, since both commands run
+while the past reasoning is being revisited. The reminder is output text only; nothing is read,
+written, or decided.

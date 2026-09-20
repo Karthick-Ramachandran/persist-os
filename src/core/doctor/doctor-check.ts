@@ -4,6 +4,7 @@ import { checkContent } from "./checks/content-check.js";
 import { checkContextBudget } from "./checks/context-budget-check.js";
 import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
+import { checkFence } from "./checks/fence-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
@@ -55,6 +56,8 @@ export type DoctorCheckContext = {
     testCommand?: string | null;
     preCommitGates?: string[];
     prePushGates?: string[];
+    /** Chesterton-fence toggle. Undefined runs the check; only explicit false disables it. */
+    fenceEnabled?: boolean;
   };
 };
 
@@ -75,6 +78,7 @@ const CONFIG_GATED_CHECKS = [
   "staleness",
   "hook-drift",
   "retired-skills",
+  "fence",
 ] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
@@ -99,6 +103,7 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
             testCommand: configResult.config.testCommand,
             preCommitGates: [...configResult.config.preCommitGates],
             prePushGates: [...configResult.config.prePushGates],
+            fenceEnabled: configResult.config.fenceEnabled,
           },
   };
 
@@ -146,6 +151,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const retiredSkills = await checkRetiredSkills(context);
   findings.push(...retiredSkills.findings);
   checks.push(retiredSkills.outcome);
+
+  const fence = await checkFence(context);
+  findings.push(...fence.findings);
+  checks.push(fence.outcome);
 
   return createDoctorReport(findings, checks);
 }
