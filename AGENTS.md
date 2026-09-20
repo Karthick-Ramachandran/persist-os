@@ -8,12 +8,10 @@ This file is intentionally short. Use it as routing guidance, not as the full pr
 
 For product intent, read:
 
-- `docs/00-product/PRD.md`
-- `docs/00-product/BRD.md`
+- `docs/00-product/PRODUCT.md`
 - `docs/00-product/PRODUCT_VISION.md`
 - `docs/00-product/POSITIONING.md`
 - `docs/00-product/ROADMAP.md`
-- `docs/00-product/BUILD_PRIORITY.md`
 
 For implementation constraints, read:
 

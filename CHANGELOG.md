@@ -53,7 +53,5 @@ Both are named in [MIGRATION.md](docs/00-product/MIGRATION.md) with the exact ed
 - **Warnings block commits.** The generated pre-commit hook runs `persist doctor` under `set -e`,
   and doctor exits 1 on warnings, so a repository cannot commit until template sections are filled.
   The hook is generated content rather than frozen interface, so this can change in a patch release.
-- **Chesterton's fence is not in 1.0.** ADR-0010 remains Proposed; see
-  [PLAN-1.0.md](docs/00-product/PLAN-1.0.md) phase 7. Planned for 1.1.
 - `persist adopt` still reads dev-only packages as signals in Cargo, Composer, Gemfile and
   requirements files. Every signal is proposed rather than accepted.

@@ -98,7 +98,7 @@ incident.
 
 ## Related Documents
 
-- PRD: `docs/00-product/PRD.md`
+- Product: `docs/00-product/PRODUCT.md`
 - Architecture: `docs/10-architecture/ARCHITECTURE.md`
 - Security: `docs/20-security/SECURITY_MODEL.md`
 - Feature: `docs/40-features/F-030-test-change-guard/`,

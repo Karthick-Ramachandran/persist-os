@@ -131,7 +131,7 @@ and will be wrong for some repositories; it needs to be visible and overridable 
 
 ## Related Documents
 
-- PRD: `docs/00-product/PRD.md`
+- Product: `docs/00-product/PRODUCT.md`
 - Architecture: `docs/10-architecture/ARCHITECTURE.md`,
   `docs/10-architecture/REPOSITORY_DECISIONS.md`
 - Security: `docs/20-security/SECURITY_MODEL.md`

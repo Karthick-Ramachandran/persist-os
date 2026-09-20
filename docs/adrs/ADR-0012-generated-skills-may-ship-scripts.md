@@ -81,7 +81,7 @@ and removing the _"Do not add scripts inside generated skills for MVP"_ line fro
 
 ## Related Documents
 
-- PRD: `docs/00-product/PRD.md`
+- Product: `docs/00-product/PRODUCT.md`
 - Architecture: `docs/ai/AI_AGENTS_SKILLS_MCP_STRATEGY.md`
 - Security: `docs/20-security/SECURITY_MODEL.md`, `docs/20-security/THREAT_MODEL.md`
 - Feature: `docs/40-features/F-023-skill-generation/`
