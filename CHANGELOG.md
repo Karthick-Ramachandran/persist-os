@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.2
+
+Three edges of the fence, found by probing rather than by anything failing.
+
+**`fence add` refuses a path that does not exist.** It used to report success and let the next
+doctor run contradict it, so a typo silently produced a dead fence. Existence is checked against the
+normalised path, so `src/a.ts:symbol` checks the file part, and `--dry-run` refuses too.
+
+**The context budget sees the fence index.** `ALWAYS_LOADED` counted `CLAUDE.md`, `AGENTS.md` and
+the Cursor rule — but the SessionStart hook injects the fence index, so that is always-loaded
+context as well. An 80KB `FENCES.md` produced no finding at all. Doctor now names the truncation the
+hook was already doing silently, so reasons that never reach a session are visible.
+
+**`fence add` requires an initialised repository.** It used to fall back to the default config and
+write `FENCES.md` into a bare directory. A fence is only ever read by its own repository's hook and
+checks, so one recorded outside a repository is never loaded. `skill create`, `mcp add` and `adopt`
+keep the fallback — they bootstrap or emit standalone files.
+
 ## 1.1.1
 
 **Fences no longer rot silently.** A fence records why a path is shaped the way it is. Rename or
