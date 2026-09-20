@@ -98,7 +98,7 @@ be worse than shipping 0.7.0, because the promise is what people would be relyin
 
 ## Related Documents
 
-- PRD: `docs/00-product/PRD.md`
+- Product: `docs/00-product/PRODUCT.md`
 - Architecture: `docs/10-architecture/ARCHITECTURE.md`
 - Security: `docs/20-security/SECURITY_MODEL.md`
 - Feature: `docs/50-quality/QUALITY_GATES.md`
