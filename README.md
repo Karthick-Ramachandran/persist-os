@@ -320,7 +320,10 @@ It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config
 
 ## How It Works
 
-![How Persist OS works: you capture intent, decisions, ownership, standards, and security with persist init / feature / adr / module; it writes durable, reviewable memory under docs/ and .persist/config.json that humans review in pull requests and agents re-read every session; persist doctor validates it deterministically, returning exit code 0, 1, or 2 for a pre-commit hook or CI gate.](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/how-it-works.svg)
+![Persist OS 1.0 — creating repository memory, the Chesterton fence catching an unexplained change, and a decision going proposed to accepted](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.0.gif)
+
+Recorded against the published package, not a local build. Re-render it with
+`vhs docs/media/persist-1.0.tape`.
 
 ## How agents load the memory
 
