@@ -12,6 +12,11 @@ import type { DoctorFinding } from "../doctor-check.js";
 export type ConfigCheckResult = {
   config?: PersistConfig;
   findings: DoctorFinding[];
+  /**
+   * Why the config is unusable, when it is. Returned as data so callers can explain a partial
+   * doctor run without string-matching finding messages.
+   */
+  unavailableReason?: string;
 };
 
 export async function checkConfig(rootDir: string): Promise<ConfigCheckResult> {
@@ -32,6 +37,7 @@ export async function checkConfig(rootDir: string): Promise<ConfigCheckResult> {
             path: CONFIG_PATH,
           },
         ],
+        unavailableReason: "no .persist/config.json, so configured paths are unknown",
       };
     }
     throw error;
@@ -50,6 +56,7 @@ export async function checkConfig(rootDir: string): Promise<ConfigCheckResult> {
           path: CONFIG_PATH,
         },
       ],
+      unavailableReason: ".persist/config.json is not valid JSON, so configured paths are unknown",
     };
   }
 
@@ -78,6 +85,7 @@ export async function checkConfig(rootDir: string): Promise<ConfigCheckResult> {
             path: CONFIG_PATH,
           },
         ],
+        unavailableReason: "invalid .persist/config.json, so configured paths are unknown",
       };
     }
 

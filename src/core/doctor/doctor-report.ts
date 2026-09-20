@@ -24,6 +24,7 @@ export function formatDoctorJsonReport(report: DoctorReport): string {
       exitCode: getDoctorExitCode(report),
       summary: report.summary,
       findings: report.findings,
+      checks: report.checks,
     },
     null,
     2,
@@ -50,6 +51,16 @@ export function formatDoctorReport(report: DoctorReport): string {
   if (report.findings.length === 0) {
     lines.push("INFO");
     lines.push("- No findings.");
+    lines.push("");
+  }
+
+  const notEvaluated = report.checks.filter((check) => check.status === "not-evaluated");
+
+  if (notEvaluated.length > 0) {
+    lines.push("NOT EVALUATED");
+    for (const check of notEvaluated) {
+      lines.push(`- ${check.id}: ${check.reason ?? "no reason given"}`);
+    }
     lines.push("");
   }
 

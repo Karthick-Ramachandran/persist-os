@@ -5,7 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createDefaultConfig } from "../../../src/core/config/default-config.js";
-import { checkStaleness } from "../../../src/core/doctor/checks/staleness-check.js";
+import {
+  checkStaleness,
+  isShallowRepository,
+} from "../../../src/core/doctor/checks/staleness-check.js";
 import { createTempRoot, removeTempRoot } from "../../helpers/init-test-helpers.js";
 
 function gitAt(rootDir: string, date: string, ...args: string[]): void {
@@ -53,8 +56,12 @@ describe("doctor staleness check", () => {
     gitAt(rootDir, "2024-12-01T00:00:00", "add", "src/foo.ts");
     gitAt(rootDir, "2024-12-01T00:00:00", "commit", "-m", "change code months later");
 
-    const findings = await checkStaleness({ rootDir, config: createDefaultConfig() });
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
 
+    expect(outcome).toEqual({ id: "staleness", status: "evaluated" });
     expect(findings).toContainEqual(
       expect.objectContaining({ severity: "warning", check: "staleness" }),
     );
@@ -68,18 +75,93 @@ describe("doctor staleness check", () => {
     gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
     gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "init together");
 
-    const findings = await checkStaleness({ rootDir, config: createDefaultConfig() });
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
 
+    expect(outcome).toEqual({ id: "staleness", status: "evaluated" });
     expect(findings).toEqual([]);
   });
 
-  it("skips gracefully outside a git repository", async () => {
+  it("detects full history as not shallow", async () => {
+    const rootDir = await createRoot("shallow-full");
+    await initRepo(rootDir);
+    await write(rootDir, "file.txt", "x\n");
+    gitAt(rootDir, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-01-01T00:00:00", "commit", "-m", "one");
+    await write(rootDir, "file.txt", "y\n");
+    gitAt(rootDir, "2024-02-01T00:00:00", "add", "-A");
+    gitAt(rootDir, "2024-02-01T00:00:00", "commit", "-m", "two");
+
+    await expect(isShallowRepository(rootDir)).resolves.toBe(false);
+  });
+
+  it("detects a depth-1 clone as shallow", async () => {
+    const source = await createRoot("shallow-source");
+    await initRepo(source);
+    await write(source, "file.txt", "x\n");
+    gitAt(source, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(source, "2024-01-01T00:00:00", "commit", "-m", "one");
+
+    const cloneDir = await createTempRoot("shallow-clone");
+    roots.push(cloneDir);
+    execFileSync("git", ["clone", "--depth", "1", `file://${source}`, cloneDir], {
+      stdio: "ignore",
+    });
+
+    await expect(isShallowRepository(cloneDir)).resolves.toBe(true);
+  });
+
+  it("treats git failure as not shallow rather than crashing", async () => {
+    const rootDir = await createRoot("shallow-nogit");
+
+    await expect(isShallowRepository(rootDir)).resolves.toBe(false);
+  });
+
+  it("reports not-evaluated with a fetch-depth reason in a shallow clone", async () => {
+    const source = await createRoot("shallow-stale-source");
+    await initRepo(source);
+    await write(source, "docs/40-features/F-001-x/PRD.md", "# PRD\n\nUses `src/foo.ts`.\n");
+    await write(source, "src/foo.ts", "export const a = 1;\n");
+    gitAt(source, "2024-01-01T00:00:00", "add", "-A");
+    gitAt(source, "2024-01-01T00:00:00", "commit", "-m", "one");
+
+    const cloneDir = await createTempRoot("shallow-stale-clone");
+    roots.push(cloneDir);
+    execFileSync("git", ["clone", "--depth", "1", `file://${source}`, cloneDir], {
+      stdio: "ignore",
+    });
+
+    const { findings, outcome } = await checkStaleness({
+      rootDir: cloneDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "staleness",
+      status: "not-evaluated",
+      reason:
+        "shallow clone (fetch-depth 1): every file reports the same commit time, so staleness cannot be measured — use fetch-depth: 0",
+    });
+  });
+
+  it("reports not-evaluated with a reason outside a git repository", async () => {
     const rootDir = await createRoot("stale-nogit");
     await write(rootDir, "docs/40-features/F-001-x/PRD.md", "# PRD\n\nUses `src/foo.ts`.\n");
     await write(rootDir, "src/foo.ts", "x\n");
 
-    const findings = await checkStaleness({ rootDir, config: createDefaultConfig() });
+    const { findings, outcome } = await checkStaleness({
+      rootDir,
+      config: createDefaultConfig(),
+    });
 
     expect(findings).toEqual([]);
+    expect(outcome).toEqual({
+      id: "staleness",
+      status: "not-evaluated",
+      reason: "not a git repository, so commit history is unavailable",
+    });
   });
 });

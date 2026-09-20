@@ -19,6 +19,19 @@ export type DoctorFinding = {
   path?: string;
 };
 
+export type DoctorCheckStatus = "evaluated" | "not-evaluated";
+
+export type DoctorCheckOutcome = {
+  /**
+   * The check module's id. Deliberately named `id`, not `check`: a finding's `check` field is a
+   * finer-grained rule id (`feature-memory`, `content-conventions`) owned by one of these modules,
+   * so the two namespaces do not line up and must not look like they do.
+   */
+  id: string;
+  status: DoctorCheckStatus;
+  reason?: string;
+};
+
 export type DoctorReport = {
   findings: DoctorFinding[];
   summary: {
@@ -26,6 +39,7 @@ export type DoctorReport = {
     warnings: number;
     info: number;
   };
+  checks: DoctorCheckOutcome[];
 };
 
 export type DoctorCheckContext = {
@@ -39,15 +53,30 @@ export type DoctorCheckContext = {
   };
 };
 
-export type DoctorCheck = (
-  context: DoctorCheckContext,
-) => Promise<DoctorFinding[]> | DoctorFinding[];
+/**
+ * Checks that only run once a validated config is available. When the config is missing or
+ * invalid these are recorded as not-evaluated instead of silently dropped, so a partial run
+ * never looks like a full pass.
+ */
+const CONFIG_GATED_CHECKS = [
+  "memory-integrity",
+  "standards",
+  "drift",
+  "content",
+  "conventions",
+  "code-references",
+  "superseded",
+  "context-budget",
+  "staleness",
+] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const findings: DoctorFinding[] = [];
+  const checks: DoctorCheckOutcome[] = [];
   const configResult = await checkConfig(rootDir);
 
   findings.push(...configResult.findings);
+  checks.push({ id: "config", status: "evaluated" });
 
   const context: DoctorCheckContext = {
     rootDir,
@@ -64,23 +93,45 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   };
 
   findings.push(...(await checkRequiredFiles(context)));
+  checks.push({ id: "required-files", status: "evaluated" });
 
-  if (configResult.config !== undefined) {
-    findings.push(...(await checkMemoryIntegrity(context)));
-    findings.push(...(await checkStandards(context)));
-    findings.push(...(await checkDrift(context)));
-    findings.push(...(await checkContent(context)));
-    findings.push(...(await checkConventions(context)));
-    findings.push(...(await checkCodeReferences(context)));
-    findings.push(...(await checkSuperseded(context)));
-    findings.push(...(await checkContextBudget(context)));
-    findings.push(...(await checkStaleness(context)));
+  if (configResult.config === undefined) {
+    const reason =
+      configResult.unavailableReason ?? "the Persist OS config is unusable, so paths are unknown";
+    for (const check of CONFIG_GATED_CHECKS) {
+      checks.push({ id: check, status: "not-evaluated", reason });
+    }
+    return createDoctorReport(findings, checks);
   }
 
-  return createDoctorReport(findings);
+  findings.push(...(await checkMemoryIntegrity(context)));
+  checks.push({ id: "memory-integrity", status: "evaluated" });
+  findings.push(...(await checkStandards(context)));
+  checks.push({ id: "standards", status: "evaluated" });
+  findings.push(...(await checkDrift(context)));
+  checks.push({ id: "drift", status: "evaluated" });
+  findings.push(...(await checkContent(context)));
+  checks.push({ id: "content", status: "evaluated" });
+  findings.push(...(await checkConventions(context)));
+  checks.push({ id: "conventions", status: "evaluated" });
+  findings.push(...(await checkCodeReferences(context)));
+  checks.push({ id: "code-references", status: "evaluated" });
+  findings.push(...(await checkSuperseded(context)));
+  checks.push({ id: "superseded", status: "evaluated" });
+  findings.push(...(await checkContextBudget(context)));
+  checks.push({ id: "context-budget", status: "evaluated" });
+
+  const staleness = await checkStaleness(context);
+  findings.push(...staleness.findings);
+  checks.push(staleness.outcome);
+
+  return createDoctorReport(findings, checks);
 }
 
-export function createDoctorReport(findings: DoctorFinding[]): DoctorReport {
+export function createDoctorReport(
+  findings: DoctorFinding[],
+  checks: DoctorCheckOutcome[],
+): DoctorReport {
   return {
     findings,
     summary: {
@@ -88,5 +139,6 @@ export function createDoctorReport(findings: DoctorFinding[]): DoctorReport {
       warnings: findings.filter((finding) => finding.severity === "warning").length,
       info: findings.filter((finding) => finding.severity === "info").length,
     },
+    checks,
   };
 }
