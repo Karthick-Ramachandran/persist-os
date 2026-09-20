@@ -17,9 +17,46 @@ code generation.
 
 [Website](https://persist-os.pages.dev) · [Install](#install) · [Quickstart](#quickstart) ·
 [Commands](#commands) · [What Doctor Checks](#what-doctor-checks) ·
-[Why I built this](PHILOSOPHY.md) · [Contributing](CONTRIBUTING.md)
+[Chesterton's Fence](#chestertons-fence) · [Why I built this](PHILOSOPHY.md) ·
+[Contributing](CONTRIBUTING.md)
 
-![Persist OS — guided memory creation, ADR acceptance, and the doctor gate](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-demo.gif)
+```console
+$ npx persist-os@latest init
+
+persist  repository memory for AI-assisted software work
+────────────────────────────────────────
+Persist OS init complete.
+Test gate: not configured — no one-shot test script detected.
+Chesterton fence: enabled — record why code is shaped this way in docs/60-engineering/FENCES.md
+
+Generated repository memory, 4 agent skills, pre-commit and pre-push hooks,
+a CI workflow, a Claude SessionStart hook, and a Cursor rule.
+
+$ persist doctor
+Result: PASSED
+```
+
+What it writes — plain files, tracked in Git, reviewed in pull requests like any other change:
+
+```txt
+your-repo/
+├── AGENTS.md                              # entry point every agent reads
+├── CLAUDE.md                              # Claude Code's entry point
+├── docs/
+│   ├── 00-product/PRODUCT.md              # what this is and is not
+│   ├── 20-security/SECURITY_MODEL.md
+│   ├── 50-quality/QUALITY_GATES.md
+│   ├── 60-engineering/
+│   │   ├── ENGINEERING_STANDARDS.md
+│   │   ├── CONVENTIONS.md                 # the vocabulary agents must reuse
+│   │   └── LESSONS.md                     # what broke, and why
+│   └── adrs/                              # decisions: proposed → accepted → superseded
+├── .claude/skills/, .agents/skills/       # 4 skills, loaded on trigger
+├── .persist/hooks/                        # doctor at commit, tests at push
+└── .github/workflows/persist.yml
+```
+
+Six documents and a decision log. Nothing else is required.
 
 ---
 
@@ -125,7 +162,7 @@ git config core.hooksPath .persist/hooks
 
 | Command                             | Purpose                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------ |
-| `persist init`                      | Create neutral repository memory (and a pre-commit hook).                      |
+| `persist init`                      | Create repository memory. Asks four questions, then writes the minimum.        |
 | `persist init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
 | `persist init --features --modules` | Also generate the opt-in feature/module workflow scaffolding.                  |
 | `persist init --yes`                | Take every default without prompting (CI, scripts, non-TTY stdin).             |
@@ -146,18 +183,26 @@ git config core.hooksPath .persist/hooks
 `persist doctor` is the part that makes Persist OS more than a template. Every check is
 deterministic, local, and read-only.
 
-| Category            | Detects                                                                                     | Severity     |
-| ------------------- | ------------------------------------------------------------------------------------------- | ------------ |
-| Structure           | Missing config, required docs, or feature / module / ADR sections                           | error        |
-| Completion evidence | A feature marked complete with review pending or no test / result evidence                  | error        |
-| ADR quality         | An accepted ADR with no meaningful consequences                                             | error / warn |
-| Security            | A security-sensitive feature with no documented security impact                             | error / warn |
-| Drift               | Memory that references a missing, or not-yet-accepted, ADR                                  | error / warn |
-| Superseded          | Memory still citing a decision that has been superseded by a newer ADR                      | warning      |
-| Staleness           | Memory citing `src/` code that changed long after the memory did (git-based; off-git skips) | warning      |
-| Context budget      | The always-loaded agent files (CLAUDE.md + AGENTS.md + Cursor rule) grown past a budget     | warning      |
-| Content             | A feature PRD, module, or (once work exists) the threat / security model left as a stub     | warning      |
-| Conventions         | The canonical-vocabulary doc left as a stub once the repository has real work               | warning      |
+| Category            | Detects                                                              | Severity     |
+| ------------------- | -------------------------------------------------------------------- | ------------ |
+| Structure           | Missing config or required documents                                 | error        |
+| Memory integrity    | Memory referencing documents or ADRs that do not exist               | error        |
+| Completion evidence | Work marked complete with review pending or no test evidence         | error        |
+| ADR quality         | An accepted decision with no meaningful consequences or alternatives | error / warn |
+| Duplicate decisions | Two ADRs accepted under the same title                               | error / warn |
+| Security            | A security-sensitive decision that links no security memory          | warning      |
+| Drift               | Memory referencing a missing, or not-yet-accepted, ADR               | error / warn |
+| Superseded          | Memory still citing a decision replaced by a newer ADR               | warning      |
+| Code references     | Current memory citing `src/` paths that no longer exist              | warning      |
+| Staleness           | Memory citing code that changed long after the memory did            | warning      |
+| Chesterton fence    | A change to source with no recorded reason and no ADR reference      | warning      |
+| Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
+| Retired skills      | Skills retired in a newer release still sitting on disk              | warning      |
+| Context budget      | The always-loaded agent files grown past 24KB                        | warning      |
+| Content             | Required memory left as an unedited template once real work exists   | warning      |
+
+A check that **cannot** evaluate its input says so — `NOT EVALUATED`, with the reason — instead of
+reporting success for work it did not do. A gate that silently passes is worse than no gate.
 
 ```txt
 Exit codes:  0 = healthy   1 = warnings only   2 = errors
@@ -169,9 +214,13 @@ Because it returns an exit code, Doctor drops straight into the completion loop:
 pnpm test:run && pnpm typecheck && persist doctor
 ```
 
-Use it locally via the generated pre-commit hook, or add `persist doctor` as a step in CI. Add
-`--json` (`persist doctor --json`) for a stable, machine-readable report — handy for CI artifacts,
-hooks, and agent handoffs.
+The generated pre-commit hook runs Doctor and fails only on **errors** — warnings print and let the
+commit through, so the two severities mean different things. Add `persist doctor` to
+`preCommitGates` if you want warnings to block too.
+
+Use it locally via the generated hooks, or add `persist doctor` as a step in CI. Add `--json`
+(`persist doctor --json`) for a stable, machine-readable report — handy for CI artifacts, hooks, and
+agent handoffs.
 
 ## Opt-In Memory
 
@@ -179,6 +228,26 @@ hooks, and agent handoffs.
 and module workflow memory is opt-in — pass `persist init --features --modules`, or run
 `persist feature create` / `persist module create` whenever you need them. Doctor treats absent
 opt-in memory as not-evaluated (with a reason), never as an error.
+
+## Chesterton's Fence
+
+Git records what changed. ADRs record the decisions worth a document. Neither records why a piece of
+code is _shaped_ the way it is when that reasoning never rose to that level.
+
+You wrote a query that hits four collections instead of one, deliberately, because of a constraint.
+Months later nobody remembers it — including you. An agent reads the code, concludes one call would
+be simpler, and removes the constraint. Nothing notices until production does.
+
+`docs/60-engineering/FENCES.md` is where that reasoning lives. It **starts empty and grows through
+use**: nothing generates it, not `init`, not `adopt`, not an agent sweeping your codebase. A file of
+confident guesses about why code exists is worse than an empty one.
+
+When a change touches source with no recorded reason and no ADR reference, Doctor says so. The
+`chestertons-fence` skill walks an agent through the three questions — what is changing, what logic
+was already there and why, what might break — and a human confirms the answer, because the whole
+premise is that the constraint lives in someone's memory rather than in the code.
+
+It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config.json`.
 
 ## How It Works
 
