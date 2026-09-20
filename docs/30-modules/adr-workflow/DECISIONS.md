@@ -13,3 +13,10 @@ memory.
 
 The existing file is reused, and the filesystem write policy determines whether it is skipped or
 explicitly overwritten.
+
+## Supersede Refuses a Colliding Replacement Title
+
+`adr supersede <old> <new-title>` fails with `DUPLICATE_TITLE` when another live decision or
+proposal already holds the normalised title, pointing at the existing file. The superseded old
+file and superseded records are excluded — a title vacates when its decision does. Prevention
+at the source; the doctor duplicate-titles check still covers hand-written ADRs.

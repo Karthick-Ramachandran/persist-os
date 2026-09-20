@@ -88,3 +88,17 @@ addition to feature and module documents, so minimal repositories get a real gat
 
 Not-evaluated is now reserved for genuine inability: missing config, no scannable memory at all, or
 (staleness) non-git and shallow-clone repositories.
+
+## Retired Skills Are an Explicit List
+
+`retired-skills` warns only on the nine names 1.0 retired (`RETIRED_SKILL_NAMES` — append there
+when a release retires more). Anything else on disk is a custom skill and stays silent: warning
+on `skill create` output punished a supported workflow. Absent skills directories report
+not-evaluated rather than passing.
+
+## Duplicate ADR Titles Are an Error
+
+`duplicate-titles` compares normalised titles (trim, whitespace collapse, case-insensitive),
+never file names. Two live accepted decisions under one title error; a proposal sharing a live
+title warns on the proposal. Superseded records are history and never collide, so a succession
+pair sharing a title stays silent.
