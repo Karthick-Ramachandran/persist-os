@@ -96,6 +96,7 @@
                 <tr><td class="cmd-cell"><a href="#skill-create"><code>persist skill create &lt;name&gt;</code></a></td><td class="desc">Generate an agent skill for Claude Code and the portable Agent Skills target.</td></tr>
                 <tr><td class="cmd-cell"><a href="#skill-list"><code>persist skill list</code></a></td><td class="desc">List built-in catalog skills.</td></tr>
                 <tr><td class="cmd-cell"><a href="#fence-add"><code>persist fence add</code></a></td><td class="desc">Record the human-confirmed reason a path is shaped the way it is.</td></tr>
+                <tr><td class="cmd-cell"><a href="#hooks-sync"><code>persist hooks sync</code></a></td><td class="desc">Regenerate the generated hooks from the config. Never touches docs or config.</td></tr>
               </tbody>
             </table>
           </div>
@@ -153,7 +154,9 @@
               <dd>
                 Required together with <code>--force</code> when the directory already has
                 <code>.persist/config.json</code>. Without it, <code>--force</code> refuses, so an
-                existing installation is never overwritten by accident.
+                existing installation is never overwritten by accident. Reinit rewrites every
+                generated file, filled-in docs included, and resets the config to defaults. To
+                refresh hooks only, use <a href="#hooks-sync"><code>persist hooks sync</code></a>.
               </dd>
             </div>
           </dl>
@@ -369,6 +372,18 @@ Created:
             crossing. A path may carry a symbol &mdash; <code>src/billing.js:writeOrder</code>
             &mdash; which matches changes to the file. The loop end to end is in
             <a href="doctor.html#fence">Doctor</a>.
+          </p>
+
+          <h2 id="hooks-sync">persist hooks sync</h2>
+          <pre><code>persist hooks sync [--dry-run]</code></pre>
+          <p>
+            Regenerates the git hooks and the Claude SessionStart hook from
+            <code>.persist/config.json</code>, and nothing else. This is the repair the doctor's
+            <code>hook-drift</code> warning points at: after an upgrade, or after editing the gates
+            or <code>testCommand</code>. Hooks that already match are reported as unchanged.
+            <code>.claude/settings.json</code> is created when missing and otherwise left alone,
+            because it often holds your own settings. Docs, config and agent files are never
+            touched.
           </p>
 
           <h2 id="mcp-add">persist mcp add</h2>

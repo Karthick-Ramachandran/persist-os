@@ -28,6 +28,7 @@ import {
   SkillCreateError,
 } from "../commands/skill/create.js";
 import { addFence, formatFenceAddResult } from "../commands/fence/add.js";
+import { formatSyncHooksResult, HooksSyncError, syncHooks } from "../commands/hooks/sync.js";
 import { formatSkillListResult } from "../commands/skill/list.js";
 
 export type CliWritable = {
@@ -321,6 +322,22 @@ export function createCliProgram(
       },
     );
 
+  const hooksCommand = program
+    .command("hooks")
+    .description("Manage the generated git and Claude hooks.");
+
+  hooksCommand
+    .command("sync")
+    .description(
+      "Regenerate the generated hooks from .persist/config.json. Never touches docs or config.",
+    )
+    .option("--dry-run", "Show planned writes without writing files.")
+    .action(async (options: { dryRun?: boolean }) => {
+      const result = await syncHooks({ rootDir: cwd, dryRun: options.dryRun });
+
+      stdout.write(formatSyncHooksResult(result));
+    });
+
   return program;
 }
 
@@ -401,6 +418,14 @@ export async function main(
     }
 
     if (error instanceof McpAddError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof HooksSyncError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

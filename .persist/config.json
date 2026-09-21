@@ -1,6 +1,6 @@
 {
-  "version": "1.1.2",
-  "templateVersion": "1.1.2",
+  "version": "1.2.0",
+  "templateVersion": "1.2.0",
   "aiTools": [
     "claude",
     "codex",

@@ -269,11 +269,14 @@ branch 'main' set up to track 'origin/main'.
           <h2 id="regenerate">Editing and regenerating</h2>
           <p>
             The config is the source of truth and the hooks are rendered from it. After changing
-            the config, regenerate the hooks by re-running init with <code>--force --reinit</code>
-            (both flags are needed once <code>.persist/config.json</code> exists), and review the
-            diff before committing. If you hand-edit a hook instead, that is allowed, and the
-            doctor's <code>hook-drift</code> check will keep reporting the difference as a warning so
-            it stays visible.
+            the config, regenerate the hooks with <code>persist hooks sync</code>
+            (<code>--dry-run</code> first to preview). It rewrites only the generated hook scripts
+            and never touches docs or config. <code>.claude/settings.json</code> is created when
+            missing and otherwise left alone, because it often holds your own settings.
+            <code>init --force --reinit</code> is not a way to do this: it rewrites every generated
+            file, filled-in docs included, and resets the config to defaults. If you hand-edit a
+            hook instead, that is allowed, and the doctor's <code>hook-drift</code> check keeps
+            reporting the difference as a warning so it stays visible.
           </p>
 
           <h2 id="test-gate">persist test-gate</h2>

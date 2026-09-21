@@ -1,16 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import {
-  CLAUDE_SETTINGS_PATH,
-  PRE_COMMIT_HOOK_PATH,
-  PRE_PUSH_HOOK_PATH,
-  SESSION_START_HOOK_PATH,
-  renderClaudeSettings,
-  renderPreCommitHook,
-  renderPrePushHook,
-  renderSessionStartHook,
-} from "../../hooks/generate-hook.js";
+import { CLAUDE_SETTINGS_PATH, expectedHookFiles } from "../../hooks/generate-hook.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 export type HookDriftCheckResult = {
@@ -26,7 +17,8 @@ export type HookDriftCheckResult = {
  * A mismatch is a warning, not an error — a hand-edited hook is a legitimate choice, but it
  * should be visible, not silently trusted. Regenerating from a drifted config would otherwise
  * silently drop the hand edit. When an expected file does not exist there is nothing to compare,
- * so the check reports not-evaluated instead of passing.
+ * so the check reports not-evaluated instead of passing. `persist hooks sync` repairs
+ * exactly what this check flags, because both read `expectedHookFiles`.
  *
  * The Claude SessionStart hook and its settings file are covered too, because they are generated
  * output like the git hooks — and because they are the ones that drift silently: they carry the
@@ -39,18 +31,10 @@ export async function checkHookDrift(context: DoctorCheckContext): Promise<HookD
     return notEvaluated("no validated Persist OS config, so the expected hooks are unknown");
   }
 
-  const expected: [string, string][] = [
-    [PRE_COMMIT_HOOK_PATH, renderPreCommitHook(context.config.preCommitGates ?? [])],
-    [
-      PRE_PUSH_HOOK_PATH,
-      renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
-    ],
-  ];
-
-  if ((context.config.aiTools ?? []).includes("claude")) {
-    expected.push([SESSION_START_HOOK_PATH, renderSessionStartHook()]);
-    expected.push([CLAUDE_SETTINGS_PATH, renderClaudeSettings()]);
-  }
+  const expected: [string, string][] = expectedHookFiles(context.config).map((file) => [
+    file.path,
+    file.content,
+  ]);
 
   const missing = (
     await Promise.all(
@@ -62,7 +46,7 @@ export async function checkHookDrift(context: DoctorCheckContext): Promise<HookD
 
   if (missing.length > 0) {
     return notEvaluated(
-      `no generated file at ${missing.join(" and ")}, so drift cannot be measured — run \`persist init\` to generate it`,
+      `no generated file at ${missing.join(" and ")}, so drift cannot be measured — run \`persist hooks sync\` to generate it`,
     );
   }
 
@@ -74,7 +58,9 @@ export async function checkHookDrift(context: DoctorCheckContext): Promise<HookD
         severity: "warning",
         check: "hook-drift",
         message:
-          "Generated file disagrees with what this version of Persist OS produces — hand edits are allowed but should be visible. Re-run `persist init --force --reinit` to regenerate it (review the diff first).",
+          hookPath === CLAUDE_SETTINGS_PATH
+            ? "Claude settings disagree with what this version of Persist OS produces — often your own settings sit alongside the SessionStart entry, which is fine. Merge the SessionStart hook entry by hand if it is missing; `persist hooks sync` never overwrites this file."
+            : "Generated file disagrees with what this version of Persist OS produces — hand edits are allowed but should be visible. Run `persist hooks sync --dry-run` to preview, then `persist hooks sync` to regenerate it; it rewrites only the generated hooks, never docs or config.",
         path: hookPath,
       });
     }

@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0
+
+**A relocated memory folder keeps loading into sessions.** `docsDir`, `adrDir` and `modulesDir` in
+`.persist/config.json` moved the memory for doctor and every command, but the Claude SessionStart
+hook read fixed `docs/` paths. A repository that moved `docs/` passed doctor while every session
+loaded no ADRs, no modules and no fence index. The hook now reads those paths from the config when
+it runs, falling back to the default layout. The README documents how to relocate.
+
+**`persist hooks sync` regenerates the hooks, and nothing else.** Doctor's `hook-drift` warning used
+to say `persist init --force --reinit`, which rewrites every generated file (a filled-in
+`PRODUCT.md` came back as the template) and resets the config to defaults. Following a doctor
+warning could cost a repository its memory. `hooks sync` rewrites only the generated hook scripts
+from the current config, reports matching ones as unchanged, and creates `.claude/settings.json`
+only when it is missing. Docs, config and agent files are never touched. The warning now points at
+it, and the missing-Cursor-rule warning points at plain `persist init`, which only adds missing
+files.
+
+**Upgrading:** the SessionStart hook changed, so doctor shows one `hook-drift` warning on
+`.claude/hooks/session-start.sh`. Run `persist hooks sync`.
+
 ## 1.1.2
 
 Three edges of the fence, found by probing rather than by anything failing.

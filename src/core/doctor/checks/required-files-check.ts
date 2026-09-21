@@ -69,7 +69,7 @@ export async function checkRequiredFiles(context: DoctorCheckContext): Promise<D
         severity: "warning",
         check: "tool-files",
         message:
-          'Cursor rule is missing, so memory will not auto-load in Cursor. Regenerate it with `persist init --force --reinit`, or drop "cursor" from aiTools.',
+          'Cursor rule is missing, so memory will not auto-load in Cursor. Restore it with `persist init` — without --force it only adds files that are missing — or drop "cursor" from aiTools.',
         path: filePath,
       });
     }
