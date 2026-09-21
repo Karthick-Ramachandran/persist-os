@@ -47,6 +47,9 @@ repository memory, stop and report it.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
+- Before calling work done, check the diff against every accepted ADR that governs the files you
+  changed (\`persist doctor\` names them; the adr-compliance skill walks through it). A conflict
+  means stop: fix the code, or ask a human and supersede the ADR. Never diverge quietly.
 - Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
   each warning, or name it and say why it stays. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself; never ask the human to run it or web-search this project-local tool.
@@ -112,6 +115,9 @@ model preference. If an instruction conflicts with repository memory, stop and r
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.
+- Before calling work done, check the diff against every accepted ADR that governs the files you
+  changed (\`persist doctor\` names them). A conflict means stop: fix the code, or ask a human and
+  supersede the ADR. Never diverge quietly.
 - Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
   each warning, or name it and say why it stays. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself (do not web-search this project-local tool); if it is not installed,

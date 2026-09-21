@@ -142,12 +142,12 @@ INFO
 - 0 ADRs detected.
 
 Result: <span class="warn">WARNINGS</span>
-[main d7c2e09] Plan the checkout feature
+[main eaa3b2d] Plan the checkout feature
  2 files changed, 50 insertions(+)
 <span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-d7c2e09 Plan the checkout feature
-2751edb Add repository memory</code></pre>
+eaa3b2d Plan the checkout feature
+ac9d9f8 Add repository memory</code></pre>
 
           <h2 id="checks">Every check</h2>
           <p>
@@ -228,6 +228,11 @@ d7c2e09 Plan the checkout feature
                   <td><code>hook-drift</code></td>
                   <td class="desc">The tracked hooks in <code>.persist/hooks/</code> differ from what the current config would generate. Hand edits are allowed, but should be visible.</td>
                   <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
+                  <td><code>governing-adrs</code></td>
+                  <td class="desc">A change touches files an accepted ADR governs (its <code>Applies To</code> list), so the ADR and its decision are named for the agent and the reviewer to check against. It reports and never judges. Not evaluated when no ADR lists the paths it governs.</td>
+                  <td class="sev-info">info</td>
                 </tr>
                 <tr>
                   <td><code>hooks-active</code></td>
@@ -322,6 +327,7 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED</code></pre>
           <p>The same fresh memory in a folder that is not a git repository: every check that reads git says so.</p>
@@ -341,6 +347,7 @@ NOT EVALUATED
 - ignored-files: not a git repository, so ignore rules cannot be evaluated
 - hooks-active: not a git repository, so there is no clone to switch the hooks on in
 - fence: not inside a git work tree, so the staged set is unknown
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED</code></pre>
 

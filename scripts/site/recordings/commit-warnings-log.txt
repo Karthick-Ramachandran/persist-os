@@ -1,4 +1,4 @@
 $ git log --oneline
-d7c2e09 Plan the checkout feature
-2751edb Add repository memory
+eaa3b2d Plan the checkout feature
+ac9d9f8 Add repository memory
 [exit 0]

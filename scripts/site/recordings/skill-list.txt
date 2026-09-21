@@ -5,4 +5,5 @@ Persist OS skill catalog
 - security-review: Security Review
 - conventions-adherence: Conventions Adherence
 - chestertons-fence: Chesterton's Fence
+- adr-compliance: ADR Compliance
 [exit 0]

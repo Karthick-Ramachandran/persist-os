@@ -32,6 +32,8 @@ Planned creates:
 - .agents/skills/conventions-adherence/SKILL.md
 - .claude/skills/chestertons-fence/SKILL.md
 - .agents/skills/chestertons-fence/SKILL.md
+- .claude/skills/adr-compliance/SKILL.md
+- .agents/skills/adr-compliance/SKILL.md
 
 Pre-commit and pre-push hooks will be written to .persist/hooks/.
 Would switch the git hooks on for this clone: git config core.hooksPath .persist/hooks

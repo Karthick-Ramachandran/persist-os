@@ -11,6 +11,7 @@ INFO
 NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED
 [exit 0]

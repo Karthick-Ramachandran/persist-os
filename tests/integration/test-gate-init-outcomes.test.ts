@@ -144,12 +144,12 @@ describe("doctor check outcomes", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("records fifteen not-evaluated checks when config is missing", async () => {
+  it("records sixteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("outcomes-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(17);
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(15);
+    expect(report.checks).toHaveLength(18);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(16);
     expect(report.checks).toContainEqual({
       id: "hook-drift",
       status: "not-evaluated",
@@ -184,6 +184,8 @@ describe("doctor check outcomes", () => {
     await runCommand(rootDir, ["module", "create", "billing"]);
     await runCommand(rootDir, ["adr", "create", "use-postgres"]);
     await runCommand(rootDir, ["adr", "accept", "use-postgres"]);
+    // A healthy repository's decision says which code it governs, so governing-adrs evaluates.
+    await scopeAdr(rootDir, "docs/adrs/ADR-0001-use-postgres.md", "src/db/**");
     await fillModuleDoc(rootDir, "billing");
     await fillScaffoldDocs(rootDir);
     // staleness needs real commit history, so a "healthy" repo is a git repo with
@@ -208,7 +210,7 @@ describe("doctor check outcomes", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(17);
+    expect(report.checks).toHaveLength(18);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -234,7 +236,7 @@ describe("doctor check outcomes", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(17);
+    expect(parsed.checks).toHaveLength(18);
   });
 
   it("has no guard command left", async () => {
@@ -244,3 +246,17 @@ describe("doctor check outcomes", () => {
     expect(result.exitCode).not.toBe(0);
   });
 });
+
+/** Replace a generated ADR's Applies To placeholder with one governed path. */
+async function scopeAdr(rootDir: string, adrPath: string, pattern: string): Promise<void> {
+  const file = path.join(rootDir, adrPath);
+  const content = await readFile(file, "utf8");
+  await writeFile(
+    file,
+    content.replace(
+      /## Applies To\n\n[\s\S]*?\n\n## /u,
+      `## Applies To\n\n- \`${pattern}\`\n\n## `,
+    ),
+    "utf8",
+  );
+}

@@ -8,6 +8,7 @@ import {
 } from "../helpers/init-test-helpers.js";
 
 const EXPECTED_MINIMAL_FILES = [
+  ".agents/skills/adr-compliance/SKILL.md",
   ".agents/skills/chestertons-fence/SKILL.md",
   ".agents/skills/conventions-adherence/SKILL.md",
   ".agents/skills/plan-feature/SKILL.md",
@@ -15,6 +16,7 @@ const EXPECTED_MINIMAL_FILES = [
   ".agents/skills/security-review/SKILL.md",
   ".claude/hooks/session-start.sh",
   ".claude/settings.json",
+  ".claude/skills/adr-compliance/SKILL.md",
   ".claude/skills/chestertons-fence/SKILL.md",
   ".claude/skills/conventions-adherence/SKILL.md",
   ".claude/skills/plan-feature/SKILL.md",

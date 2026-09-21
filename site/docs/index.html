@@ -118,7 +118,7 @@ Persist OS init complete.
 Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
 Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json).
 stdin is not a TTY — proceeded with defaults without prompting (as --yes).
-Generated repository memory, 4 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Generated repository memory, 5 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
 Created:
 - .persist/config.json
 - AGENTS.md
@@ -255,6 +255,7 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED</code></pre>
           <p>

@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.2.4
+
+Agents follow ADRs again, not just their titles.
+
+**Why this was needed.** In a rehearsal an agent recorded "money is integer cents, including
+intermediate calculations" as an ADR, then wrote a tip calculation with a float division under a
+comment claiming integer math. The rule "never contradict an accepted ADR" has been in the agent
+rules since 0.x, word for word. What 1.0 removed was the step that acted on it: the retired
+`implement-task` skill read the ADRs governing an area before coding, and
+`architecture-drift-review` compared the diff against them afterwards. Tests that claimed their
+substance was routed elsewhere read the Persist OS repository's own files, so they passed while the
+routed rules never reached users.
+
+**New skill: `adr-compliance`.** Find the ADRs that govern a change, read each Decision in full,
+turn it into rules a line of code can pass or fail, and check every added line against them from a
+fresh context, quoting the line. A comment that claims compliance is not evidence. A conflict means
+fix the code, or stop and supersede the ADR with a human's agreement. It also flags new dependencies
+or interfaces no ADR covers.
+
+**ADRs can say which code they govern.** New ADRs have an `## Applies To` section
+(`- src/billing/**`). A new doctor check, `governing-adrs`, names each accepted ADR whose paths a
+change touches, with its decision, at commit time (staged changes, or unpushed commits when nothing
+is staged). It is info: it points at the rule, and the skill does the judging. Not evaluated when no
+ADR lists paths.
+
+**Done includes the ADR check.** The agent rules (`AGENTS.md`, the Cursor rule, the SessionStart
+text) now say: before calling work done, check the diff against every accepted ADR governing the
+files you changed, reading its Decision rather than its title.
+
+**Skill fixes.** `chestertons-fence` and `plan-feature` linked to Persist OS's own docs (`ADR-0010`,
+`docs/ai/MODULE_DELIVERY_WORKFLOW.md`), dead in every user repository. `security-review` carried
+Persist's own concerns (symlinks, overwrite policy, templates); it now checks input validation at
+trust boundaries. A test now fails if any skill links to a file a fresh repository does not have.
+
+**Upgrading:** `persist skill create adr-compliance` adds the skill to an existing repository. Add
+`## Applies To` to the ADRs that govern code. `init` never overwrites `AGENTS.md`, so copy the new
+done-rule line across by hand, and run `persist hooks sync` for the SessionStart text.
+
 ## 1.2.3
 
 The hooks now actually run, and the fence can't be skipped by committing first.
