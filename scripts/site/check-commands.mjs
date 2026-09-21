@@ -39,9 +39,10 @@ const surface = new Map();
 for (const c of listCommands(help([]))) {
   const h = help([c]);
   const subs = listCommands(h);
-  if (subs.length === 0) {
-    surface.set(c, options(h));
-  } else {
+  // The parent is always registered too: some commands (context) take their own
+  // argument and options alongside subcommands.
+  surface.set(c, options(h));
+  if (subs.length > 0) {
     for (const s of subs) surface.set(`${c} ${s}`, options(help([c, s])));
   }
 }

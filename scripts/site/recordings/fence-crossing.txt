@@ -14,6 +14,7 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
+- context-cards: no context cards exist, so there is nothing to check for dead paths or staleness
 
 Result: WARNINGS
 [exit 1]

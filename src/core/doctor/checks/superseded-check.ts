@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { CONTEXT_DIR_NAME } from "../../context/context-card.js";
 import { FENCES_FILE } from "../../fence/generate-fence.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 import { requiredDocs } from "./required-files-check.js";
@@ -23,8 +24,8 @@ export type SupersededCheckResult = {
  * green. Semantic agreement between docs is left to the agent; this only follows the explicit
  * supersede trail.
  *
- * Scanned: the required default docs, FENCES.md, and in-progress feature and module memory —
- * the current-state set the code-reference check reads. Not scanned: the ADR directory itself
+ * Scanned: the required default docs, FENCES.md, context cards, and in-progress feature and
+ * module memory — the current-state set the code-reference check reads. Not scanned: the ADR directory itself
  * (the new ADR legitimately links back to the one it supersedes, and the old one's status
  * section names its replacement — flagging either would punish the trail), the ADR index
  * (a catalog, not authority), and the agent entry files (routing, not reasoning).
@@ -41,7 +42,11 @@ export async function checkSuperseded(context: DoctorCheckContext): Promise<Supe
   const findings: DoctorFinding[] = [];
   let scanned = 0;
 
-  for (const referenceDir of [config.featuresDir, config.modulesDir]) {
+  for (const referenceDir of [
+    config.featuresDir,
+    config.modulesDir,
+    path.posix.join(config.docsDir, CONTEXT_DIR_NAME),
+  ]) {
     const result = await checkReferences(context.rootDir, referenceDir, supersededIds);
     findings.push(...result.findings);
     scanned += result.scanned;

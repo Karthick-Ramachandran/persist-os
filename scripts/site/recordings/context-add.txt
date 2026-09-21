@@ -1,0 +1,10 @@
+$ persist context add billing --purpose How billing writes land.
+Persist OS context add complete.
+Card: docs/context/billing.md
+Created:
+- docs/context/billing.md
+
+Next steps:
+- Fill the sections in docs/context/billing.md: Start Here paths, Rules pointers, and above all the Answers list with the task you were just given, phrased the way it was asked.
+- Run persist context "<task>" to check the card is found before calling the work done.
+[exit 0]

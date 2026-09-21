@@ -24,6 +24,10 @@ const RUN_PERSIST_FUNCTION = [
 
 export const SESSION_START_HOOK_PATH = ".claude/hooks/session-start.sh";
 export const CLAUDE_SETTINGS_PATH = ".claude/settings.json";
+/** Prompt hook: looks up context cards for the submitted prompt, per tool docs. */
+export const CONTEXT_PROMPT_HOOK_PATH = ".claude/hooks/context-prompt.sh";
+export const CODEX_HOOKS_JSON_PATH = ".codex/hooks.json";
+export const CODEX_CONTEXT_HOOK_PATH = ".codex/hooks/context-prompt.sh";
 
 /**
  * The always-loaded budget both the SessionStart hook and the doctor context-budget check
@@ -38,7 +42,7 @@ export const ALWAYS_LOADED_BUDGET_BYTES = 24 * 1024;
  * the hook emits — `${...}` here is shell, not interpolation.
  */
 export const SESSION_START_BASE_CONTEXT =
-  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED.";
+  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked.";
 
 /** The label the hook places between the base context and the fence index. */
 export const FENCE_INDEX_LABEL =
@@ -118,17 +122,127 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
 }
 
 /**
- * Claude Code settings that wire the SessionStart hook. Generated only when no settings file exists,
- * since the safe write policy never overwrites a user's existing settings.
+ * Render a deterministic POSIX `sh` prompt hook for the context-cards lookup.
+ *
+ * Both Claude Code (`UserPromptSubmit`) and Codex (`UserPromptSubmit`) hand a
+ * command hook its input as JSON on stdin with a `prompt` field, and both read
+ * injected context back from `hookSpecificOutput.additionalContext` on stdout.
+ * The script only forwards the payload to `persist context --hook <tool>`,
+ * which prints nothing below the match threshold — silence is the correct
+ * signal there, not an error.
+ *
+ * Speed and safety, per the hook contracts: the script always exits 0 so it
+ * can never block or fail the prompt; it runs only when `persist` is on PATH
+ * or in the project's `node_modules/.bin`, and it never calls `npx` (far too
+ * slow on every prompt). A `context --help` probe stands down when the found
+ * binary predates the command instead of failing the lookup noisily. The
+ * prompt text rides a shell variable and a pipe — it is never written to disk
+ * or logged. The short timeout lives in each tool's settings, not here.
  */
-export function renderClaudeSettings(): string {
+/**
+ * How each tool's settings file launches the prompt hook. Both are absolute at run time:
+ * Claude Code expands `${CLAUDE_PROJECT_DIR}` (its documented settings example does the
+ * same), and Codex evaluates the `git rev-parse` substitution (its documented example
+ * resolves hook scripts from the git root). Plain strings, never template literals, so
+ * the `$` reaches the file verbatim.
+ */
+export const CLAUDE_CONTEXT_HOOK_COMMAND =
+  '"${CLAUDE_PROJECT_DIR}/' + CONTEXT_PROMPT_HOOK_PATH + '"';
+export const CODEX_CONTEXT_HOOK_COMMAND =
+  '"$(git rev-parse --show-toplevel)/' + CODEX_CONTEXT_HOOK_PATH + '"';
+/** Same quoting for the SessionStart entry: new settings only, never merged. */
+export const SESSION_START_HOOK_COMMAND = '"${CLAUDE_PROJECT_DIR}/' + SESSION_START_HOOK_PATH + '"';
+
+export function renderContextPromptHook(tool: "claude" | "codex"): string {
+  const wiring = tool === "claude" ? CLAUDE_SETTINGS_PATH : CODEX_HOOKS_JSON_PATH;
+  // Hooks can fire with any working directory, but the lookup reads config and
+  // node_modules relative to the project root — so each script moves there first.
+  // The root comes from the tool's own documented source: Claude Code exports
+  // CLAUDE_PROJECT_DIR on the hook process; Codex has no equivalent variable,
+  // so the script asks git. Any failure exits 0: a lookup never blocks a prompt.
+  const goRoot =
+    tool === "claude"
+      ? 'if [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then\n  cd "$CLAUDE_PROJECT_DIR" || exit 0\nfi'
+      : 'root=$(git rev-parse --show-toplevel 2>/dev/null)\nif [ -n "$root" ]; then\n  cd "$root" || exit 0\nfi';
+  return `#!/bin/sh
+# Persist OS ${tool === "claude" ? "Claude Code UserPromptSubmit" : "Codex UserPromptSubmit"} hook.
+# Generated by \`persist init\`. Looks up context cards for the submitted prompt and injects
+# pointers (never whole files) into the prompt. Read-only: the prompt text stays in this
+# process and is never written to disk or logged.
+# Wired in ${wiring}; that file decides the timeout.
+${goRoot}
+input=$(cat)
+# The installed persist may predate the context command (1.3.0). Probe for it
+# first: an old binary would fail the lookup noisily instead of standing down.
+if command -v persist >/dev/null 2>&1; then
+  persist context --help >/dev/null 2>&1 || exit 0
+  printf '%s' "$input" | persist context --hook ${tool}
+elif [ -x node_modules/.bin/persist ]; then
+  node_modules/.bin/persist context --help >/dev/null 2>&1 || exit 0
+  printf '%s' "$input" | node_modules/.bin/persist context --hook ${tool}
+fi
+exit 0
+`;
+}
+
+/**
+ * Claude Code settings that wire the SessionStart hook. Generated only when no settings file exists,
+ * since the safe write policy never overwrites a user's existing settings. With the context hook
+ * on, the UserPromptSubmit entry rides the same file: one short-timeout lookup per prompt.
+ */
+export function renderClaudeSettings(includeContextHook = true): string {
+  const userPromptSubmit =
+    includeContextHook === true
+      ? {
+          UserPromptSubmit: [
+            {
+              hooks: [
+                {
+                  type: "command",
+                  command: CLAUDE_CONTEXT_HOOK_COMMAND,
+                  timeout: 10,
+                },
+              ],
+            },
+          ],
+        }
+      : {};
   return `${JSON.stringify(
     {
       hooks: {
         SessionStart: [
           {
             matcher: "startup",
-            hooks: [{ type: "command", command: `./${SESSION_START_HOOK_PATH}` }],
+            hooks: [{ type: "command", command: SESSION_START_HOOK_COMMAND }],
+          },
+        ],
+        ...userPromptSubmit,
+      },
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+/**
+ * Codex project hooks live in `.codex/hooks.json` next to the active config
+ * layer. User-owned like the Claude settings: the user may wire their own
+ * hooks alongside, so it is created when missing and never merged.
+ */
+export function renderCodexHooksJson(): string {
+  return `${JSON.stringify(
+    {
+      description: "Persist OS context cards: prompt pointers.",
+      hooks: {
+        UserPromptSubmit: [
+          {
+            hooks: [
+              {
+                type: "command",
+                command: CODEX_CONTEXT_HOOK_COMMAND,
+                timeout: 10,
+              },
+            ],
           },
         ],
       },
@@ -239,6 +353,7 @@ export function expectedHookFiles(config: {
   preCommitGates?: string[];
   prePushGates?: string[];
   testCommand?: string | null;
+  contextHook?: boolean;
 }): GeneratedHookFile[] {
   const files: GeneratedHookFile[] = [
     {
@@ -259,7 +374,33 @@ export function expectedHookFiles(config: {
       content: renderSessionStartHook(),
       executable: true,
     });
-    files.push({ path: CLAUDE_SETTINGS_PATH, content: renderClaudeSettings(), userOwned: true });
+    files.push({
+      path: CLAUDE_SETTINGS_PATH,
+      content: renderClaudeSettings(config.contextHook !== false),
+      userOwned: true,
+    });
+    // The prompt hook is layered on the SessionStart one: same memory, delivered per prompt.
+    // Off when contextHook is false; that spends no extra lookup on users who opted out.
+    if (config.contextHook !== false) {
+      files.push({
+        path: CONTEXT_PROMPT_HOOK_PATH,
+        content: renderContextPromptHook("claude"),
+        executable: true,
+      });
+    }
+  }
+
+  if (config.contextHook !== false && (config.aiTools ?? []).includes("codex")) {
+    files.push({
+      path: CODEX_CONTEXT_HOOK_PATH,
+      content: renderContextPromptHook("codex"),
+      executable: true,
+    });
+    files.push({
+      path: CODEX_HOOKS_JSON_PATH,
+      content: renderCodexHooksJson(),
+      userOwned: true,
+    });
   }
 
   return files;

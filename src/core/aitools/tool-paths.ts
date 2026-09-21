@@ -13,6 +13,10 @@ export function keepPathForTools(filePath: string, aiTools: readonly string[]): 
   if (filePath.startsWith(".cursor/")) {
     return aiTools.includes("cursor");
   }
+  if (filePath.startsWith(".codex/")) {
+    // The prompt hook and its wiring are Codex-only files, like .claude/ is Claude-only.
+    return aiTools.includes("codex");
+  }
   if (filePath.startsWith(".agents/")) {
     // The portable Agent Skills are how Codex, Cursor, and other AGENTS.md-aware tools
     // consume workflow skills — Cursor has no skills format of its own.

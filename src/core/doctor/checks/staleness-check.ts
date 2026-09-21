@@ -26,7 +26,9 @@ const placeholderMarkers = /[<>*]|\.\.\./u;
 // Conservative gap: only flag when the referenced code's last commit is this much newer than the
 // memory's last commit. A fresh repo commits docs and code together (no gap), so this stays quiet;
 // it fires when memory is genuinely old and the code it cites moved on long after.
-const STALE_AFTER_SECONDS = 90 * 24 * 60 * 60;
+// Exported: the context-cards check reuses this threshold and the git plumbing below rather than
+// inventing its own, so every staleness verdict in doctor means the same gap.
+export const STALE_AFTER_SECONDS = 90 * 24 * 60 * 60;
 
 export type StalenessCheckResult = {
   findings: DoctorFinding[];
@@ -212,7 +214,10 @@ export async function isShallowRepository(rootDir: string): Promise<boolean> {
   }
 }
 
-async function lastCommitTime(rootDir: string, relativePath: string): Promise<number | null> {
+export async function lastCommitTime(
+  rootDir: string,
+  relativePath: string,
+): Promise<number | null> {
   try {
     const { stdout } = await execFileAsync(
       "git",

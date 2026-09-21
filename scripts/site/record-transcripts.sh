@@ -163,4 +163,40 @@ rec fence-add persist fence add src/billing.js --why "Writes four collections in
 rec fence-answered persist doctor
 recsh fence-file "cat docs/60-engineering/FENCES.md"
 
+# --- Context cards: scaffold a card, record the task phrasing, look it up ---
+rec context-add persist context add billing --purpose "How billing writes land."
+cat > docs/context/billing.md <<'EOF'
+# Billing
+
+## Purpose
+
+How billing writes land.
+
+## Answers
+
+- simplify the billing write
+- who pays the extra collection
+
+## Also Known As
+
+- billing, charges, ledger
+
+## Start Here
+
+- `src/billing.js` — writeOrder: the four-collection write and its reason
+
+## Rules
+
+- Fence `src/billing.js` — four collections land in one transaction, and why
+
+## Pitfalls
+
+- LESSONS: simplifying the write splits the ledger from the audit trail
+
+## Applies To
+
+- `src/billing.js`
+EOF
+rec context-find persist context "simplify the billing write"
+
 echo "recorded $(ls "$OUT" | wc -l | tr -d ' ') blocks into $OUT (work dir: $WORK)"

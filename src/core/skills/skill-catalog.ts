@@ -241,19 +241,19 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     name: "adr-compliance",
     title: "ADR Compliance",
     description:
-      "Check that a change follows the accepted ADRs governing the files it touches. Use when changing code in an area an ADR governs, before calling work done, or when persist doctor names a governing ADR for a changed file. Skip for writing a new ADR (use persist adr create), planning, and convention or security reviews.",
+      "Check that a change follows the accepted ADRs governing the files it touches: a quick check by default, a full review for large, multi-decision, or money, auth, and data-model changes. Use when a Start here block or persist doctor names a governing ADR, or before calling work done. Skip for writing ADRs, planning, and convention or security reviews.",
     goal: "Prove every accepted ADR that governs a change is followed, or stop before a conflict lands.",
     inputs: [
       "The change: the staged diff, or the commits not yet pushed.",
-      "The accepted ADRs in docs/adrs/; superseded ones no longer bind.",
+      'The governing decisions: the "Follow ADR-…" lines Persist handed you and the ADRs persist doctor names.',
     ],
     workflow: [
-      "Find the governing ADRs: run `persist doctor` and take the ADRs it names for the changed files, then search the accepted ADRs for each changed path, its directory, and the domain it touches (money, auth, storage) and add any that match.",
-      "Read each governing ADR's Decision section in full, not just its title, and rewrite it as short rules a line of code can pass or fail.",
-      "Review with fresh context: a separate pass, or a sub-agent given only the diff and those rules, never the conversation that wrote the change.",
-      "Check every added or changed line against every rule and quote the line for each finding. Judge the operation itself; a comment, name, or summary that claims compliance is not evidence.",
-      "Check for new dependencies, services, storage, or public interfaces that no accepted ADR covers; each one is a decision to record, not a detail.",
-      "Mark each rule: follows, conflicts (quote the line), or unclear (say what would settle it).",
+      'List the governing ADRs: the "Follow ADR-…" lines from the Start here block, plus any ADR `persist doctor` names for the changed files.',
+      "Quick check, the default: for each decision, read the changed lines it covers and confirm each one follows it. Judge the operation itself; a comment, name, or summary that claims compliance is not evidence.",
+      "Escalate to the full review when the diff is large, several decisions govern it, or it touches money, auth, or the data model.",
+      "Full review: read each governing ADR's Decision section in full and rewrite it as rules a line of code can pass or fail.",
+      "Full review: check every added line against every rule with fresh context, a sub-agent given only the diff and the rules, and quote the line for each finding.",
+      "Full review: flag new dependencies, services, storage, or public interfaces that no accepted ADR covers; each is a decision to record, not a detail.",
       "Resolve every conflict before calling the work done, as the Decisions below say.",
     ],
     decisions: [
@@ -261,7 +261,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "If the ADR looks wrong for this change → stop and ask a human; once they agree, record it with `persist adr supersede <old> <new-title>`.",
       "If a decision is too vague to check → report it as unclear and propose sharper wording and an Applies To list; do not guess.",
       "If the change makes a decision no ADR records → propose one with `persist adr create`; never accept it yourself.",
-      "If no accepted ADR governs the change → say so explicitly; that is a valid all-clear.",
+      "If no accepted ADR governs the change → say so; that is a valid all-clear and needs no review.",
     ],
     verification: [
       "Every governing ADR has a verdict, or the review states that none govern the change.",
@@ -275,6 +275,38 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     output: [
       "Per ADR: follows, conflicts (with quoted lines), or unclear.",
       "What was fixed, or the human decision still needed.",
+    ],
+  },
+  {
+    name: "context",
+    title: "Context Lookup",
+    description:
+      "Find and record area memory through context cards. Use when starting work in an area with history, when a task names code whose reasons live outside the source, or when finishing work the next task here should find. Skip for small fixes with no reusable reasoning, security reviews, and release planning.",
+    goal: "Start from recorded area memory instead of rediscovery, and leave the next task a better card.",
+    workflow: [
+      'Run `persist context "<task>"` before starting, phrasing the task the way it was asked.',
+      "Read only what the matches point at: the Start Here paths first, then the Rules and Pitfalls lines they name.",
+      "When no card covers the task, read the closest decisions and fences the output names instead.",
+      "Do the work, then check the diff against the pointed-at rules before calling it done.",
+      'When done, create or refresh the area card: `persist context add <name> --purpose "<one line>"` for a new area, otherwise edit the existing card directly.',
+      "Add the finished task to the card Answers list, phrased the way it was asked.",
+      'Run `persist context "<task>"` again to confirm the card is found before calling the work done.',
+    ],
+    decisions: [
+      "If the lookup names no card and no decision → say so; an empty result is a valid answer.",
+      "If the area has no card yet → scaffold one with `persist context add`; never overwrite an existing card.",
+      "If the card's pointers contradict the code → the code wins today; update the card and say so.",
+    ],
+    verification: [
+      "The lookup ran before any source file was read for the task.",
+      "Only pointed-at files were read; no surrounding directory was explored.",
+      "The card Answers list holds the finished task in its asked phrasing.",
+      "A repeat lookup finds the card for that phrasing.",
+    ],
+    resources: ["For area memory, when present → docs/context/"],
+    output: [
+      "The card found and the pointed-at files read, or an explicit statement that none covers the task.",
+      "The card created or updated, with the new Answers line quoted.",
     ],
   },
 ];

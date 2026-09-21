@@ -31,7 +31,20 @@ repository memory, stop and report it.
 
 ## Rules — follow on every change
 
-- Read the Required reading below before non-trivial work.
+- Every task, kept short:
+  1. Start from what Persist hands you: the "Start here" block in the prompt, or run
+     \`persist context "<task>"\` (\`npx persist-os context "<task>"\` when \`persist\` is not
+     installed). Open those files and what the task itself needs; do not survey the repository.
+  2. Each "Follow ADR-…" line is a rule for this change. Keep to it; if the task needs to break it,
+     stop and ask. The pointers are where to start, not the limit of what applies: every accepted
+     ADR and repository rule still binds, and when a card disagrees with an ADR, the ADR wins and
+     the card gets fixed.
+  3. Implement with focused tests.
+  4. Before calling it done, check your changed lines against each governing decision
+     (\`persist doctor\` names them), then run the tests and doctor.
+  5. Add the task to the area card's Answers list, phrased the way it was asked.
+- Read the Required reading below only when no card covers the area or the work is new ground: a new
+  feature, module, data model, or security decision.
 - Match ceremony to scope — both ways. A genuinely new feature, module, integration, data model, or
   security/architecture decision gets proper planning (PRD/plan/ADR as fit) — do not under-build it.
   A small addition or fix within an already-decided area (a component, helper, endpoint, bug fix)
@@ -47,9 +60,9 @@ repository memory, stop and report it.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
-- Before calling work done, check the diff against every accepted ADR that governs the files you
-  changed (\`persist doctor\` names them; the adr-compliance skill walks through it). A conflict
-  means stop: fix the code, or ask a human and supersede the ADR. Never diverge quietly.
+- A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
+  Never diverge quietly. Run the adr-compliance skill in full when the diff is large, touches several
+  decisions, or touches money, auth, or the data model; otherwise step 4's quick check is enough.
 - Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
   each warning, or name it and say why it stays. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself; never ask the human to run it or web-search this project-local tool.
@@ -100,7 +113,14 @@ model preference. If an instruction conflicts with repository memory, stop and r
 
 ## Rules — follow on every change
 
-- Read \`AGENTS.md\` and the docs it routes to before non-trivial work.
+- Every task, kept short: start from the "Start here" pointers (run \`persist context "<task>"\`, or
+  \`npx persist-os context "<task>"\`) and open only those files and what the task needs; treat each
+  "Follow ADR-…" line as a rule for this change (the pointers are a start, not the limit: every
+  accepted ADR still binds, and an ADR beats a card that disagrees with it); implement with focused tests; before calling it
+  done, check your changed lines against each governing decision (\`persist doctor\` names them) and
+  run the tests and doctor; then add the task to the area card's Answers list, as it was asked.
+- Read \`AGENTS.md\` and the docs it routes to only when no card covers the area or the work is new
+  ground.
 - Match ceremony to scope, both ways: a genuinely new feature, module, integration, data model, or
   security/architecture decision gets proper planning; a small addition or fix within an
   already-decided area just gets implemented with focused tests. Judge by novelty and blast radius,
@@ -115,9 +135,9 @@ model preference. If an instruction conflicts with repository memory, stop and r
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.
-- Before calling work done, check the diff against every accepted ADR that governs the files you
-  changed (\`persist doctor\` names them). A conflict means stop: fix the code, or ask a human and
-  supersede the ADR. Never diverge quietly.
+- A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
+  Never diverge quietly. For a large diff, several decisions, or money, auth, or data-model code,
+  run the full adr-compliance review.
 - Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
   each warning, or name it and say why it stays. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself (do not web-search this project-local tool); if it is not installed,

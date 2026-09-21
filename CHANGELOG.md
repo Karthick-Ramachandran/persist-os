@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.3.0
+
+Store the meaning when it is known; retrieve it deterministically. Context cards are one small
+Markdown file per area of the codebase (`docs/context/<name>.md`): what the area is for, which task
+phrasings it answers, the words people use for it, where to start reading, and which rules apply.
+`persist context "<task>"` matches a new task against those stored phrases with deterministic BM25 —
+no embeddings, no model calls, no network — and answers in pointers, never whole files. A 38-prompt
+retrieval benchmark over a Splitr fixture reports both sets honestly: the 22 stored task phrasings
+recall 1.0 at rank 1 and rank 3, while 16 held-out paraphrases that copy no stored phrase recall
+7/16 at rank 1 and 11/16 in the top 3. Suffixes strip to a fixpoint, the file bridge only boosts
+alongside a field score and names its files, and typos get one Damerau suggestion each on a fallback
+pass shown as `logn≈login`.
+
+**The habit that makes it work.** When you finish work in an area, scaffold the card if there is
+none (`persist context add <name> --purpose "<one line>"`), then add the task you were just given to
+its Answers list, phrased the way it was asked. The agent rules, the Cursor rule, the SessionStart
+text, and the new `context` skill all carry this habit; the lookup half rides one rule line
+(`persist context "<task>"` before starting, read only what it points at).
+
+**Delivered in layers.** A prompt hook injects the pointers per prompt in Claude Code
+(`UserPromptSubmit` → `additionalContext`) and Codex (same shape, project `.codex/hooks.json`);
+Cursor's hook API cannot return context, so it is deliberately skipped and covered by the skill and
+rule line instead. `persist context --hook <tool>` answers the hook over stdin with at most 1,500
+bytes of pointers, silence below the threshold, and never fails the prompt. A `contextHook` toggle
+in `.persist/config.json` (default `true`) opts out of the hook files.
+
+**The decision comes with the pointers.** A card's Rules line is a paraphrase, and a paraphrase
+drifts; an agent handed "ADR-0001: money is integer cents" once did float division that the Decision
+itself forbade. The lookup now quotes the live Decision sentence of every accepted ADR a matched
+card's area falls under (cited by id, or governing the card's files), first under the card so the
+hook's byte cap never cuts it, once per lookup even when several cards share it.
+
+**A short default loop.** `AGENTS.md` and the Cursor rule open with five steps: start from the
+pointers, keep to each "Follow ADR" line, implement with focused tests, check the changed lines
+against each governing decision and run tests and doctor, then add the task to the card. The
+Required reading is for areas no card covers and for new ground. `adr-compliance` runs a quick check
+by default and the full fresh-context review only for large, multi-decision, or money, auth, and
+data-model changes.
+
+**Doctor keeps cards honest.** The new `context-cards` check warns on Start Here paths that no
+longer exist, on Applies-To files that changed long after the card did (the staleness check's 90-day
+gap), and informs on cards with an empty Answers list that no task can find. Cards are also scanned
+for superseded ADR references and for git-ignore sharing.
+
+**Upgrading:** run `persist hooks sync` for the SessionStart text and the new prompt-hook files
+(`init` never overwrites existing settings — merge the `UserPromptSubmit` entry by hand).
+`persist skill create context` adds the skill to an existing repository. ADR-0015 records the
+per-tool hook findings and stays Proposed until the maintainer accepts it.
+
 ## 1.2.4
 
 Agents follow ADRs again, not just their titles.

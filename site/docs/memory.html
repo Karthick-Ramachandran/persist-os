@@ -91,11 +91,14 @@ AGENTS.md                               <span class="m">rules and routing for ev
 CLAUDE.md                               <span class="m">Claude Code entry point; imports AGENTS.md</span>
 .claude/hooks/session-start.sh          <span class="m">injects the memory map each Claude session</span>
 .claude/settings.json                   <span class="m">wires the SessionStart hook (only if absent)</span>
+.claude/hooks/context-prompt.sh         <span class="m">looks up context cards per prompt</span>
+.codex/hooks.json                       <span class="m">wires the Codex prompt hook (only if absent)</span>
+.codex/hooks/context-prompt.sh          <span class="m">looks up context cards per prompt</span>
 .cursor/rules/persist-memory.mdc        <span class="m">always-apply Cursor rule</span>
 .github/workflows/persist.yml           <span class="m">runs persist doctor on pull requests</span>
-.claude/skills/&lt;skill&gt;/SKILL.md          <span class="m">3 workflow skills</span>
+.claude/skills/&lt;skill&gt;/SKILL.md          <span class="m">6 workflow skills</span>
 .claude/skills/security-review/scripts/scan-secrets.sh   <span class="m">read-only secret scan</span>
-.agents/skills/&lt;skill&gt;/SKILL.md          <span class="m">the same 3, portable layout</span>
+.agents/skills/&lt;skill&gt;/SKILL.md          <span class="m">the same 6, portable layout</span>
 .agents/skills/security-review/scripts/scan-secrets.sh</code></pre>
           <p>
             <code>--features</code> adds <code>docs/40-features/README.md</code> and
@@ -175,7 +178,8 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
                 <code>CLAUDE.md</code> is loaded automatically and contains <code>@AGENTS.md</code>,
                 so the shared rules load with it. The SessionStart hook above runs at startup; it
                 is wired in <code>.claude/settings.json</code>, which init writes only when no
-                settings file exists.
+                settings file exists. A prompt hook looks up context cards for every submitted
+                prompt and injects the pointers.
               </dd>
             </div>
             <div>
@@ -191,6 +195,8 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
               <dd>
                 <code>AGENTS.md</code> is discovered and loaded. It is always written, whichever
                 <code>--ai-tools</code> you choose, so there is always a portable floor.
+                A prompt hook wired in <code>.codex/hooks.json</code> looks up context cards for
+                every submitted prompt and injects the pointers.
               </dd>
             </div>
           </dl>
@@ -205,11 +211,12 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
 
           <h2 id="skills">Skills</h2>
           <p>
-            Five workflow skills are written to <code>.claude/skills/</code> and
+            Six workflow skills are written to <code>.claude/skills/</code> and
             <code>.agents/skills/</code>: <code>plan-feature</code>, <code>security-review</code>,
-            <code>conventions-adherence</code>, <code>chestertons-fence</code>, and
+            <code>conventions-adherence</code>, <code>chestertons-fence</code>,
             <code>adr-compliance</code>, which checks a change against the accepted ADRs that
-            govern the files it touches. Each is a
+            govern the files it touches, and <code>context</code>, which looks up the area memory
+            before starting and records it when done. Each is a
             short <code>SKILL.md</code> that points at the memory it needs rather than repeating
             it. <code>security-review</code> also ships
             <code>scripts/scan-secrets.sh</code>, a read-only scan for common accidentally

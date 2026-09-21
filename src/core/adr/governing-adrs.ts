@@ -19,7 +19,16 @@ export type GoverningAdr = {
 
 const ADR_FILE_PATTERN = /^(ADR-\d{4,})-[a-z0-9-]+\.md$/iu;
 
+/** Accepted ADRs that declare the paths they govern. */
 export async function readGoverningAdrs(rootDir: string, adrDir: string): Promise<GoverningAdr[]> {
+  return (await readAcceptedAdrs(rootDir, adrDir)).filter((adr) => adr.appliesTo.length > 0);
+}
+
+/**
+ * Every accepted, still-binding ADR, with or without an Applies To list. Context cards cite
+ * ADRs by id, so a decision is looked up here even when it never declared its paths.
+ */
+export async function readAcceptedAdrs(rootDir: string, adrDir: string): Promise<GoverningAdr[]> {
   let names: string[];
   try {
     names = (await readdir(path.join(rootDir, adrDir), { withFileTypes: true }))
@@ -45,9 +54,6 @@ export async function readGoverningAdrs(rootDir: string, adrDir: string): Promis
     }
 
     const appliesTo = parseAppliesTo(section(content, "Applies To"));
-    if (appliesTo.length === 0) {
-      continue;
-    }
 
     adrs.push({
       id: (match[1] ?? "").toUpperCase(),

@@ -15,6 +15,7 @@ NOT EVALUATED
 - hooks-active: not a git repository, so there is no clone to switch the hooks on in
 - fence: not inside a git work tree, so the staged set is unknown
 - governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
+- context-cards: no context cards exist, so there is nothing to check for dead paths or staleness
 
 Result: PASSED
 [exit 0]

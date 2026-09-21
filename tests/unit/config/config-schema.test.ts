@@ -21,10 +21,11 @@ describe("config schema", () => {
       prePushGates: [],
       testCommand: null,
       fenceEnabled: true,
+      contextHook: true,
     });
   });
 
-  it("loads a 0.6.x config without testCommand, prePushGates, or fenceEnabled", () => {
+  it("loads a 0.6.x config without testCommand, prePushGates, fenceEnabled, or contextHook", () => {
     const legacy = {
       version: "0.6.2",
       templateVersion: "0.6.2",
@@ -40,6 +41,7 @@ describe("config schema", () => {
       prePushGates: [],
       testCommand: null,
       fenceEnabled: true,
+      contextHook: true,
     });
   });
 

@@ -136,3 +136,33 @@ Exit codes:
 - `0`: healthy
 - `1`: warnings only
 - `2`: errors
+
+### `persist context "<task>"`
+
+Look up the area memory a task needs. Scores context cards (`docs/context/`) with deterministic
+BM25 over their Answers, Also Known As, Purpose, title, Rules, Pitfalls, and Start Here fields,
+boosted when the task names a tracked file the record covers. Prints the top cards (default 3)
+as pointers — Start Here paths, Rules, Pitfalls — with the matched terms, never whole files.
+When no card covers the task, the closest accepted ADRs, fences, conventions, and lessons are
+listed instead, marked as such; when nothing matches, it says so plainly. Exit 0 either way.
+Read-only.
+
+Options:
+
+- `--json`: emit the same content as JSON.
+- `--limit <n>`: maximum cards shown (default 3).
+- `--hook <tool>` (`claude` or `codex`): answer a prompt hook — read the tool's hook input from
+  stdin, extract the prompt, and print the tool's expected output with at most about 1,500 bytes
+  of pointers, or nothing below the threshold.
+
+### `persist context add <name>`
+
+Scaffold a context card for an area of the codebase. Writes the exact card shape with empty
+sections through the write plan; the agent fills them by hand, above all the Answers list with
+the task just finished, phrased the way it was asked. Refuses to overwrite an existing card and
+refuses outside an initialised repository.
+
+Options:
+
+- `--purpose "<one line>"`: required. What the area is for.
+- `--dry-run`: show planned writes without writing files.

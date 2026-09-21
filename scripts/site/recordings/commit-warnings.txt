@@ -15,9 +15,10 @@ INFO
 
 NOT EVALUATED
 - governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
+- context-cards: no context cards exist, so there is nothing to check for dead paths or staleness
 
 Result: WARNINGS
-[main eaa3b2d] Plan the checkout feature
+[main 305fdb2] Plan the checkout feature
  2 files changed, 50 insertions(+)
  create mode 100644 docs/40-features/F-001-checkout/PLAN.md
  create mode 100644 docs/40-features/F-001-checkout/TASKS.md

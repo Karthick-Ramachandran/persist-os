@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,14 +7,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
+  CLAUDE_CONTEXT_HOOK_COMMAND,
+  CODEX_CONTEXT_HOOK_COMMAND,
+  CODEX_CONTEXT_HOOK_PATH,
+  CODEX_HOOKS_JSON_PATH,
+  CONTEXT_PROMPT_HOOK_PATH,
   FENCE_INDEX_LABEL,
   FENCE_INDEX_TRUNCATION_MARKER,
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
   SESSION_START_BASE_CONTEXT,
-  SESSION_START_HOOK_PATH,
+  SESSION_START_HOOK_COMMAND,
+  expectedHookFiles,
   renderClaudeSettings,
+  renderCodexHooksJson,
+  renderContextPromptHook,
   renderPreCommitHook,
   renderPrePushHook,
   renderSessionStartHook,
@@ -206,7 +214,298 @@ describe("renderPrePushHook", () => {
       hooks: { SessionStart: { hooks: { command: string }[] }[] };
     };
 
-    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`./${SESSION_START_HOOK_PATH}`);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(SESSION_START_HOOK_COMMAND);
+  });
+
+  it("wires the prompt hook in Claude settings with a short timeout", () => {
+    const settings = JSON.parse(renderClaudeSettings()) as {
+      hooks: { UserPromptSubmit: { hooks: { command: string; timeout: number }[] }[] };
+    };
+
+    // The documented settings example addresses hooks from the project root, so the
+    // command must not depend on the hook's working directory.
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe(CLAUDE_CONTEXT_HOOK_COMMAND);
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].timeout).toBeLessThanOrEqual(10);
+  });
+
+  it("omits the prompt hook from Claude settings when the toggle is off", () => {
+    const settings = JSON.parse(renderClaudeSettings(false)) as {
+      hooks: Record<string, unknown>;
+    };
+
+    expect(settings.hooks).not.toHaveProperty("UserPromptSubmit");
+  });
+
+  it("nests events under top-level hooks, matching the documented Codex example", () => {
+    // Per https://learn.chatgpt.com/docs/hooks the workspace example nests every event
+    // under a top-level "hooks" key. A top-level UserPromptSubmit is silently ignored,
+    // so the hook would never run — structure is asserted here, not just behavior.
+    const parsed = JSON.parse(renderCodexHooksJson()) as {
+      hooks?: Record<string, { hooks: { type: string; command: string; timeout: number }[] }[]>;
+      UserPromptSubmit?: unknown;
+    };
+
+    expect(parsed).not.toHaveProperty("UserPromptSubmit");
+    expect(parsed.hooks).toBeDefined();
+    const entries = parsed.hooks?.["UserPromptSubmit"] ?? [];
+    expect(entries).toHaveLength(1);
+    expect(entries[0].hooks[0].type).toBe("command");
+    // Quoted: the resolved root may contain a space, and an unquoted split would
+    // run half a path. The git-root form follows the documented example.
+    expect(entries[0].hooks[0].command).toBe(CODEX_CONTEXT_HOOK_COMMAND);
+    expect(entries[0].hooks[0].timeout).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("renderContextPromptHook", () => {
+  for (const tool of ["claude", "codex"] as const) {
+    it(`forwards the ${tool} payload to persist context without slowness or failure`, () => {
+      const hook = renderContextPromptHook(tool);
+
+      expect(hook.startsWith("#!/bin/sh\n")).toBe(true);
+      expect(hook).toContain(`persist context --hook ${tool}`);
+      // npx on every prompt is far too slow; the installed binary or the local one wins.
+      expect(hook).toContain("node_modules/.bin/persist");
+      expect(hook).not.toContain("npx");
+      // The prompt text is piped, never written: no redirect to a file, no log.
+      expect(hook).not.toMatch(/>>|\blog\b/u);
+      expect(hook.trimEnd().endsWith("exit 0")).toBe(true);
+    });
+  }
+
+  it("exits 0 with no output when persist is missing", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-context-hook-"));
+    try {
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("claude"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "who pays the extra cent" }),
+        encoding: "utf8",
+        // No persist on PATH and no node_modules/.bin below: the hook stands down.
+        env: { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe("");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("forwards stdin to persist and prints its output", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-context-hook-"));
+    try {
+      const bin = path.join(dir, "bin");
+      await mkdir(bin, { recursive: true });
+      await writeFile(path.join(bin, "persist"), '#!/bin/sh\ncat\nprintf -- "-hooked-"\n');
+      await chmod(path.join(bin, "persist"), 0o755);
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("claude"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "hello" }),
+        encoding: "utf8",
+        env: { PATH: `${bin}:/usr/bin:/bin`, SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      // The stub echoes stdin (proving the payload arrived) and marks its output.
+      expect(result.stdout).toContain('"prompt":"hello"');
+      expect(result.stdout).toContain("-hooked-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  for (const tool of ["claude", "codex"] as const) {
+    it(`runs the ${tool} lookup from the project root when fired in a subdirectory`, async () => {
+      // Hooks can fire with any working directory, but node_modules/.bin/persist only
+      // exists at the root. Without the cd, the relative fallback misses from below.
+      const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-subdir-"));
+      try {
+        const bin = path.join(dir, "node_modules", ".bin");
+        await mkdir(bin, { recursive: true });
+        await writeFile(path.join(bin, "persist"), '#!/bin/sh\ncat\nprintf -- "-hooked-"\n');
+        await chmod(path.join(bin, "persist"), 0o755);
+        const deep = path.join(dir, "sub", "deep");
+        await mkdir(deep, { recursive: true });
+        const hookPath = path.join(dir, "context-prompt.sh");
+        await writeFile(hookPath, renderContextPromptHook(tool));
+        await chmod(hookPath, 0o755);
+
+        const env: NodeJS.ProcessEnv = { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" };
+        if (tool === "claude") {
+          // The tool's documented root variable, expanded from the hook process.
+          env["CLAUDE_PROJECT_DIR"] = dir;
+        } else {
+          execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+        }
+
+        const result = spawnSync("sh", [hookPath], {
+          cwd: deep,
+          input: JSON.stringify({ prompt: "hello" }),
+          encoding: "utf8",
+          env,
+        });
+
+        expect(result.status).toBe(0);
+        expect(result.stdout).toContain("-hooked-");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  }
+
+  it("stands down silently outside git when the codex root is unknowable", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-nogit-"));
+    try {
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("codex"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "hello" }),
+        encoding: "utf8",
+        env: { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe("");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs the generated claude command through sh -c with spaces in the path", async () => {
+    // The settings command carries an absolute root that may contain a space.
+    // Unquoted, the shell would split it and the hook would never run.
+    const dir = await mkdtemp(path.join(tmpdir(), "my proj-"));
+    try {
+      const hookDir = path.join(dir, ".claude", "hooks");
+      await mkdir(hookDir, { recursive: true });
+      await writeFile(path.join(hookDir, "context-prompt.sh"), '#!/bin/sh\nprintf -- "-cmd-ok-"\n');
+      await chmod(path.join(hookDir, "context-prompt.sh"), 0o755);
+      const elsewhere = path.join(dir, "other dir");
+      await mkdir(elsewhere, { recursive: true });
+
+      const settings = JSON.parse(renderClaudeSettings()) as {
+        hooks: { UserPromptSubmit: { hooks: { command: string }[] }[] };
+      };
+      const result = spawnSync("sh", ["-c", settings.hooks.UserPromptSubmit[0].hooks[0].command], {
+        cwd: elsewhere,
+        encoding: "utf8",
+        env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("-cmd-ok-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs the generated codex command through sh -c with spaces in the path", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "my proj-"));
+    try {
+      execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+      const hookDir = path.join(dir, ".codex", "hooks");
+      await mkdir(hookDir, { recursive: true });
+      await writeFile(path.join(hookDir, "context-prompt.sh"), '#!/bin/sh\nprintf -- "-cmd-ok-"\n');
+      await chmod(path.join(hookDir, "context-prompt.sh"), 0o755);
+      const elsewhere = path.join(dir, "other dir");
+      await mkdir(elsewhere, { recursive: true });
+
+      const parsed = JSON.parse(renderCodexHooksJson()) as {
+        hooks: Record<string, { hooks: { command: string }[] }[]>;
+      };
+      const result = spawnSync("sh", ["-c", parsed.hooks["UserPromptSubmit"][0].hooks[0].command], {
+        cwd: elsewhere,
+        encoding: "utf8",
+        env: { ...process.env, PATH: "/usr/bin:/bin" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("-cmd-ok-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  for (const tool of ["claude", "codex"] as const) {
+    for (const variant of ["path", "local"] as const) {
+      it(`stands down when ${variant} persist predates context (${tool})`, async () => {
+        // An old binary rejects the subcommand: without the --help probe the hook
+        // would fail the lookup noisily instead of printing nothing and exiting 0.
+        const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-old-"));
+        try {
+          // Emulates a real pre-context binary: unknown subcommands fail noisily
+          // on stderr, which the probe must swallow by never calling it.
+          const stub =
+            '#!/bin/sh\nif [ "$1" = "context" ]; then printf -- "error: unknown command \'context\'\\n" >&2; exit 1; fi\nprintf -- "-should-not-run-"\n';
+          let env: NodeJS.ProcessEnv;
+          if (variant === "path") {
+            const bin = path.join(dir, "bin");
+            await mkdir(bin, { recursive: true });
+            await writeFile(path.join(bin, "persist"), stub);
+            await chmod(path.join(bin, "persist"), 0o755);
+            env = { PATH: `${bin}:/usr/bin:/bin`, SHELL: "/bin/sh" };
+          } else {
+            const bin = path.join(dir, "node_modules", ".bin");
+            await mkdir(bin, { recursive: true });
+            await writeFile(path.join(bin, "persist"), stub);
+            await chmod(path.join(bin, "persist"), 0o755);
+            env = { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" };
+          }
+          if (tool === "claude") {
+            env["CLAUDE_PROJECT_DIR"] = dir;
+          }
+          const hookPath = path.join(dir, "context-prompt.sh");
+          await writeFile(hookPath, renderContextPromptHook(tool));
+          await chmod(hookPath, 0o755);
+
+          const result = spawnSync("sh", [hookPath], {
+            cwd: dir,
+            input: JSON.stringify({ prompt: "hello" }),
+            encoding: "utf8",
+            env,
+          });
+
+          expect(result.status).toBe(0);
+          expect(result.stdout).toBe("");
+          expect(result.stderr).toBe("");
+        } finally {
+          await rm(dir, { recursive: true, force: true });
+        }
+      });
+    }
+  }
+
+  it("lists the prompt hook files in the expected hook files", () => {
+    const paths = expectedHookFiles({
+      aiTools: ["claude", "codex"],
+      contextHook: true,
+    }).map((file) => file.path);
+
+    expect(paths).toContain(CONTEXT_PROMPT_HOOK_PATH);
+    expect(paths).toContain(CODEX_CONTEXT_HOOK_PATH);
+    expect(paths).toContain(CODEX_HOOKS_JSON_PATH);
+  });
+
+  it("drops the prompt hook files when the toggle is off", () => {
+    const paths = expectedHookFiles({
+      aiTools: ["claude", "codex"],
+      contextHook: false,
+    }).map((file) => file.path);
+
+    expect(paths).not.toContain(CONTEXT_PROMPT_HOOK_PATH);
+    expect(paths).not.toContain(CODEX_CONTEXT_HOOK_PATH);
+    expect(paths).not.toContain(CODEX_HOOKS_JSON_PATH);
   });
 });
 
@@ -241,6 +540,15 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
     const context = await injectedContext({ "CLAUDE.md": "# x\n" });
 
     expect(context).not.toMatch(/fence/i);
+  });
+
+  it("carries the card-update habit in every session", async () => {
+    // The lookup habit lives in AGENTS.md; the write-when-fresh habit rides the
+    // hook, because the agent that just finished work is the one who knows the area.
+    const context = await injectedContext({ "CLAUDE.md": "# x\n" });
+
+    expect(context).toContain("context card");
+    expect(context).toContain("Answers list");
   });
 
   it("injects paths and reasons but not crossing history for a small FENCES.md", async () => {

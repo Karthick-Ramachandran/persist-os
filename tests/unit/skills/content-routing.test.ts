@@ -43,9 +43,22 @@ describe("retired skill content routing", () => {
     const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
 
     expect(agents).toContain("Never contradict an accepted ADR");
-    expect(agents).toContain(
-      "check the diff against every accepted ADR that governs the files you",
-    );
+    expect(agents).toContain("check your changed lines against each governing decision");
+    // The short loop cuts reading, never authority: pointers are a start, and ADRs beat cards.
+    expect(agents).toContain("The pointers are where to start, not the limit of what applies");
+    expect(agents).toContain("when a card disagrees with an ADR, the ADR wins");
+    expect(agents).toContain("repository rules override model preference");
+  });
+
+  it("routes the context lookup and card-update habit through AGENTS.md and the Cursor rule", async () => {
+    const rootDir = await initializedRepo();
+    const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
+    const cursor = readFileSync(path.join(rootDir, ".cursor/rules/persist-memory.mdc"), "utf8");
+
+    for (const content of [agents, cursor]) {
+      expect(content).toContain('persist context "<task>"');
+      expect(content).toContain("Answers list");
+    }
   });
 
   it("carries the ADR check as its own skill", () => {

@@ -22,6 +22,9 @@ Planned creates:
 - .persist/hooks/pre-push
 - .claude/hooks/session-start.sh
 - .claude/settings.json
+- .claude/hooks/context-prompt.sh
+- .codex/hooks/context-prompt.sh
+- .codex/hooks.json
 - .claude/skills/plan-feature/SKILL.md
 - .agents/skills/plan-feature/SKILL.md
 - .claude/skills/security-review/SKILL.md
@@ -34,6 +37,8 @@ Planned creates:
 - .agents/skills/chestertons-fence/SKILL.md
 - .claude/skills/adr-compliance/SKILL.md
 - .agents/skills/adr-compliance/SKILL.md
+- .claude/skills/context/SKILL.md
+- .agents/skills/context/SKILL.md
 
 Pre-commit and pre-push hooks will be written to .persist/hooks/.
 Would switch the git hooks on for this clone: git config core.hooksPath .persist/hooks

@@ -6,7 +6,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./.claude/hooks/session-start.sh"
+            "command": "\"${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start.sh\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR}/.claude/hooks/context-prompt.sh\"",
+            "timeout": 10
           }
         ]
       }

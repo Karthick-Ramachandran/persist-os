@@ -2,6 +2,7 @@ import { checkCodeReferences } from "./checks/code-reference-check.js";
 import { checkConfig } from "./checks/config-check.js";
 import { checkContent } from "./checks/content-check.js";
 import { checkContextBudget } from "./checks/context-budget-check.js";
+import { checkContextCards } from "./checks/context-cards-check.js";
 import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
 import { checkFence } from "./checks/fence-check.js";
@@ -62,6 +63,8 @@ export type DoctorCheckContext = {
     prePushGates?: string[];
     /** Chesterton-fence toggle. Undefined runs the check; only explicit false disables it. */
     fenceEnabled?: boolean;
+    /** Context prompt-hook toggle. Undefined expects the hook files, like fenceEnabled. */
+    contextHook?: boolean;
   };
 };
 
@@ -87,6 +90,7 @@ const CONFIG_GATED_CHECKS = [
   "duplicate-titles",
   "fence",
   "governing-adrs",
+  "context-cards",
 ] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
@@ -112,6 +116,7 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
             preCommitGates: [...configResult.config.preCommitGates],
             prePushGates: [...configResult.config.prePushGates],
             fenceEnabled: configResult.config.fenceEnabled,
+            contextHook: configResult.config.contextHook,
           },
   };
 
@@ -182,6 +187,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const governingAdrs = await checkGoverningAdrs(context);
   findings.push(...governingAdrs.findings);
   checks.push(governingAdrs.outcome);
+
+  const contextCards = await checkContextCards(context);
+  findings.push(...contextCards.findings);
+  checks.push(contextCards.outcome);
 
   return createDoctorReport(findings, checks);
 }
