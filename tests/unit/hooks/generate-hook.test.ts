@@ -219,6 +219,36 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
     expect(context).not.toContain("constraint confirmed by H.");
   });
 
+  it("reads the memory folders from .persist/config.json", async () => {
+    // A relocated docs folder must keep loading without regenerating the hook; fixed `docs/`
+    // paths here once made a relocated repository inject nothing while doctor passed.
+    const context = await injectedContext({
+      ".persist/config.json": `${JSON.stringify(
+        { docsDir: "memory", modulesDir: "memory/mods", adrDir: "memory/decisions" },
+        null,
+        2,
+      )}\n`,
+      "memory/decisions/ADR-0001-ledger.md": "# ADR-0001\n",
+      "memory/mods/billing/MODULE.md": "# billing\n",
+      "memory/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: relocated reason.\n",
+    });
+
+    expect(context).toContain("Accepted ADRs (memory/decisions/): ADR-0001-ledger");
+    expect(context).toContain("Modules (memory/mods/): billing");
+    expect(context).toContain("relocated reason.");
+    expect(context).toContain("full history in memory/60-engineering/FENCES.md");
+  });
+
+  it("falls back to the default layout when the config is missing", async () => {
+    const context = await injectedContext({
+      "docs/adrs/ADR-0002-default.md": "# ADR-0002\n",
+      "docs/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: default reason.\n",
+    });
+
+    expect(context).toContain("Accepted ADRs (docs/adrs/): ADR-0002-default");
+    expect(context).toContain("default reason.");
+  });
+
   it("exposes the exact strings the budget check measures against", () => {
     // The doctor context-budget check subtracts these constants from the budget. If the
     // rendered hook ever stopped emitting them verbatim, the check would measure a fiction —

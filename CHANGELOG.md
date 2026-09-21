@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+**A relocated memory folder keeps loading into sessions.** `docsDir`, `adrDir` and `modulesDir` in
+`.persist/config.json` moved the memory for doctor and every command, but the Claude SessionStart
+hook read fixed `docs/` paths. A repository that moved `docs/` passed doctor while every session
+loaded no ADRs, no modules and no fence index. The hook now reads those paths from the config when
+it runs, falling back to the default layout. Existing hooks show a `hook-drift` warning until
+regenerated. The README documents how to relocate.
+
 ## 1.1.2
 
 Three edges of the fence, found by probing rather than by anything failing.

@@ -365,6 +365,56 @@ source-of-truth order:
 
 If external context or chat history conflicts with repository memory, **repository memory wins**.
 
+### Putting memory somewhere other than `docs/`
+
+If `docs/` is already taken, or you want the memory out of the way, move it and tell
+`.persist/config.json` where it went. Four keys set the layout. Each is a path relative to the
+repository root:
+
+| Key           | Default            | What lives there                                   |
+| ------------- | ------------------ | -------------------------------------------------- |
+| `docsDir`     | `docs`             | The required docs, plus `60-engineering/FENCES.md` |
+| `adrDir`      | `docs/adrs`        | ADRs and the ADR index (`README.md`)               |
+| `modulesDir`  | `docs/30-modules`  | Module memory (opt-in)                             |
+| `featuresDir` | `docs/40-features` | Feature plans (opt-in)                             |
+
+`init` always writes the default layout, so relocate after it:
+
+```bash
+persist init
+mv docs .memory
+```
+
+```jsonc
+// .persist/config.json
+{
+  "docsDir": ".memory",
+  "adrDir": ".memory/adrs",
+  "modulesDir": ".memory/30-modules",
+  "featuresDir": ".memory/40-features",
+  // ...leave the other keys as they are
+}
+```
+
+```bash
+persist doctor   # should pass exactly as it did before the move
+```
+
+The four keys are independent. `adrDir` can be a top-level `decisions/` while everything else stays
+under `docs/`. Inside `docsDir` the layout is fixed: the required docs stay at
+`00-product/PRODUCT.md`, `60-engineering/CONVENTIONS.md` and so on, because doctor looks for them by
+those names.
+
+**What follows the config:** doctor, every `create` command, `adr accept` / `supersede`,
+`fence add`, and the Claude SessionStart hook. The hook reads the config each time a session starts,
+so moving the folder never means regenerating it.
+
+**What doesn't:** the prose in `CLAUDE.md`, `AGENTS.md`, the Cursor rule and the generated skills
+still says `docs/`. Those files are yours to edit, so update the paths in them after a move.
+
+**Careful with `persist init --force --reinit`.** It writes a fresh config, and that config uses the
+default paths. Re-apply your paths afterwards, or review the diff before committing.
+
 ## Local-First Guarantees
 
 Persist OS does not:
