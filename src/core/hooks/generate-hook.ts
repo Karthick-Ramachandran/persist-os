@@ -134,9 +134,10 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
  * Speed and safety, per the hook contracts: the script always exits 0 so it
  * can never block or fail the prompt; it runs only when `persist` is on PATH
  * or in the project's `node_modules/.bin`, and it never calls `npx` (far too
- * slow on every prompt). The prompt text rides a shell variable and a pipe —
- * it is never written to disk or logged. The short timeout lives in each
- * tool's settings, not here.
+ * slow on every prompt). A `context --help` probe stands down when the found
+ * binary predates the command instead of failing the lookup noisily. The
+ * prompt text rides a shell variable and a pipe — it is never written to disk
+ * or logged. The short timeout lives in each tool's settings, not here.
  */
 /**
  * How each tool's settings file launches the prompt hook. Both are absolute at run time:
@@ -145,9 +146,12 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
  * resolves hook scripts from the git root). Plain strings, never template literals, so
  * the `$` reaches the file verbatim.
  */
-export const CLAUDE_CONTEXT_HOOK_COMMAND = "${CLAUDE_PROJECT_DIR}/" + CONTEXT_PROMPT_HOOK_PATH;
+export const CLAUDE_CONTEXT_HOOK_COMMAND =
+  '"${CLAUDE_PROJECT_DIR}/' + CONTEXT_PROMPT_HOOK_PATH + '"';
 export const CODEX_CONTEXT_HOOK_COMMAND =
-  "$(git rev-parse --show-toplevel)/" + CODEX_CONTEXT_HOOK_PATH;
+  '"$(git rev-parse --show-toplevel)/' + CODEX_CONTEXT_HOOK_PATH + '"';
+/** Same quoting for the SessionStart entry: new settings only, never merged. */
+export const SESSION_START_HOOK_COMMAND = '"${CLAUDE_PROJECT_DIR}/' + SESSION_START_HOOK_PATH + '"';
 
 export function renderContextPromptHook(tool: "claude" | "codex"): string {
   const wiring = tool === "claude" ? CLAUDE_SETTINGS_PATH : CODEX_HOOKS_JSON_PATH;
@@ -168,9 +172,13 @@ export function renderContextPromptHook(tool: "claude" | "codex"): string {
 # Wired in ${wiring}; that file decides the timeout.
 ${goRoot}
 input=$(cat)
+# The installed persist may predate the context command (1.3.0). Probe for it
+# first: an old binary would fail the lookup noisily instead of standing down.
 if command -v persist >/dev/null 2>&1; then
+  persist context --help >/dev/null 2>&1 || exit 0
   printf '%s' "$input" | persist context --hook ${tool}
 elif [ -x node_modules/.bin/persist ]; then
+  node_modules/.bin/persist context --help >/dev/null 2>&1 || exit 0
   printf '%s' "$input" | node_modules/.bin/persist context --hook ${tool}
 fi
 exit 0
@@ -205,7 +213,7 @@ export function renderClaudeSettings(includeContextHook = true): string {
         SessionStart: [
           {
             matcher: "startup",
-            hooks: [{ type: "command", command: `./${SESSION_START_HOOK_PATH}` }],
+            hooks: [{ type: "command", command: SESSION_START_HOOK_COMMAND }],
           },
         ],
         ...userPromptSubmit,

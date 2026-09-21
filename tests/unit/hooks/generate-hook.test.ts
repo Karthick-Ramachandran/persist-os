@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
   CLAUDE_CONTEXT_HOOK_COMMAND,
+  CODEX_CONTEXT_HOOK_COMMAND,
   CODEX_CONTEXT_HOOK_PATH,
   CODEX_HOOKS_JSON_PATH,
   CONTEXT_PROMPT_HOOK_PATH,
@@ -17,7 +18,7 @@ import {
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
   SESSION_START_BASE_CONTEXT,
-  SESSION_START_HOOK_PATH,
+  SESSION_START_HOOK_COMMAND,
   expectedHookFiles,
   renderClaudeSettings,
   renderCodexHooksJson,
@@ -213,7 +214,7 @@ describe("renderPrePushHook", () => {
       hooks: { SessionStart: { hooks: { command: string }[] }[] };
     };
 
-    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`./${SESSION_START_HOOK_PATH}`);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(SESSION_START_HOOK_COMMAND);
   });
 
   it("wires the prompt hook in Claude settings with a short timeout", () => {
@@ -249,10 +250,9 @@ describe("renderPrePushHook", () => {
     const entries = parsed.hooks?.["UserPromptSubmit"] ?? [];
     expect(entries).toHaveLength(1);
     expect(entries[0].hooks[0].type).toBe("command");
-    expect(entries[0].hooks[0].command).toContain(CODEX_CONTEXT_HOOK_PATH);
-    // The documented example resolves scripts from the git root, so the command
-    // must not depend on the hook's working directory either.
-    expect(entries[0].hooks[0].command).toMatch(/^\$\(git rev-parse --show-toplevel\)\//u);
+    // Quoted: the resolved root may contain a space, and an unquoted split would
+    // run half a path. The git-root form follows the documented example.
+    expect(entries[0].hooks[0].command).toBe(CODEX_CONTEXT_HOOK_COMMAND);
     expect(entries[0].hooks[0].timeout).toBeLessThanOrEqual(10);
   });
 });
@@ -381,6 +381,110 @@ describe("renderContextPromptHook", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("runs the generated claude command through sh -c with spaces in the path", async () => {
+    // The settings command carries an absolute root that may contain a space.
+    // Unquoted, the shell would split it and the hook would never run.
+    const dir = await mkdtemp(path.join(tmpdir(), "my proj-"));
+    try {
+      const hookDir = path.join(dir, ".claude", "hooks");
+      await mkdir(hookDir, { recursive: true });
+      await writeFile(path.join(hookDir, "context-prompt.sh"), '#!/bin/sh\nprintf -- "-cmd-ok-"\n');
+      await chmod(path.join(hookDir, "context-prompt.sh"), 0o755);
+      const elsewhere = path.join(dir, "other dir");
+      await mkdir(elsewhere, { recursive: true });
+
+      const settings = JSON.parse(renderClaudeSettings()) as {
+        hooks: { UserPromptSubmit: { hooks: { command: string }[] }[] };
+      };
+      const result = spawnSync("sh", ["-c", settings.hooks.UserPromptSubmit[0].hooks[0].command], {
+        cwd: elsewhere,
+        encoding: "utf8",
+        env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("-cmd-ok-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs the generated codex command through sh -c with spaces in the path", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "my proj-"));
+    try {
+      execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+      const hookDir = path.join(dir, ".codex", "hooks");
+      await mkdir(hookDir, { recursive: true });
+      await writeFile(path.join(hookDir, "context-prompt.sh"), '#!/bin/sh\nprintf -- "-cmd-ok-"\n');
+      await chmod(path.join(hookDir, "context-prompt.sh"), 0o755);
+      const elsewhere = path.join(dir, "other dir");
+      await mkdir(elsewhere, { recursive: true });
+
+      const parsed = JSON.parse(renderCodexHooksJson()) as {
+        hooks: Record<string, { hooks: { command: string }[] }[]>;
+      };
+      const result = spawnSync("sh", ["-c", parsed.hooks["UserPromptSubmit"][0].hooks[0].command], {
+        cwd: elsewhere,
+        encoding: "utf8",
+        env: { ...process.env, PATH: "/usr/bin:/bin" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("-cmd-ok-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  for (const tool of ["claude", "codex"] as const) {
+    for (const variant of ["path", "local"] as const) {
+      it(`stands down when ${variant} persist predates context (${tool})`, async () => {
+        // An old binary rejects the subcommand: without the --help probe the hook
+        // would fail the lookup noisily instead of printing nothing and exiting 0.
+        const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-old-"));
+        try {
+          // Emulates a real pre-context binary: unknown subcommands fail noisily
+          // on stderr, which the probe must swallow by never calling it.
+          const stub =
+            '#!/bin/sh\nif [ "$1" = "context" ]; then printf -- "error: unknown command \'context\'\\n" >&2; exit 1; fi\nprintf -- "-should-not-run-"\n';
+          let env: NodeJS.ProcessEnv;
+          if (variant === "path") {
+            const bin = path.join(dir, "bin");
+            await mkdir(bin, { recursive: true });
+            await writeFile(path.join(bin, "persist"), stub);
+            await chmod(path.join(bin, "persist"), 0o755);
+            env = { PATH: `${bin}:/usr/bin:/bin`, SHELL: "/bin/sh" };
+          } else {
+            const bin = path.join(dir, "node_modules", ".bin");
+            await mkdir(bin, { recursive: true });
+            await writeFile(path.join(bin, "persist"), stub);
+            await chmod(path.join(bin, "persist"), 0o755);
+            env = { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" };
+          }
+          if (tool === "claude") {
+            env["CLAUDE_PROJECT_DIR"] = dir;
+          }
+          const hookPath = path.join(dir, "context-prompt.sh");
+          await writeFile(hookPath, renderContextPromptHook(tool));
+          await chmod(hookPath, 0o755);
+
+          const result = spawnSync("sh", [hookPath], {
+            cwd: dir,
+            input: JSON.stringify({ prompt: "hello" }),
+            encoding: "utf8",
+            env,
+          });
+
+          expect(result.status).toBe(0);
+          expect(result.stdout).toBe("");
+          expect(result.stderr).toBe("");
+        } finally {
+          await rm(dir, { recursive: true, force: true });
+        }
+      });
+    }
+  }
 
   it("lists the prompt hook files in the expected hook files", () => {
     const paths = expectedHookFiles({

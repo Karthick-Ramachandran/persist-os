@@ -1,14 +1,16 @@
 {
   "description": "Persist OS context cards: prompt pointers.",
-  "UserPromptSubmit": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "./.codex/hooks/context-prompt.sh",
-          "timeout": 10
-        }
-      ]
-    }
-  ]
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(git rev-parse --show-toplevel)/.codex/hooks/context-prompt.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
 }

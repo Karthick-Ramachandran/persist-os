@@ -4,10 +4,17 @@
 # pointers (never whole files) into the prompt. Read-only: the prompt text stays in this
 # process and is never written to disk or logged.
 # Wired in .claude/settings.json; that file decides the timeout.
+if [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then
+  cd "$CLAUDE_PROJECT_DIR" || exit 0
+fi
 input=$(cat)
+# The installed persist may predate the context command (1.3.0). Probe for it
+# first: an old binary would fail the lookup noisily instead of standing down.
 if command -v persist >/dev/null 2>&1; then
+  persist context --help >/dev/null 2>&1 || exit 0
   printf '%s' "$input" | persist context --hook claude
 elif [ -x node_modules/.bin/persist ]; then
+  node_modules/.bin/persist context --help >/dev/null 2>&1 || exit 0
   printf '%s' "$input" | node_modules/.bin/persist context --hook claude
 fi
 exit 0
