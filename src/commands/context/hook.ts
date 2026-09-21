@@ -68,12 +68,10 @@ export async function hookContext(options: HookContextOptions): Promise<HookCont
     const found = await findContext({ rootDir: options.rootDir, task: prompt, limit: HOOK_LIMIT });
     if (found.cards.length > 0) {
       pointers = capBytes(
-        formatFindContextResult({
-          task: found.task,
-          cards: found.cards,
-          secondary: [],
-          matched: true,
-        }),
+        formatFindContextResult(
+          { task: found.task, cards: found.cards, secondary: [], matched: true },
+          { echoTask: false },
+        ),
         HOOK_MAX_BYTES,
       );
     }

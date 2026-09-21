@@ -461,7 +461,8 @@ export async function searchContext(
         Math.max(cards.length, 1),
       );
       const { boost, bridge } = boosted(named, cardPaths(card), score);
-      return { card, score: score + boost, matched: display(matched), bridge };
+      // A word typed three times is one reason to match, not three.
+      return { card, score: score + boost, matched: display(unique(matched)), bridge };
     });
     scored.sort((a, b) => b.score - a.score || (a.card.file < b.card.file ? -1 : 1));
 
@@ -469,7 +470,7 @@ export async function searchContext(
     const scoredSecondary: ScoredSecondary[] = secondary.map((doc, index) => {
       const base = secondaryScores[index] ?? { score: 0, matched: [] };
       const { boost, bridge } = boosted(named, doc.paths, base.score);
-      return { doc, score: base.score + boost, matched: display(base.matched), bridge };
+      return { doc, score: base.score + boost, matched: display(unique(base.matched)), bridge };
     });
     scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
 
@@ -548,4 +549,8 @@ async function readFileIfExists(
     }
     throw error;
   }
+}
+
+function unique(terms: string[]): string[] {
+  return [...new Set(terms)];
 }

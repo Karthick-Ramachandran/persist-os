@@ -401,6 +401,44 @@ describe("persist context quotes governing decisions", () => {
     expect(out.indexOf("Follow ADR-0001")).toBeLessThan(out.indexOf("src/lib/billing.ts"));
   });
 
+  it("quotes a decision once when several cards share it", async () => {
+    const rootDir = await repo("context-shared", ["- ADR-0001 — money stuff"]);
+    await writeFile(
+      path.join(rootDir, "docs/context/refunds.md"),
+      card("Refunds", ["who pays the extra cent on refunds"], ["src/lib/refunds.ts"]).replace(
+        "- ADR-0001 — a recorded decision about the test area",
+        "- ADR-0001 — money stuff",
+      ),
+      "utf8",
+    );
+    await acceptAdr(
+      rootDir,
+      "Money is integer cents",
+      "money-is-integer-cents",
+      "Every amount is integer cents.",
+      [],
+    );
+
+    const out = (await runCommand(rootDir, ["context", "who pays the extra cent"])).stdout;
+
+    expect(out.split("Follow ADR-0001 (Money Is Integer Cents)")).toHaveLength(2);
+    expect(out).toContain("Follow ADR-0001 (above).");
+  });
+
+  it("lists a word typed several times as one match", async () => {
+    const rootDir = await repo("context-dupes", ["- CONVENTIONS: x"]);
+
+    const result = await runCommand(rootDir, [
+      "context",
+      "--json",
+      "cent cent cent who pays the extra cent",
+    ]);
+    const parsed = JSON.parse(result.stdout) as { cards: { matched: string[] }[] };
+    const matched = parsed.cards[0]?.matched ?? [];
+
+    expect(matched.length).toBe(new Set(matched).size);
+  });
+
   it("never quotes a superseded decision", async () => {
     const rootDir = await repo("context-superseded", ["- ADR-0001 — money stuff"]);
     await acceptAdr(

@@ -1,7 +1,7 @@
 $ persist context simplify the billing write
 Start here for "simplify the billing write":
 
-Billing (docs/context/billing.md) — matched: simplify, bill, write
+Billing (docs/context/billing.md) — matched: simplify, bill, write (via src/billing.js)
   src/billing.js — writeOrder: the four-collection write and its reason
   Rules: Fence `src/billing.js` — four collections land in one transaction, and why
   Pitfall: LESSONS: simplifying the write splits the ledger from the audit trail

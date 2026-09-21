@@ -126,9 +126,20 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
   return { task, cards, secondary, matched: cards.length > 0 || secondary.length > 0 };
 }
 
-export function formatFindContextResult(result: FindContextResult): string {
+export type FormatFindContextOptions = {
+  /**
+   * Repeat the task in the heading. The prompt hook turns this off: the agent already has the
+   * prompt, and echoing it back spends the hook's byte budget on nothing new.
+   */
+  echoTask?: boolean;
+};
+
+export function formatFindContextResult(
+  result: FindContextResult,
+  options: FormatFindContextOptions = {},
+): string {
   if (result.cards.length > 0) {
-    return formatCards(result);
+    return formatCards(result, options.echoTask ?? true);
   }
   if (result.secondary.length > 0) {
     return formatSecondary(result);
@@ -149,9 +160,11 @@ export function formatFindContextJson(result: FindContextResult): string {
   )}\n`;
 }
 
-function formatCards(result: FindContextResult): string {
+function formatCards(result: FindContextResult, echoTask: boolean): string {
   const style = getStyle();
-  const lines = [`Start here for "${result.task}":`, ""];
+  const lines = [echoTask ? `Start here for "${result.task}":` : "Start here:", ""];
+  // Cards in one area often share a decision; quote it once and point back after that.
+  const quoted = new Set<string>();
   for (const card of result.cards) {
     lines.push(
       `${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}${via(card.bridge)}`,
@@ -159,7 +172,12 @@ function formatCards(result: FindContextResult): string {
     // Decisions come first: a byte cap truncates from the end, and the rule the change must
     // follow matters more than any pointer.
     for (const adr of card.decisions) {
-      lines.push(`  Follow ${adr.id} (${adr.title}): ${adr.decision}`);
+      lines.push(
+        quoted.has(adr.id)
+          ? `  Follow ${adr.id} (above).`
+          : `  Follow ${adr.id} (${adr.title}): ${adr.decision}`,
+      );
+      quoted.add(adr.id);
     }
     for (const entry of card.startHere) {
       lines.push(entry.note === "" ? `  ${entry.path}` : `  ${entry.path} — ${entry.note}`);

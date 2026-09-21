@@ -134,6 +134,20 @@ describe("persist context --hook over a pipe", () => {
     expect(parsed.hookSpecificOutput.additionalContext).toContain("Billing");
   });
 
+  it("does not echo the prompt back into the context it adds", async () => {
+    // The agent already has the prompt; repeating it spends the byte budget on nothing new.
+    const rootDir = await repoWithCard();
+    const prompt = "who pays the extra cent on this very specific invoice run";
+
+    const result = await runPiped(["context", "--hook", "claude"], rootDir, hookInput(prompt));
+    const context = (
+      JSON.parse(result.stdout) as { hookSpecificOutput: { additionalContext: string } }
+    ).hookSpecificOutput.additionalContext;
+
+    expect(context.startsWith("Start here:")).toBe(true);
+    expect(context).not.toContain(prompt);
+  });
+
   it("prints nothing and exits 0 below the threshold", async () => {
     const rootDir = await repoWithCard();
 
