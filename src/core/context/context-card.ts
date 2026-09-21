@@ -112,7 +112,7 @@ function parseStartHere(bullet: string): ContextCardStartHere {
     const path = (ticked[1] ?? "").trim();
     const note = bullet
       .replace(ticked[0], " ")
-      .replace(/^[\s—–-]+/u, "")
+      .replace(/^[\s—–\-]+/u, "")
       .replace(/\s+/gu, " ")
       .trim();
     return { path, note };
@@ -122,7 +122,7 @@ function parseStartHere(bullet: string): ContextCardStartHere {
     path: first ?? "",
     note: rest
       .join(" ")
-      .replace(/^[\s—–-:]+/u, "")
+      .replace(/^[\s—–\-:]+/u, "")
       .trim(),
   };
 }
