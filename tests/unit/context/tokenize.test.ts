@@ -31,4 +31,22 @@ describe("context tokenizer", () => {
   it("keeps short tokens and numbers intact", () => {
     expect(tokenize("tip ADR-0001")).toEqual(["tip", "adr", "0001"]);
   });
+
+  it("strips nominal suffixes so derived nouns meet their roots", () => {
+    // "reimbursement" must tokenize like "reimburse" — otherwise a task about
+    // getting paid back never meets a card written about reimbursing.
+    expect(tokenize("reimbursement reimbursements")).toEqual(["reimburse", "reimburse"]);
+    expect(tokenize("registration registrations")).toEqual(["registr", "registr"]);
+  });
+
+  it("leaves short -ment words whole instead of guessing", () => {
+    // A length guard, not a dictionary: "moment" and "comment" keep their shape
+    // while longer derivations still strip.
+    expect(tokenize("moment comment payments station")).toEqual([
+      "moment",
+      "comment",
+      "payment",
+      "station",
+    ]);
+  });
 });

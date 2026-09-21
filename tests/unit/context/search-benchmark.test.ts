@@ -181,7 +181,11 @@ const CARDS: [string, string][] = [
   ],
 ];
 
-const PROMPTS: { prompt: string; expected: string }[] = [
+/**
+ * Stored phrasings: task wordings copied into the cards' Answers when the work was
+ * fresh. This set measures lookup — the write-when-fresh habit working as designed.
+ */
+const STORED_PROMPTS: { prompt: string; expected: string }[] = [
   { prompt: "make rounding fair", expected: "splitting-and-rounding.md" },
   { prompt: "who ends up paying the extra penny", expected: "splitting-and-rounding.md" },
   { prompt: "change how an expense is split", expected: "splitting-and-rounding.md" },
@@ -209,6 +213,41 @@ const PROMPTS: { prompt: string; expected: string }[] = [
 /** Measured 2026-09-22 on this fixture; the assertions below pin them. */
 const RECALL_AT_1 = 1;
 const RECALL_AT_3 = 1;
+
+/**
+ * Held-out paraphrases: written from the area names alone, before measuring, without
+ * reading the card text — and the contamination test below enforces that none copies
+ * a stored phrase. This set measures paraphrase, not lookup. It must stay fixed:
+ * do not reword prompts to chase the score, and do not tune weights against it.
+ */
+const HELD_OUT_PROMPTS: { prompt: string; expected: string }[] = [
+  { prompt: "which member absorbs the stray pennies", expected: "splitting-and-rounding.md" },
+  { prompt: "evening out the restaurant check", expected: "splitting-and-rounding.md" },
+  {
+    prompt: "the group total doesn't match everyone's portions",
+    expected: "splitting-and-rounding.md",
+  },
+  { prompt: "dividing costs fairly between friends", expected: "splitting-and-rounding.md" },
+  { prompt: "how much extra to leave the server", expected: "tipping.md" },
+  { prompt: "showing appreciation to the waitstaff in cash", expected: "tipping.md" },
+  { prompt: "rewarding good service at dinner", expected: "tipping.md" },
+  { prompt: "bringing a newcomer into the shared trip fund", expected: "members.md" },
+  { prompt: "kicking a freeloader out of the pool", expected: "members.md" },
+  { prompt: "seeing everyone who belongs to the trip fund", expected: "members.md" },
+  { prompt: "closing out everyone's debts at the end", expected: "settle-up.md" },
+  { prompt: "settling debts when the trip ends", expected: "settle-up.md" },
+  { prompt: "squaring balances so nobody is owed anything", expected: "settle-up.md" },
+  { prompt: "getting reimbursed for what I fronted", expected: "money.md" },
+  { prompt: "why are all amounts stored as whole cents", expected: "money.md" },
+  { prompt: "handling foreign currency on a trip abroad", expected: "money.md" },
+];
+
+/**
+ * Floors measured 2026-09-22 on this fixture: 7/16 at rank 1, 10/16 in the top 3
+ * (6 prompts clear nothing). The PR reports both sets; these pin the numbers.
+ */
+const HELD_OUT_RECALL_AT_1 = 0.4375;
+const HELD_OUT_RECALL_AT_3 = 0.625;
 
 describe("context retrieval benchmark", () => {
   const roots: string[] = [];
@@ -301,11 +340,11 @@ describe("context retrieval benchmark", () => {
     return rootDir;
   }
 
-  it("puts the expected card in the top 3 for every prompt", async () => {
+  it("puts the expected card in the top 3 for every stored phrasing", async () => {
     const rootDir = await fixture();
     const ranks: { prompt: string; expected: string; rank: number; top: string }[] = [];
 
-    for (const { prompt, expected } of PROMPTS) {
+    for (const { prompt, expected } of STORED_PROMPTS) {
       const found = await searchContext(rootDir, prompt, { docsDir: DOCS, adrDir: ADRS });
       const rank = found.cards.findIndex((hit) => hit.card.file.endsWith(expected)) + 1;
       ranks.push({
@@ -328,5 +367,70 @@ describe("context retrieval benchmark", () => {
     console.log(`recall@1=${at1.toFixed(3)} recall@3=${at3.toFixed(3)} (${ranks.length} prompts)`);
     expect(at1).toBe(RECALL_AT_1);
     expect(at3).toBe(RECALL_AT_3);
+  }, 60000);
+
+  it("holds out paraphrases that copy no stored phrase", () => {
+    // A held-out prompt that repeats a stored phrase measures lookup, not paraphrase.
+    // Single shared words are unavoidable ("tip", "group") and out of scope; what must
+    // never appear is a multi-word stored phrase, verbatim, inside a held-out prompt.
+    // If this fails after a fixture edit, reword the prompt — never the card.
+    const phrases = new Set<string>();
+    for (const [, content] of CARDS) {
+      for (const line of content.split("\n")) {
+        const bullet = line.match(/^-\s+(.*)$/u)?.[1] ?? "";
+        for (const part of bullet.split(",")) {
+          const phrase = part.toLowerCase().replace(/`+/gu, "").trim();
+          if (phrase.includes(" ")) {
+            phrases.add(phrase);
+          }
+        }
+      }
+    }
+
+    const stored = new Set(STORED_PROMPTS.map((entry) => entry.prompt.toLowerCase()));
+    expect(HELD_OUT_PROMPTS.length).toBeGreaterThanOrEqual(15);
+    for (const { prompt } of HELD_OUT_PROMPTS) {
+      expect(stored.has(prompt.toLowerCase())).toBe(false);
+      for (const phrase of phrases) {
+        expect(
+          prompt.toLowerCase().includes(phrase),
+          `"${prompt}" copies stored phrase "${phrase}"`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("reports honest recall on held-out paraphrases", async () => {
+    // No top-3 assertion here: misses are the signal, and the floors below pin the
+    // measured values so regressions show. Weights and threshold are never tuned
+    // against this set — only the tokenizer experiment in the review moved it, and
+    // its before/after is reported in the PR, not hidden in the constants.
+    const rootDir = await fixture();
+    const rows: string[] = [];
+    let at1 = 0;
+    let at3 = 0;
+
+    for (const { prompt, expected } of HELD_OUT_PROMPTS) {
+      const found = await searchContext(rootDir, prompt, { docsDir: DOCS, adrDir: ADRS });
+      const rank = found.cards.findIndex((hit) => hit.card.file.endsWith(expected)) + 1;
+      if (rank === 1) {
+        at1 += 1;
+      }
+      if (rank >= 1 && rank <= 3) {
+        at3 += 1;
+      }
+      rows.push(
+        `${rank === 0 ? "-" : rank}  "${prompt}" → ${expected} (top: ${found.cards[0]?.card.file ?? "(none)"})`,
+      );
+    }
+
+    const r1 = at1 / HELD_OUT_PROMPTS.length;
+    const r3 = at3 / HELD_OUT_PROMPTS.length;
+    console.log(`held-out ranks:\n${rows.join("\n")}`);
+    console.log(
+      `held-out recall@1=${r1.toFixed(3)} recall@3=${r3.toFixed(3)} (${HELD_OUT_PROMPTS.length} prompts)`,
+    );
+    expect(r1).toBeGreaterThanOrEqual(HELD_OUT_RECALL_AT_1);
+    expect(r3).toBeGreaterThanOrEqual(HELD_OUT_RECALL_AT_3);
   }, 60000);
 });

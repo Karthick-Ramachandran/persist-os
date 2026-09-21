@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
+  CLAUDE_CONTEXT_HOOK_COMMAND,
   CODEX_CONTEXT_HOOK_PATH,
   CODEX_HOOKS_JSON_PATH,
   CONTEXT_PROMPT_HOOK_PATH,
@@ -220,9 +221,9 @@ describe("renderPrePushHook", () => {
       hooks: { UserPromptSubmit: { hooks: { command: string; timeout: number }[] }[] };
     };
 
-    expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe(
-      `./${CONTEXT_PROMPT_HOOK_PATH}`,
-    );
+    // The documented settings example addresses hooks from the project root, so the
+    // command must not depend on the hook's working directory.
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe(CLAUDE_CONTEXT_HOOK_COMMAND);
     expect(settings.hooks.UserPromptSubmit[0].hooks[0].timeout).toBeLessThanOrEqual(10);
   });
 
@@ -234,14 +235,25 @@ describe("renderPrePushHook", () => {
     expect(settings.hooks).not.toHaveProperty("UserPromptSubmit");
   });
 
-  it("wires the prompt hook in a valid Codex hooks.json with a short timeout", () => {
+  it("nests events under top-level hooks, matching the documented Codex example", () => {
+    // Per https://learn.chatgpt.com/docs/hooks the workspace example nests every event
+    // under a top-level "hooks" key. A top-level UserPromptSubmit is silently ignored,
+    // so the hook would never run — structure is asserted here, not just behavior.
     const parsed = JSON.parse(renderCodexHooksJson()) as {
-      UserPromptSubmit: { hooks: { type: string; command: string; timeout: number }[] }[];
+      hooks?: Record<string, { hooks: { type: string; command: string; timeout: number }[] }[]>;
+      UserPromptSubmit?: unknown;
     };
 
-    expect(parsed.UserPromptSubmit[0].hooks[0].type).toBe("command");
-    expect(parsed.UserPromptSubmit[0].hooks[0].command).toBe(`./${CODEX_CONTEXT_HOOK_PATH}`);
-    expect(parsed.UserPromptSubmit[0].hooks[0].timeout).toBeLessThanOrEqual(10);
+    expect(parsed).not.toHaveProperty("UserPromptSubmit");
+    expect(parsed.hooks).toBeDefined();
+    const entries = parsed.hooks?.["UserPromptSubmit"] ?? [];
+    expect(entries).toHaveLength(1);
+    expect(entries[0].hooks[0].type).toBe("command");
+    expect(entries[0].hooks[0].command).toContain(CODEX_CONTEXT_HOOK_PATH);
+    // The documented example resolves scripts from the git root, so the command
+    // must not depend on the hook's working directory either.
+    expect(entries[0].hooks[0].command).toMatch(/^\$\(git rev-parse --show-toplevel\)\//u);
+    expect(entries[0].hooks[0].timeout).toBeLessThanOrEqual(10);
   });
 });
 
@@ -305,6 +317,66 @@ describe("renderContextPromptHook", () => {
       // The stub echoes stdin (proving the payload arrived) and marks its output.
       expect(result.stdout).toContain('"prompt":"hello"');
       expect(result.stdout).toContain("-hooked-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  for (const tool of ["claude", "codex"] as const) {
+    it(`runs the ${tool} lookup from the project root when fired in a subdirectory`, async () => {
+      // Hooks can fire with any working directory, but node_modules/.bin/persist only
+      // exists at the root. Without the cd, the relative fallback misses from below.
+      const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-subdir-"));
+      try {
+        const bin = path.join(dir, "node_modules", ".bin");
+        await mkdir(bin, { recursive: true });
+        await writeFile(path.join(bin, "persist"), '#!/bin/sh\ncat\nprintf -- "-hooked-"\n');
+        await chmod(path.join(bin, "persist"), 0o755);
+        const deep = path.join(dir, "sub", "deep");
+        await mkdir(deep, { recursive: true });
+        const hookPath = path.join(dir, "context-prompt.sh");
+        await writeFile(hookPath, renderContextPromptHook(tool));
+        await chmod(hookPath, 0o755);
+
+        const env: NodeJS.ProcessEnv = { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" };
+        if (tool === "claude") {
+          // The tool's documented root variable, expanded from the hook process.
+          env["CLAUDE_PROJECT_DIR"] = dir;
+        } else {
+          execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
+        }
+
+        const result = spawnSync("sh", [hookPath], {
+          cwd: deep,
+          input: JSON.stringify({ prompt: "hello" }),
+          encoding: "utf8",
+          env,
+        });
+
+        expect(result.status).toBe(0);
+        expect(result.stdout).toContain("-hooked-");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  }
+
+  it("stands down silently outside git when the codex root is unknowable", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-nogit-"));
+    try {
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("codex"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "hello" }),
+        encoding: "utf8",
+        env: { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe("");
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

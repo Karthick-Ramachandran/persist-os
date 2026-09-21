@@ -17,6 +17,9 @@
  *      when the stem is still ≥ 5 long (`splitting` → `split`).
  *    - `ed` (length ≥ 5) → strip, with the same double-consonant collapse
  *      (`stopped` → `stop`).
+ *    - `ments` / `ment` and `ations` / `ation`, keeping a stem of length ≥ 4
+ *      (`reimbursement` → `reimburse`). The stem floor is the whole rule:
+ *      without it `moment` would become `mo` and `comment` `com`.
  *    - `es` after a sibilant (`s`, `x`, `z`, `ch`, `sh`, length ≥ 5) → strip
  *      both letters (`branches` → `branch`).
  *    - trailing `s` (length ≥ 4) → strip one (`shares` → `share`).
@@ -188,6 +191,18 @@ function stem(token: string): string {
   }
   if (token.endsWith("ed") && token.length >= 5) {
     return collapseDouble(token.slice(0, -2));
+  }
+  if (token.endsWith("ments") && token.length - 5 >= 4) {
+    return token.slice(0, -5);
+  }
+  if (token.endsWith("ment") && token.length - 4 >= 4) {
+    return token.slice(0, -4);
+  }
+  if (token.endsWith("ations") && token.length - 6 >= 4) {
+    return token.slice(0, -6);
+  }
+  if (token.endsWith("ation") && token.length - 5 >= 4) {
+    return token.slice(0, -5);
   }
   if (token.length >= 5 && SIBILANT_ENDINGS.some((ending) => token.endsWith(ending))) {
     return token.slice(0, -2);

@@ -7,8 +7,9 @@ Markdown file per area of the codebase (`docs/context/<name>.md`): what the area
 task phrasings it answers, the words people use for it, where to start reading, and which rules
 apply. `persist context "<task>"` matches a new task against those stored phrases with
 deterministic BM25 — no embeddings, no model calls, no network — and answers in pointers, never
-whole files. A 22-prompt retrieval benchmark over a Splitr fixture (including paraphrases that
-share no words with the code) recalls 1.0 at rank 1 and rank 3.
+whole files. A 38-prompt retrieval benchmark over a Splitr fixture reports both sets honestly:
+the 22 stored task phrasings recall 1.0 at rank 1 and rank 3, while 16 held-out paraphrases
+that copy no stored phrase recall 7/16 at rank 1 and 10/16 in the top 3.
 
 **The habit that makes it work.** When you finish work in an area, scaffold the card if there is
 none (`persist context add <name> --purpose "<one line>"`), then add the task you were just
