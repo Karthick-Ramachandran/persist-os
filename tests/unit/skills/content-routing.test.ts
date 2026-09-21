@@ -43,9 +43,7 @@ describe("retired skill content routing", () => {
     const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
 
     expect(agents).toContain("Never contradict an accepted ADR");
-    expect(agents).toContain(
-      "check the diff against every accepted ADR that governs the files you",
-    );
+    expect(agents).toContain("check your changed lines against each governing decision");
   });
 
   it("routes the context lookup and card-update habit through AGENTS.md and the Cursor rule", async () => {

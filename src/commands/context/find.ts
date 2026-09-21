@@ -1,6 +1,13 @@
 import { getStyle } from "../../cli/style.js";
 import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
+import {
+  adrGoverns,
+  matchesPattern,
+  readAcceptedAdrs,
+  type GoverningAdr,
+} from "../../core/adr/governing-adrs.js";
+import type { ContextCard } from "../../core/context/context-card.js";
 import { searchContext, type ScoredCard, type ScoredSecondary } from "../../core/context/search.js";
 
 export type FindContextOptions = {
@@ -17,6 +24,8 @@ export type FindContextCard = {
   /** File names whose bridge boosted this card; empty when it did not fire. */
   bridge: string[];
   startHere: { path: string; note: string }[];
+  /** The live Decision sentence of every accepted ADR this card's area falls under. */
+  decisions: { id: string; title: string; decision: string; file: string }[];
   rules: string[];
   pitfalls: string[];
   score: number;
@@ -81,18 +90,23 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
     adrDir: config.adrDir,
   });
 
-  const cards = found.cards.slice(0, limit).map(
-    (hit: ScoredCard): FindContextCard => ({
+  const adrs = await readAcceptedAdrs(options.rootDir, config.adrDir);
+  const cards = found.cards.slice(0, limit).map((hit: ScoredCard): FindContextCard => {
+    const decisions = decisionsFor(hit.card, adrs);
+    const quoted = new Set(decisions.map((adr) => adr.id));
+    return {
       title: hit.card.title,
       file: hit.card.file,
       matched: hit.matched,
       bridge: hit.bridge,
       startHere: hit.card.startHere,
-      rules: hit.card.rules,
+      decisions,
+      // A Rules line that only restates a quoted ADR would repeat it in a byte budget.
+      rules: hit.card.rules.filter((rule) => !citedIds(rule).some((id) => quoted.has(id))),
       pitfalls: hit.card.pitfalls,
       score: round(hit.score),
-    }),
-  );
+    };
+  });
   // Secondary records show only when no card covers the task — they answer a
   // different question ("what did we decide here") than the cards do.
   const secondary =
@@ -142,6 +156,11 @@ function formatCards(result: FindContextResult): string {
     lines.push(
       `${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}${via(card.bridge)}`,
     );
+    // Decisions come first: a byte cap truncates from the end, and the rule the change must
+    // follow matters more than any pointer.
+    for (const adr of card.decisions) {
+      lines.push(`  Follow ${adr.id} (${adr.title}): ${adr.decision}`);
+    }
     for (const entry of card.startHere) {
       lines.push(entry.note === "" ? `  ${entry.path}` : `  ${entry.path} — ${entry.note}`);
     }
@@ -205,4 +224,33 @@ async function loadRepoConfig(rootDir: string) {
 
     throw error;
   }
+}
+
+/**
+ * The accepted ADRs a card's area falls under: those the card cites by id, and those whose
+ * Applies To covers a file the card points at. The decision text is read from the ADR itself,
+ * so the agent gets the rule as written, not a card's paraphrase that can drift.
+ */
+function decisionsFor(card: ContextCard, adrs: GoverningAdr[]): FindContextCard["decisions"] {
+  const cited = new Set([...card.rules, ...card.pitfalls].flatMap(citedIds));
+  const cardPaths = [
+    ...card.startHere.map((entry) => entry.path),
+    ...card.appliesTo.map((pattern) => pattern.replace(/\/\*\*?$/u, "")),
+  ];
+
+  return adrs
+    .filter(
+      (adr) =>
+        cited.has(adr.id) ||
+        cardPaths.some(
+          (cardPath) =>
+            adrGoverns(adr, cardPath) ||
+            adr.appliesTo.some((pattern) => matchesPattern(`${cardPath}/**`, pattern)),
+        ),
+    )
+    .map((adr) => ({ id: adr.id, title: adr.title, decision: adr.decision, file: adr.file }));
+}
+
+function citedIds(text: string): string[] {
+  return [...text.matchAll(/ADR-\d{4,}/giu)].map((match) => match[0].toUpperCase());
 }

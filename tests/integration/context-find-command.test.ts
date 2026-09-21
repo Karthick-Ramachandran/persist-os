@@ -288,3 +288,137 @@ describe("persist context", () => {
     expect(await listRelativeFiles(rootDir)).toContain("docs/context/refunds.md");
   });
 });
+
+/**
+ * A card paraphrases its rules, and a paraphrase drifts. In a rehearsal an agent was handed
+ * "ADR-0001 — money is integer cents", never opened the ADR, and did float division that its
+ * Decision ("including intermediate calculations") forbade. The lookup now quotes the Decision
+ * itself, read from the ADR, first under the card, for every ADR the card's area falls under.
+ */
+describe("persist context quotes governing decisions", () => {
+  const roots: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
+  });
+
+  async function readText(rootDir: string, relative: string): Promise<string> {
+    const { readFile } = await import("node:fs/promises");
+    return readFile(path.join(rootDir, relative), "utf8");
+  }
+
+  async function acceptAdr(
+    rootDir: string,
+    title: string,
+    slug: string,
+    decision: string,
+    appliesTo: string[],
+  ): Promise<void> {
+    await runCommand(rootDir, ["adr", "create", title]);
+    const { readdir } = await import("node:fs/promises");
+    const file = (await readdir(path.join(rootDir, "docs/adrs"))).find((name) =>
+      name.endsWith(`-${slug}.md`),
+    );
+    const relative = `docs/adrs/${file}`;
+    const content = await readText(rootDir, relative);
+    await writeFile(
+      path.join(rootDir, relative),
+      content
+        .replace(/## Decision\n\n[\s\S]*?\n\n## /u, `## Decision\n\n${decision}\n\n## `)
+        .replace(
+          /## Applies To\n\n[\s\S]*?\n\n## /u,
+          `## Applies To\n\n${appliesTo.map((p) => `- \`${p}\``).join("\n")}\n\n## `,
+        ),
+      "utf8",
+    );
+    await runCommand(rootDir, ["adr", "accept", slug]);
+  }
+
+  async function repo(prefix: string, rules: string[]): Promise<string> {
+    const rootDir = await createTempRoot(prefix);
+    roots.push(rootDir);
+    await runInitCommand(rootDir, ["--yes"]);
+    await mkdir(path.join(rootDir, "docs/context"), { recursive: true });
+    const body = card(
+      "Billing",
+      ["who pays the extra cent on invoices"],
+      ["src/lib/billing.ts"],
+    ).replace("- ADR-0001 — a recorded decision about the test area", rules.join("\n"));
+    await writeFile(path.join(rootDir, "docs/context/billing.md"), body, "utf8");
+    return rootDir;
+  }
+
+  it("quotes a cited ADR's Decision from the ADR, not the card's paraphrase", async () => {
+    const rootDir = await repo("context-cited", ["- ADR-0001 — money stuff"]);
+    await acceptAdr(
+      rootDir,
+      "Money is integer cents",
+      "money-is-integer-cents",
+      "Every amount is integer cents, including intermediate calculations.",
+      [],
+    );
+
+    const result = await runCommand(rootDir, ["context", "who pays the extra cent"]);
+
+    expect(result.stdout).toContain(
+      "Follow ADR-0001 (Money Is Integer Cents): Every amount is integer cents, including intermediate calculations.",
+    );
+    // The paraphrase is dropped rather than shown beside the real rule.
+    expect(result.stdout).not.toContain("money stuff");
+  });
+
+  it("quotes an ADR that governs the card's files even when the card never cites it", async () => {
+    const rootDir = await repo("context-governed", ["- CONVENTIONS: use the shared helper"]);
+    await acceptAdr(
+      rootDir,
+      "Invoices are immutable",
+      "invoices-are-immutable",
+      "An issued invoice is never edited; corrections are new credit notes.",
+      ["src/lib/**"],
+    );
+
+    const result = await runCommand(rootDir, ["context", "who pays the extra cent"]);
+
+    expect(result.stdout).toContain(
+      "Follow ADR-0001 (Invoices Are Immutable): An issued invoice is never edited; corrections are new credit notes.",
+    );
+    expect(result.stdout).toContain("Rules: CONVENTIONS: use the shared helper");
+  });
+
+  it("puts the decision before the file pointers, so a byte cap never cuts it", async () => {
+    const rootDir = await repo("context-order", ["- ADR-0001 — money stuff"]);
+    await acceptAdr(
+      rootDir,
+      "Money is integer cents",
+      "money-is-integer-cents",
+      "Every amount is integer cents.",
+      [],
+    );
+
+    const out = (await runCommand(rootDir, ["context", "who pays the extra cent"])).stdout;
+
+    expect(out.indexOf("Follow ADR-0001")).toBeGreaterThan(-1);
+    expect(out.indexOf("Follow ADR-0001")).toBeLessThan(out.indexOf("src/lib/billing.ts"));
+  });
+
+  it("never quotes a superseded decision", async () => {
+    const rootDir = await repo("context-superseded", ["- ADR-0001 — money stuff"]);
+    await acceptAdr(
+      rootDir,
+      "Money is integer cents",
+      "money-is-integer-cents",
+      "Every amount is integer cents.",
+      [],
+    );
+    await runCommand(rootDir, [
+      "adr",
+      "supersede",
+      "money-is-integer-cents",
+      "Money is minor units per currency",
+    ]);
+
+    const result = await runCommand(rootDir, ["context", "who pays the extra cent"]);
+
+    expect(result.stdout).not.toContain("Follow ADR-0001");
+  });
+});
