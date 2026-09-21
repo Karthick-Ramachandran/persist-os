@@ -29,6 +29,12 @@ import {
 } from "../commands/skill/create.js";
 import { addFence, formatFenceAddResult } from "../commands/fence/add.js";
 import { addContext, ContextAddError, formatAddContextResult } from "../commands/context/add.js";
+import {
+  findContext,
+  FindContextError,
+  formatFindContextJson,
+  formatFindContextResult,
+} from "../commands/context/find.js";
 import { formatSyncHooksResult, HooksSyncError, syncHooks } from "../commands/hooks/sync.js";
 import { formatSkillListResult } from "../commands/skill/list.js";
 
@@ -331,7 +337,21 @@ export function createCliProgram(
 
   const contextCommand = program
     .command("context")
-    .description("Record and find area memory (context cards).");
+    .description("Record and find area memory (context cards).")
+    .argument("[task]", 'Task to look up, e.g. "make rounding fair".')
+    .option("--json", "Emit the matches as JSON.")
+    .option("--limit <n>", "Maximum cards shown.", "3")
+    .action(
+      async (task: string | undefined, options: { json?: boolean; limit?: string }) => {
+        const result = await findContext({
+          rootDir: cwd,
+          task: task ?? "",
+          limit: options.limit === undefined ? undefined : Number.parseInt(options.limit, 10),
+        });
+
+        stdout.write(options.json === true ? formatFindContextJson(result) : formatFindContextResult(result));
+      },
+    );
 
   contextCommand
     .command("add")
@@ -456,6 +476,14 @@ export async function main(
     }
 
     if (error instanceof ContextAddError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof FindContextError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

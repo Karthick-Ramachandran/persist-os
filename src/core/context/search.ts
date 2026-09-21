@@ -1,0 +1,460 @@
+import { execFile } from "node:child_process";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
+import { promisify } from "node:util";
+
+import { type GoverningAdr, matchesPattern, readGoverningAdrs } from "../adr/governing-adrs.js";
+import { fenceFileKey, FENCE_HEADING_PATTERN } from "../fence/generate-fence.js";
+import { CONTEXT_DIR_NAME, parseContextCard, type ContextCard } from "./context-card.js";
+import { tokenize } from "./tokenize.js";
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * Field weights, in one place. Answers carries task phrasings in the asker's
+ * own words, so it dominates: five prompts in the benchmark are answerable
+ * only through it. Also Known As carries synonyms next. Purpose and title
+ * describe the area. Rules, Pitfalls, and Start Here are code-word heavy, so
+ * they only disambiguate — a task naming `splitEvenly` should prefer the card
+ * whose Start Here names it, not outrank a card whose Answers match.
+ */
+export const FIELD_WEIGHTS = {
+  answers: 3,
+  alsoKnownAs: 2.5,
+  purpose: 2,
+  title: 2,
+  rules: 1,
+  pitfalls: 1,
+  startHere: 1,
+} as const;
+
+type FieldName = keyof typeof FIELD_WEIGHTS;
+
+/** BM25 constants from the brief (k1 = 1.2, b = 0.75). */
+const K1 = 1.2;
+const B = 0.75;
+
+/**
+ * A card boosted because the task names a file it covers ("tip" matches
+ * `src/lib/tip.ts`). Sized to outrank a weak single-term field hit but not a
+ * strong Answers match: the bridge resolves ambiguity, it never invents
+ * relevance.
+ */
+const PATH_BOOST = 1.5;
+
+/** Below this total a hit is noise. Tuned against the retrieval benchmark. */
+export const MIN_SCORE = 0.9;
+
+const FENCES_FILE = "60-engineering/FENCES.md";
+const CONVENTIONS_FILE = "60-engineering/CONVENTIONS.md";
+const LESSONS_FILE = "60-engineering/LESSONS.md";
+
+const WHY_PATTERN = /^Why:\s*(.+)$/u;
+const BULLET_PATTERN = /^\s*[-*]\s+(.+?)\s*$/u;
+const CODE_PATH_PATTERN = /`((?:src|tests)\/[A-Za-z0-9._/-]+\.[A-Za-z0-9]+)`/gu;
+
+export type SecondaryKind = "adr" | "fence" | "convention" | "lesson";
+
+export type SecondaryDocument = {
+  kind: SecondaryKind;
+  /** Display label: ADR id, fence path, or source file. */
+  label: string;
+  /** Repo-relative source file for tie-breaks and display. */
+  file: string;
+  /** Indexed text. */
+  text: string;
+  /** Path patterns or files this record covers, for the path bridge. */
+  paths: string[];
+  /** One-line display detail: decision sentence, Why, or bullet. */
+  detail: string;
+};
+
+export type ScoredCard = {
+  card: ContextCard;
+  score: number;
+  /** Query tokens hit in any field, in query order — the match explains itself. */
+  matched: string[];
+};
+
+export type ScoredSecondary = {
+  doc: SecondaryDocument;
+  score: number;
+  matched: string[];
+};
+
+export type ContextSearchResult = {
+  task: string;
+  query: string[];
+  cards: ScoredCard[];
+  secondary: ScoredSecondary[];
+};
+
+export type ContextSearchDirs = {
+  docsDir: string;
+  adrDir: string;
+};
+
+/** Field texts in weight-table order, so the scorer cannot drift from it. */
+function cardFields(card: ContextCard): { field: FieldName; text: string }[] {
+  return [
+    { field: "answers", text: card.answers.join("\n") },
+    { field: "alsoKnownAs", text: card.alsoKnownAs.join(" ") },
+    { field: "purpose", text: card.purpose },
+    { field: "title", text: card.title },
+    { field: "rules", text: card.rules.join("\n") },
+    { field: "pitfalls", text: card.pitfalls.join("\n") },
+    {
+      field: "startHere",
+      text: card.startHere.map((entry) => `${entry.path} ${entry.note}`).join("\n"),
+    },
+  ];
+}
+
+/** Paths a card covers: Applies To patterns plus Start Here files. */
+function cardPaths(card: ContextCard): string[] {
+  return [...card.appliesTo, ...card.startHere.map((entry) => entry.path)];
+}
+
+function idf(docFreq: number, docCount: number): number {
+  return Math.log(1 + (docCount - docFreq + 0.5) / (docFreq + 0.5));
+}
+
+function bm25Term(
+  termFreq: number,
+  docLength: number,
+  avgLength: number,
+  termIdf: number,
+): number {
+  if (termFreq === 0 || avgLength === 0) {
+    return 0;
+  }
+  const norm = 1 - B + (B * docLength) / avgLength;
+  return termIdf * ((termFreq * (K1 + 1)) / (termFreq + K1 * norm));
+}
+
+/**
+ * Score one query against one corpus of field texts with BM25 per field. The
+ * corpus is a single field across documents, so identical phrasing in a rare
+ * field outranks the same words repeated in a common one.
+ */
+function scoreFields(
+  query: string[],
+  fieldDocs: Map<FieldName, string[][]>,
+  docIndex: number,
+  docCount: number,
+): { score: number; matched: string[] } {
+  let score = 0;
+  const matched: string[] = [];
+
+  for (const [field, docs] of fieldDocs) {
+    const weight = FIELD_WEIGHTS[field];
+    const tokenized = docs.map((tokens) => tokens);
+    const avgLength = tokenized.reduce((sum, tokens) => sum + tokens.length, 0) / docCount;
+    const docTokens = tokenized[docIndex] ?? [];
+    const docLength = docTokens.length;
+    const counts = new Map<string, number>();
+    for (const token of docTokens) {
+      counts.set(token, (counts.get(token) ?? 0) + 1);
+    }
+
+    for (const term of query) {
+      const termFreq = counts.get(term) ?? 0;
+      if (termFreq === 0) {
+        continue;
+      }
+      let docFreq = 0;
+      for (const tokens of tokenized) {
+        if (tokens.includes(term)) {
+          docFreq += 1;
+        }
+      }
+      score += weight * bm25Term(termFreq, docLength, avgLength, idf(docFreq, docCount));
+      if (!matched.includes(term)) {
+        matched.push(term);
+      }
+    }
+  }
+
+  return { score, matched: query.filter((term) => matched.includes(term)) };
+}
+
+function scoreSecondaryDocs(
+  query: string[],
+  docs: SecondaryDocument[],
+): { score: number; matched: string[] }[] {
+  const tokenized = docs.map((doc) => tokenize(doc.text));
+  const avgLength =
+    tokenized.reduce((sum, tokens) => sum + tokens.length, 0) / Math.max(docs.length, 1);
+  const docFreq = new Map<string, number>();
+  for (const tokens of tokenized) {
+    for (const term of new Set(tokens)) {
+      docFreq.set(term, (docFreq.get(term) ?? 0) + 1);
+    }
+  }
+
+  return tokenized.map((tokens) => {
+    const counts = new Map<string, number>();
+    for (const token of tokens) {
+      counts.set(token, (counts.get(token) ?? 0) + 1);
+    }
+    let score = 0;
+    const matched: string[] = [];
+    for (const term of query) {
+      const termFreq = counts.get(term) ?? 0;
+      if (termFreq === 0) {
+        continue;
+      }
+      score += bm25Term(termFreq, tokens.length, avgLength, idf(docFreq.get(term) ?? 0, docs.length));
+      matched.push(term);
+    }
+    return { score, matched };
+  });
+}
+
+/** Backticked `src/`/`tests/` paths mentioned in a prose line. */
+function mentionedPaths(text: string): string[] {
+  const found: string[] = [];
+  for (const match of text.matchAll(CODE_PATH_PATTERN)) {
+    const value = match[1] ?? "";
+    if (value !== "" && !found.includes(value)) {
+      found.push(value);
+    }
+  }
+  return found;
+}
+
+function bulletsOf(content: string): string[] {
+  const items: string[] = [];
+  for (const line of content.split("\n")) {
+    const match = BULLET_PATTERN.exec(line);
+    if (match !== null) {
+      const text = (match[1] ?? "").trim();
+      if (text !== "") {
+        items.push(text);
+      }
+    }
+  }
+  return items;
+}
+
+async function readCards(rootDir: string, docsDir: string): Promise<ContextCard[]> {
+  const dir = path.join(rootDir, docsDir, CONTEXT_DIR_NAME);
+  let names: string[];
+  try {
+    names = (await readdir(dir, { withFileTypes: true }))
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+      .map((entry) => entry.name)
+      .sort();
+  } catch {
+    return [];
+  }
+
+  const cards: ContextCard[] = [];
+  for (const name of names) {
+    const file = path.posix.join(docsDir, CONTEXT_DIR_NAME, name);
+    const content = await readFile(path.join(rootDir, file), "utf8");
+    cards.push(parseContextCard(content, file));
+  }
+  return cards;
+}
+
+/**
+ * Fence path plus standing Why, read from the same `## \`path\`` / `Why:`
+ * shape fence-check reads. Kept local so search never depends on a doctor
+ * gate's internals; both follow generate-fence's writer, which is the shape's
+ * owner.
+ */
+async function readFenceDocs(rootDir: string, docsDir: string): Promise<SecondaryDocument[]> {
+  const content = await readFileIfExists(rootDir, path.posix.join(docsDir, FENCES_FILE));
+  if (content === undefined) {
+    return [];
+  }
+  const file = path.posix.join(docsDir, FENCES_FILE);
+  const docs: SecondaryDocument[] = [];
+  let current: string | null = null;
+  let why: string | null = null;
+  const flush = (): void => {
+    if (current !== null && why !== null) {
+      docs.push({
+        kind: "fence",
+        label: current,
+        file,
+        text: `${current} ${why}`,
+        paths: [fenceFileKey(current)],
+        detail: why,
+      });
+    }
+  };
+  for (const line of content.split("\n")) {
+    const heading = FENCE_HEADING_PATTERN.exec(line);
+    if (heading !== null) {
+      flush();
+      current = ((heading[1] ?? "").trim() || null) as string | null;
+      why = null;
+      continue;
+    }
+    if (current !== null && why === null) {
+      const match = WHY_PATTERN.exec(line);
+      if (match !== null) {
+        why = (match[1] ?? "").trim();
+      }
+    }
+  }
+  flush();
+  return docs;
+}
+
+async function readConventionDocs(rootDir: string, docsDir: string): Promise<SecondaryDocument[]> {
+  const file = path.posix.join(docsDir, CONVENTIONS_FILE);
+  const content = await readFileIfExists(rootDir, file);
+  if (content === undefined) {
+    return [];
+  }
+  return bulletsOf(content).map((bullet) => ({
+    kind: "convention" as const,
+    label: "CONVENTIONS",
+    file,
+    text: bullet,
+    paths: mentionedPaths(bullet),
+    detail: bullet,
+  }));
+}
+
+async function readLessonDocs(rootDir: string, docsDir: string): Promise<SecondaryDocument[]> {
+  const file = path.posix.join(docsDir, LESSONS_FILE);
+  const content = await readFileIfExists(rootDir, file);
+  if (content === undefined) {
+    return [];
+  }
+  return bulletsOf(content).map((bullet) => ({
+    kind: "lesson" as const,
+    label: "LESSONS",
+    file,
+    text: bullet,
+    paths: mentionedPaths(bullet),
+    detail: bullet,
+  }));
+}
+
+function adrDocs(adrs: GoverningAdr[]): SecondaryDocument[] {
+  return adrs.map((adr) => ({
+    kind: "adr" as const,
+    label: adr.id,
+    file: adr.file,
+    text: `${adr.title} ${adr.decision} ${adr.appliesTo.join(" ")}`,
+    paths: adr.appliesTo,
+    detail: adr.decision,
+  }));
+}
+
+/** Repo files from `git ls-files`. Outside git there is no bridge — never an error. */
+async function listTrackedFiles(rootDir: string): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync("git", ["ls-files"], { cwd: rootDir });
+    return stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "");
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The file-name bridge: a task token matching a tracked file's name ("tip"
+ * matches `src/lib/tip.ts`), or the task naming the path outright, marks the
+ * file. Records covering a marked file get the path boost. The file list
+ * itself is never printed.
+ */
+function bridgeFiles(task: string, query: string[], tracked: string[]): Set<string> {
+  const lowered = task.toLowerCase();
+  const named = new Set<string>();
+  for (const file of tracked) {
+    if (lowered.includes(file.toLowerCase())) {
+      named.add(file);
+      continue;
+    }
+    const base = file.split("/").pop() ?? file;
+    const stem = base.replace(/\.[^.]+$/u, "");
+    const nameTokens = new Set(tokenize(stem));
+    if (query.some((term) => nameTokens.has(term))) {
+      named.add(file);
+    }
+  }
+  return named;
+}
+
+function covers(paths: string[], file: string): boolean {
+  return paths.some((pattern) => {
+    if (/[*?]/u.test(pattern)) {
+      return matchesPattern(pattern, file);
+    }
+    const key = pattern.includes(":") ? (pattern.split(":")[0] ?? pattern) : pattern;
+    return file === key || file.startsWith(`${key.replace(/\/+$/u, "")}/`);
+  });
+}
+
+export async function searchContext(
+  rootDir: string,
+  task: string,
+  dirs: ContextSearchDirs,
+): Promise<ContextSearchResult> {
+  const query = tokenize(task);
+  const cards = await readCards(rootDir, dirs.docsDir);
+  const adrs = await readGoverningAdrs(rootDir, dirs.adrDir);
+  const secondary: SecondaryDocument[] = [
+    ...adrDocs(adrs),
+    ...(await readFenceDocs(rootDir, dirs.docsDir)),
+    ...(await readConventionDocs(rootDir, dirs.docsDir)),
+    ...(await readLessonDocs(rootDir, dirs.docsDir)),
+  ];
+
+  const tracked = await listTrackedFiles(rootDir);
+  const named = bridgeFiles(task, query, tracked);
+  const boosted = (paths: string[]): number =>
+    named.size > 0 && [...named].some((file) => covers(paths, file)) ? PATH_BOOST : 0;
+
+  const fieldDocs = new Map<FieldName, string[][]>();
+  const fields = cards.map(cardFields);
+  for (const field of Object.keys(FIELD_WEIGHTS) as FieldName[]) {
+    fieldDocs.set(
+      field,
+      fields.map((entries) => tokenize(entries.find((entry) => entry.field === field)?.text ?? "")),
+    );
+  }
+
+  const scoredCards: ScoredCard[] = cards.map((card, index) => {
+    const { score, matched } = scoreFields(query, fieldDocs, index, Math.max(cards.length, 1));
+    return { card, score: score + boosted(cardPaths(card)), matched };
+  });
+  scoredCards.sort((a, b) => b.score - a.score || (a.card.file < b.card.file ? -1 : 1));
+
+  const secondaryScores = scoreSecondaryDocs(query, secondary);
+  const scoredSecondary: ScoredSecondary[] = secondary.map((doc, index) => {
+    const base = secondaryScores[index] ?? { score: 0, matched: [] };
+    return { doc, score: base.score + boosted(doc.paths), matched: base.matched };
+  });
+  scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
+
+  return {
+    task,
+    query,
+    cards: scoredCards.filter((hit) => hit.score >= MIN_SCORE),
+    secondary: scoredSecondary.filter((hit) => hit.score >= MIN_SCORE),
+  };
+}
+
+async function readFileIfExists(
+  rootDir: string,
+  relativePath: string,
+): Promise<string | undefined> {
+  try {
+    return await readFile(path.join(rootDir, relativePath), "utf8");
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return undefined;
+    }
+    throw error;
+  }
+}
