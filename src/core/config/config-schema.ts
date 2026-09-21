@@ -74,6 +74,9 @@ export const persistConfigSchema = z
     // Whether the Chesterton fence is active (F-037). Optional on read via zod default so
     // pre-fence configs keep loading; this spends no breaking-change budget (ADR-0011).
     fenceEnabled: z.boolean().default(true),
+    // Whether the per-prompt context hook files are generated and expected. Optional on
+    // read via zod default so pre-existing configs keep loading (ADR-0011).
+    contextHook: z.boolean().default(true),
     // Deprecated B5 knobs: accepted on read for backward compat with pre-0.7 configs,
     // never written by new inits and never read. `mode` duplicated `memoryProfile`;
     // `writePolicy` was superseded by --force/--dry-run.

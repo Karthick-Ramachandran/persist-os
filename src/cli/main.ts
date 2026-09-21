@@ -35,6 +35,12 @@ import {
   formatFindContextJson,
   formatFindContextResult,
 } from "../commands/context/find.js";
+import {
+  ContextHookError,
+  formatHookContextResult,
+  hookContext,
+  readHookInput,
+} from "../commands/context/hook.js";
 import { formatSyncHooksResult, HooksSyncError, syncHooks } from "../commands/hooks/sync.js";
 import { formatSkillListResult } from "../commands/skill/list.js";
 
@@ -341,8 +347,27 @@ export function createCliProgram(
     .argument("[task]", 'Task to look up, e.g. "make rounding fair".')
     .option("--json", "Emit the matches as JSON.")
     .option("--limit <n>", "Maximum cards shown.", "3")
+    .option(
+      "--hook <tool>",
+      "Answer a prompt hook: read the tool's hook input from stdin and print its expected output.",
+    )
     .action(
-      async (task: string | undefined, options: { json?: boolean; limit?: string }) => {
+      async (
+        task: string | undefined,
+        options: { json?: boolean; limit?: string; hook?: string },
+      ) => {
+        // Hook mode never fails the prompt: a lookup miss or an unreadable repo prints
+        // nothing and exits 0. Only an unknown tool is a wiring bug, and that throws.
+        if (options.hook !== undefined) {
+          const hooked = await hookContext({
+            rootDir: cwd,
+            tool: options.hook,
+            rawInput: await readHookInput(),
+          });
+          stdout.write(formatHookContextResult(hooked));
+          return;
+        }
+
         const result = await findContext({
           rootDir: cwd,
           task: task ?? "",
@@ -484,6 +509,14 @@ export async function main(
     }
 
     if (error instanceof FindContextError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof ContextHookError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);

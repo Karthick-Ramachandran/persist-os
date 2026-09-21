@@ -7,10 +7,15 @@ import { createDefaultConfig } from "../../../src/core/config/default-config.js"
 import { checkHookDrift } from "../../../src/core/doctor/checks/hook-drift-check.js";
 import {
   CLAUDE_SETTINGS_PATH,
+  CODEX_CONTEXT_HOOK_PATH,
+  CODEX_HOOKS_JSON_PATH,
+  CONTEXT_PROMPT_HOOK_PATH,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
   SESSION_START_HOOK_PATH,
   renderClaudeSettings,
+  renderCodexHooksJson,
+  renderContextPromptHook,
   renderPreCommitHook,
   renderPrePushHook,
   renderSessionStartHook,
@@ -48,6 +53,7 @@ describe("hook-drift check", () => {
         testCommand: config.testCommand,
         preCommitGates: [...config.preCommitGates],
         prePushGates: [...config.prePushGates],
+        contextHook: config.contextHook,
       },
     };
   }
@@ -67,6 +73,22 @@ describe("hook-drift check", () => {
       "utf8",
     );
     await writeFile(path.join(rootDir, CLAUDE_SETTINGS_PATH), renderClaudeSettings(), "utf8");
+    await writeFile(
+      path.join(rootDir, CONTEXT_PROMPT_HOOK_PATH),
+      renderContextPromptHook("claude"),
+      "utf8",
+    );
+  }
+
+  /** The Codex generated files, written as the generator would produce them. */
+  async function writeCodexFiles(rootDir: string): Promise<void> {
+    await mkdir(path.join(rootDir, ".codex/hooks"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, CODEX_CONTEXT_HOOK_PATH),
+      renderContextPromptHook("codex"),
+      "utf8",
+    );
+    await writeFile(path.join(rootDir, CODEX_HOOKS_JSON_PATH), renderCodexHooksJson(), "utf8");
   }
 
   it("passes when both hooks match the config", async () => {
@@ -78,6 +100,7 @@ describe("hook-drift check", () => {
       renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
     );
     await writeClaudeFiles(rootDir);
+    await writeCodexFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
@@ -94,6 +117,7 @@ describe("hook-drift check", () => {
       renderPrePushHook("pnpm run test:run", ["pnpm run typecheck"]),
     );
     await writeClaudeFiles(rootDir);
+    await writeCodexFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
@@ -117,6 +141,7 @@ describe("hook-drift check", () => {
       renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
     );
     await writeClaudeFiles(rootDir, "#!/bin/sh\n# an older generated hook\n");
+    await writeCodexFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
@@ -137,10 +162,66 @@ describe("hook-drift check", () => {
       renderPreCommitHook(context.config.preCommitGates ?? []),
       renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
     );
+    await writeCodexFiles(rootDir);
 
     const { findings, outcome } = await checkHookDrift(context);
 
     // No .claude/ anywhere, and that is correct rather than drift.
+    expect(findings).toEqual([]);
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
+  });
+
+  it("warns when the context prompt hook is stale", async () => {
+    const rootDir = await createRoot("drift-context-stale");
+    const context = contextFor(rootDir);
+    await writeHooks(
+      rootDir,
+      renderPreCommitHook(context.config.preCommitGates ?? []),
+      renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
+    );
+    await writeClaudeFiles(rootDir);
+    await writeCodexFiles(rootDir);
+    await writeFile(
+      path.join(rootDir, CONTEXT_PROMPT_HOOK_PATH),
+      "#!/bin/sh\n# an older generated hook\n",
+      "utf8",
+    );
+
+    const { findings, outcome } = await checkHookDrift(context);
+
+    expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      severity: "warning",
+      check: "hook-drift",
+      path: CONTEXT_PROMPT_HOOK_PATH,
+    });
+  });
+
+  it("expects no prompt hook files when the toggle is off", async () => {
+    const rootDir = await createRoot("drift-context-off");
+    const context = contextFor(rootDir, { aiTools: ["claude"], contextHook: false });
+    await writeHooks(
+      rootDir,
+      renderPreCommitHook(context.config.preCommitGates ?? []),
+      renderPrePushHook(context.config.testCommand ?? null, context.config.prePushGates ?? []),
+    );
+    // The toggle-off shapes: session start without the prompt entry, and no
+    // prompt script anywhere. Expecting either would punish the opt-out.
+    await mkdir(path.join(rootDir, ".claude/hooks"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, SESSION_START_HOOK_PATH),
+      renderSessionStartHook(),
+      "utf8",
+    );
+    await writeFile(
+      path.join(rootDir, CLAUDE_SETTINGS_PATH),
+      renderClaudeSettings(false),
+      "utf8",
+    );
+
+    const { findings, outcome } = await checkHookDrift(context);
+
     expect(findings).toEqual([]);
     expect(outcome).toEqual({ id: "hook-drift", status: "evaluated" });
   });

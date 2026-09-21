@@ -13,6 +13,7 @@ const DEFAULT_CONFIG = {
   prePushGates: [],
   testCommand: null,
   fenceEnabled: true,
+  contextHook: true,
 } satisfies PersistConfig;
 
 export function createDefaultConfig(overrides: Partial<PersistConfig> = {}): PersistConfig {

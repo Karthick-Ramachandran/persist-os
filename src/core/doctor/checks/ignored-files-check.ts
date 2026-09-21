@@ -4,7 +4,13 @@ import path from "node:path";
 import { promisify } from "node:util";
 
 import { CONTEXT_DIR_NAME } from "../../context/context-card.js";
-import { CLAUDE_SETTINGS_PATH, SESSION_START_HOOK_PATH } from "../../hooks/generate-hook.js";
+import {
+  CLAUDE_SETTINGS_PATH,
+  CODEX_CONTEXT_HOOK_PATH,
+  CODEX_HOOKS_JSON_PATH,
+  CONTEXT_PROMPT_HOOK_PATH,
+  SESSION_START_HOOK_PATH,
+} from "../../hooks/generate-hook.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 import { advisoryToolFiles, requiredDocs, requiredRootFiles } from "./required-files-check.js";
 import { isGitRepository } from "./staleness-check.js";
@@ -46,6 +52,9 @@ export async function checkIgnoredFiles(
     path.posix.join(config.adrDir, "README.md"),
     SESSION_START_HOOK_PATH,
     CLAUDE_SETTINGS_PATH,
+    CONTEXT_PROMPT_HOOK_PATH,
+    CODEX_CONTEXT_HOOK_PATH,
+    CODEX_HOOKS_JSON_PATH,
   ];
 
   const existing: string[] = [];

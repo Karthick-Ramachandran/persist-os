@@ -7,6 +7,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
+  CODEX_CONTEXT_HOOK_PATH,
+  CODEX_HOOKS_JSON_PATH,
+  CONTEXT_PROMPT_HOOK_PATH,
   FENCE_INDEX_LABEL,
   FENCE_INDEX_TRUNCATION_MARKER,
   HOOKS_PATH_ACTIVATION_COMMAND,
@@ -14,7 +17,10 @@ import {
   PRE_PUSH_HOOK_PATH,
   SESSION_START_BASE_CONTEXT,
   SESSION_START_HOOK_PATH,
+  expectedHookFiles,
   renderClaudeSettings,
+  renderCodexHooksJson,
+  renderContextPromptHook,
   renderPreCommitHook,
   renderPrePushHook,
   renderSessionStartHook,
@@ -207,6 +213,123 @@ describe("renderPrePushHook", () => {
     };
 
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`./${SESSION_START_HOOK_PATH}`);
+  });
+
+  it("wires the prompt hook in Claude settings with a short timeout", () => {
+    const settings = JSON.parse(renderClaudeSettings()) as {
+      hooks: { UserPromptSubmit: { hooks: { command: string; timeout: number }[] }[] };
+    };
+
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].command).toBe(
+      `./${CONTEXT_PROMPT_HOOK_PATH}`,
+    );
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].timeout).toBeLessThanOrEqual(10);
+  });
+
+  it("omits the prompt hook from Claude settings when the toggle is off", () => {
+    const settings = JSON.parse(renderClaudeSettings(false)) as {
+      hooks: Record<string, unknown>;
+    };
+
+    expect(settings.hooks).not.toHaveProperty("UserPromptSubmit");
+  });
+
+  it("wires the prompt hook in a valid Codex hooks.json with a short timeout", () => {
+    const parsed = JSON.parse(renderCodexHooksJson()) as {
+      UserPromptSubmit: { hooks: { type: string; command: string; timeout: number }[] }[];
+    };
+
+    expect(parsed.UserPromptSubmit[0].hooks[0].type).toBe("command");
+    expect(parsed.UserPromptSubmit[0].hooks[0].command).toBe(`./${CODEX_CONTEXT_HOOK_PATH}`);
+    expect(parsed.UserPromptSubmit[0].hooks[0].timeout).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("renderContextPromptHook", () => {
+  for (const tool of ["claude", "codex"] as const) {
+    it(`forwards the ${tool} payload to persist context without slowness or failure`, () => {
+      const hook = renderContextPromptHook(tool);
+
+      expect(hook.startsWith("#!/bin/sh\n")).toBe(true);
+      expect(hook).toContain(`persist context --hook ${tool}`);
+      // npx on every prompt is far too slow; the installed binary or the local one wins.
+      expect(hook).toContain("node_modules/.bin/persist");
+      expect(hook).not.toContain("npx");
+      // The prompt text is piped, never written: no redirect to a file, no log.
+      expect(hook).not.toMatch(/>>|\blog\b/u);
+      expect(hook.trimEnd().endsWith("exit 0")).toBe(true);
+    });
+  }
+
+  it("exits 0 with no output when persist is missing", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-context-hook-"));
+    try {
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("claude"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "who pays the extra cent" }),
+        encoding: "utf8",
+        // No persist on PATH and no node_modules/.bin below: the hook stands down.
+        env: { PATH: "/usr/bin:/bin", SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe("");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("forwards stdin to persist and prints its output", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-context-hook-"));
+    try {
+      const bin = path.join(dir, "bin");
+      await mkdir(bin, { recursive: true });
+      await writeFile(path.join(bin, "persist"), '#!/bin/sh\ncat\nprintf -- "-hooked-"\n');
+      await chmod(path.join(bin, "persist"), 0o755);
+      const hookPath = path.join(dir, "context-prompt.sh");
+      await writeFile(hookPath, renderContextPromptHook("claude"));
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        cwd: dir,
+        input: JSON.stringify({ prompt: "hello" }),
+        encoding: "utf8",
+        env: { PATH: `${bin}:/usr/bin:/bin`, SHELL: "/bin/sh" },
+      });
+
+      expect(result.status).toBe(0);
+      // The stub echoes stdin (proving the payload arrived) and marks its output.
+      expect(result.stdout).toContain('"prompt":"hello"');
+      expect(result.stdout).toContain("-hooked-");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("lists the prompt hook files in the expected hook files", () => {
+    const paths = expectedHookFiles({
+      aiTools: ["claude", "codex"],
+      contextHook: true,
+    }).map((file) => file.path);
+
+    expect(paths).toContain(CONTEXT_PROMPT_HOOK_PATH);
+    expect(paths).toContain(CODEX_CONTEXT_HOOK_PATH);
+    expect(paths).toContain(CODEX_HOOKS_JSON_PATH);
+  });
+
+  it("drops the prompt hook files when the toggle is off", () => {
+    const paths = expectedHookFiles({
+      aiTools: ["claude", "codex"],
+      contextHook: false,
+    }).map((file) => file.path);
+
+    expect(paths).not.toContain(CONTEXT_PROMPT_HOOK_PATH);
+    expect(paths).not.toContain(CODEX_CONTEXT_HOOK_PATH);
+    expect(paths).not.toContain(CODEX_HOOKS_JSON_PATH);
   });
 });
 

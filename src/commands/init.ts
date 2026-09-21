@@ -16,11 +16,16 @@ import { enableHooks, readHooksPathState } from "../core/hooks/activate-hooks.js
 import { detectPrePushGates, detectTestCommand } from "../core/hooks/detect-gates.js";
 import {
   CLAUDE_SETTINGS_PATH,
+  CODEX_CONTEXT_HOOK_PATH,
+  CODEX_HOOKS_JSON_PATH,
+  CONTEXT_PROMPT_HOOK_PATH,
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
   SESSION_START_HOOK_PATH,
   renderClaudeSettings,
+  renderCodexHooksJson,
+  renderContextPromptHook,
   renderPreCommitHook,
   renderPrePushHook,
   renderSessionStartHook,
@@ -631,8 +636,29 @@ function createInitWriteFiles(
     },
     {
       path: CLAUDE_SETTINGS_PATH,
-      content: renderClaudeSettings(),
+      content: renderClaudeSettings(config.contextHook !== false),
     },
+    // The per-prompt context hook, layered on the SessionStart one: the submitted prompt is
+    // looked up against the cards and pointers ride back into the prompt. Off when the
+    // contextHook toggle is false. Tool filtering below keeps each tool's own files.
+    ...(config.contextHook === false
+      ? []
+      : [
+          {
+            path: CONTEXT_PROMPT_HOOK_PATH,
+            content: renderContextPromptHook("claude"),
+            executable: true,
+          },
+          {
+            path: CODEX_CONTEXT_HOOK_PATH,
+            content: renderContextPromptHook("codex"),
+            executable: true,
+          },
+          {
+            path: CODEX_HOOKS_JSON_PATH,
+            content: renderCodexHooksJson(),
+          },
+        ]),
     // Generate the agent skill set so a fresh repo has the workflows that guide AI agents,
     // not just the docs. Written to both the Claude and portable Agent Skills targets.
     ...listCatalogSkillNames().flatMap((name) => generateSkillFiles(name).files),

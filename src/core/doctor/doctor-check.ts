@@ -63,6 +63,8 @@ export type DoctorCheckContext = {
     prePushGates?: string[];
     /** Chesterton-fence toggle. Undefined runs the check; only explicit false disables it. */
     fenceEnabled?: boolean;
+    /** Context prompt-hook toggle. Undefined expects the hook files, like fenceEnabled. */
+    contextHook?: boolean;
   };
 };
 
@@ -114,6 +116,7 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
             preCommitGates: [...configResult.config.preCommitGates],
             prePushGates: [...configResult.config.prePushGates],
             fenceEnabled: configResult.config.fenceEnabled,
+            contextHook: configResult.config.contextHook,
           },
   };
 
