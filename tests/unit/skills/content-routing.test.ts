@@ -48,6 +48,17 @@ describe("retired skill content routing", () => {
     );
   });
 
+  it("routes the context lookup and card-update habit through AGENTS.md and the Cursor rule", async () => {
+    const rootDir = await initializedRepo();
+    const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
+    const cursor = readFileSync(path.join(rootDir, ".cursor/rules/persist-memory.mdc"), "utf8");
+
+    for (const content of [agents, cursor]) {
+      expect(content).toContain('persist context "<task>"');
+      expect(content).toContain("Answers list");
+    }
+  });
+
   it("carries the ADR check as its own skill", () => {
     const skill = getCatalogSkill("adr-compliance");
 

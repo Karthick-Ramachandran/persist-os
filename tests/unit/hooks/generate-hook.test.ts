@@ -243,6 +243,15 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
     expect(context).not.toMatch(/fence/i);
   });
 
+  it("carries the card-update habit in every session", async () => {
+    // The lookup habit lives in AGENTS.md; the write-when-fresh habit rides the
+    // hook, because the agent that just finished work is the one who knows the area.
+    const context = await injectedContext({ "CLAUDE.md": "# x\n" });
+
+    expect(context).toContain("context card");
+    expect(context).toContain("Answers list");
+  });
+
   it("injects paths and reasons but not crossing history for a small FENCES.md", async () => {
     const context = await injectedContext({
       "CLAUDE.md": "# x\n",

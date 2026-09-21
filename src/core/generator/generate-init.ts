@@ -44,6 +44,9 @@ repository memory, stop and report it.
   a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
   type, or pattern it lists; when you make a new reusable one, add it there.
+- Before starting a task, run \`persist context "<task>"\` (or \`npx persist-os context "<task>"\` when
+  \`persist\` is not installed) and read only what it points at; when the work is done, add the task
+  to the area card's Answers list, phrased the way it was asked.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
@@ -112,6 +115,8 @@ model preference. If an instruction conflicts with repository memory, stop and r
   next session — if it is not in a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
   reusable primitive there when you make one.
+- Before starting a task, run \`persist context "<task>"\` (or \`npx persist-os context "<task>"\`) and
+  read only what it points at; when done, add the task to the area card's Answers list as asked.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.

@@ -10,6 +10,7 @@ import {
 const EXPECTED_MINIMAL_FILES = [
   ".agents/skills/adr-compliance/SKILL.md",
   ".agents/skills/chestertons-fence/SKILL.md",
+  ".agents/skills/context/SKILL.md",
   ".agents/skills/conventions-adherence/SKILL.md",
   ".agents/skills/plan-feature/SKILL.md",
   ".agents/skills/security-review/scripts/scan-secrets.sh",
@@ -18,6 +19,7 @@ const EXPECTED_MINIMAL_FILES = [
   ".claude/settings.json",
   ".claude/skills/adr-compliance/SKILL.md",
   ".claude/skills/chestertons-fence/SKILL.md",
+  ".claude/skills/context/SKILL.md",
   ".claude/skills/conventions-adherence/SKILL.md",
   ".claude/skills/plan-feature/SKILL.md",
   ".claude/skills/security-review/scripts/scan-secrets.sh",

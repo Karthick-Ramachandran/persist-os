@@ -277,6 +277,38 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "What was fixed, or the human decision still needed.",
     ],
   },
+  {
+    name: "context",
+    title: "Context Lookup",
+    description:
+      "Find and record area memory through context cards. Use when starting work in an area with history, when a task names code whose reasons live outside the source, or when finishing work the next task here should find. Skip for small fixes with no reusable reasoning, security reviews, and release planning.",
+    goal: "Start from recorded area memory instead of rediscovery, and leave the next task a better card.",
+    workflow: [
+      "Run `persist context \"<task>\"` before starting, phrasing the task the way it was asked.",
+      "Read only what the matches point at: the Start Here paths first, then the Rules and Pitfalls lines they name.",
+      "When no card covers the task, read the closest decisions and fences the output names instead.",
+      "Do the work, then check the diff against the pointed-at rules before calling it done.",
+      "When done, create or refresh the area card: `persist context add <name> --purpose \"<one line>\"` for a new area, otherwise edit the existing card directly.",
+      "Add the finished task to the card Answers list, phrased the way it was asked.",
+      "Run `persist context \"<task>\"` again to confirm the card is found before calling the work done.",
+    ],
+    decisions: [
+      "If the lookup names no card and no decision → say so; an empty result is a valid answer.",
+      "If the area has no card yet → scaffold one with `persist context add`; never overwrite an existing card.",
+      "If the card's pointers contradict the code → the code wins today; update the card and say so.",
+    ],
+    verification: [
+      "The lookup ran before any source file was read for the task.",
+      "Only pointed-at files were read; no surrounding directory was explored.",
+      "The card Answers list holds the finished task in its asked phrasing.",
+      "A repeat lookup finds the card for that phrasing.",
+    ],
+    resources: ["For area memory, when present → docs/context/"],
+    output: [
+      "The card found and the pointed-at files read, or an explicit statement that none covers the task.",
+      "The card created or updated, with the new Answers line quoted.",
+    ],
+  },
 ];
 
 export function getCatalogSkill(name: string): SkillDefinition | undefined {
