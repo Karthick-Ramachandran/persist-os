@@ -12,6 +12,7 @@ NOT EVALUATED
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - staleness: not a git repository, so commit history is unavailable
 - ignored-files: not a git repository, so ignore rules cannot be evaluated
+- hooks-active: not a git repository, so there is no clone to switch the hooks on in
 - fence: not inside a git work tree, so the staged set is unknown
 
 Result: PASSED

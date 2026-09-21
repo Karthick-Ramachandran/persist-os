@@ -72,6 +72,10 @@ export function createCliProgram(
     .option("--force", "Overwrite existing files explicitly.")
     .option("--reinit", "Allow --force to overwrite an existing Persist OS installation.")
     .option("--yes", "Take every default without prompting.")
+    .option(
+      "--no-enable-hooks",
+      "Do not switch the git hooks on for this clone (print the command instead).",
+    )
     .action(
       async (options: {
         aiTools?: string;
@@ -81,6 +85,7 @@ export function createCliProgram(
         force?: boolean;
         reinit?: boolean;
         yes?: boolean;
+        enableHooks?: boolean;
       }) => {
         const aiTools =
           options.aiTools === undefined
@@ -103,6 +108,7 @@ export function createCliProgram(
           force: options.force,
           reinit: options.reinit,
           yes: options.yes,
+          enableHooks: options.enableHooks,
         });
 
         stdout.write(formatInitResult(result));

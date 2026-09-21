@@ -6,6 +6,7 @@ import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
 import { checkFence } from "./checks/fence-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
+import { checkHooksActive } from "./checks/hooks-active-check.js";
 import { checkIgnoredFiles } from "./checks/ignored-files-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
@@ -80,6 +81,7 @@ const CONFIG_GATED_CHECKS = [
   "staleness",
   "ignored-files",
   "hook-drift",
+  "hooks-active",
   "retired-skills",
   "duplicate-titles",
   "fence",
@@ -158,6 +160,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const hookDrift = await checkHookDrift(context);
   findings.push(...hookDrift.findings);
   checks.push(hookDrift.outcome);
+
+  const hooksActive = await checkHooksActive(context);
+  findings.push(...hooksActive.findings);
+  checks.push(hooksActive.outcome);
 
   const retiredSkills = await checkRetiredSkills(context);
   findings.push(...retiredSkills.findings);

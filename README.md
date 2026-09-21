@@ -206,12 +206,18 @@ of `claude`, `codex`, `cursor`; `AGENTS.md` is always written).
 pre-commit hook runs `persist doctor` plus any `preCommitGates` you configure; the pre-push hook
 runs `persist test-gate` (your configured `testCommand`) plus `prePushGates`. The pre-push hook is
 the final regression gate before code leaves your machine (it catches commits made with
-`--no-verify` or before the hook was active). Enable them once per clone — Persist OS proposes the
-command but never runs it for you:
+`--no-verify` or before the hook was active).
+
+Git never switches on hooks that come with a clone, so each clone opts in once. `init` asks and does
+it for you (the default; `--yes` takes it, `--no-enable-hooks` skips it). It never replaces a
+`core.hooksPath` that another hooks tool, such as Husky, already owns. Teammates on other clones run
+the same one line, and `persist doctor` reminds them until they do:
 
 ```bash
 git config core.hooksPath .persist/hooks
 ```
+
+The hooks run your installed `persist`, or `npx persist-os` when it isn't installed globally.
 
 ## Commands
 
@@ -221,6 +227,7 @@ git config core.hooksPath .persist/hooks
 | `persist init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
 | `persist init --features --modules` | Also generate the opt-in feature/module workflow scaffolding.                  |
 | `persist init --yes`                | Take every default without prompting (CI, scripts, non-TTY stdin).             |
+| `persist init --no-enable-hooks`    | Write the hooks but leave git config alone (switch them on yourself).          |
 | `persist adopt`                     | Inspect an existing repo and propose reviewable memory.                        |
 | `persist feature create <name>`     | Scaffold feature memory (plan, tasks, test evidence).                          |
 | `persist adr create <title>`        | Create a proposed architecture decision record.                                |
@@ -255,6 +262,7 @@ deterministic, local, and read-only.
 | Chesterton fence    | A change to source with no recorded reason and no ADR reference      | warning      |
 | Sharing             | Memory files git-ignored so the team never receives them             | warning      |
 | Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
+| Hooks active        | Hooks written but not switched on in this clone (skipped in CI)      | warning      |
 | Retired skills      | Skills retired in a newer release still sitting on disk              | warning      |
 | Context budget      | The always-loaded agent files grown past 24KB                        | warning      |
 | Content             | Required memory left as an unedited template once real work exists   | warning      |

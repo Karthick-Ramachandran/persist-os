@@ -34,5 +34,5 @@ Planned creates:
 - .agents/skills/chestertons-fence/SKILL.md
 
 Pre-commit and pre-push hooks will be written to .persist/hooks/.
-Enable them once per clone: git config core.hooksPath .persist/hooks
+Would switch the git hooks on for this clone: git config core.hooksPath .persist/hooks
 [exit 0]

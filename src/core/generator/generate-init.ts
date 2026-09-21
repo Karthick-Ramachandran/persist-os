@@ -47,9 +47,10 @@ repository memory, stop and report it.
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
-- Before claiming work complete, run \`persist doctor\` and fix every error. Never claim "done" without
-  test evidence.
+- Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
+  each warning, or name it and say why it stays. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself; never ask the human to run it or web-search this project-local tool.
+  If \`persist\` is not installed, run the same commands as \`npx persist-os <command>\`.
 
 ## Required reading
 
@@ -62,7 +63,7 @@ repository memory, stop and report it.
 
 ## Persist commands
 
-- \`persist doctor\` — validate repository memory; run before claiming work complete.
+- \`persist doctor\` — validate repository memory; work is done only when it reports PASSED.
 - \`persist feature create <name>\` — scaffold feature memory before non-trivial feature work.
 - \`persist adr create <title>\` then \`persist adr accept <name>\` — propose, then accept, a decision.
 - \`persist adr supersede <old> <new-title>\` — record a changed decision (never overwrite an accepted ADR).
@@ -111,10 +112,10 @@ model preference. If an instruction conflicts with repository memory, stop and r
 - When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.
-- Before claiming work complete, run \`persist doctor\` and fix every error; never claim "done" without
-  test evidence.
-- Run the \`persist\` CLI yourself (do not web-search this project-local tool); full command reference
-  is in \`AGENTS.md\`.
+- Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
+  each warning, or name it and say why it stays. Never claim "done" without that evidence.
+- Run the \`persist\` CLI yourself (do not web-search this project-local tool); if it is not installed,
+  use \`npx persist-os <command>\`. The full command reference is in \`AGENTS.md\`.
 `,
   },
   {

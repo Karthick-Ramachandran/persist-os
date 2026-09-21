@@ -26,7 +26,7 @@ describe("renderPreCommitHook", () => {
   });
 
   it("runs persist doctor", () => {
-    expect(renderPreCommitHook([])).toContain("\npersist doctor\n");
+    expect(renderPreCommitHook([])).toContain("\nrun_persist doctor\n");
   });
 
   it("runs only persist doctor when there are no gates", () => {
@@ -114,11 +114,55 @@ describe("renderPreCommitHook exit codes (ADR-0013)", () => {
   });
 });
 
+describe("hooks without a global persist", () => {
+  /**
+   * Run a rendered hook where the only thing on PATH besides the system basics is a stub `npx`
+   * that records its arguments. No `persist` anywhere, as for someone who only ever ran
+   * `npx persist-os init`.
+   */
+  async function runWithOnlyNpx(hook: string): Promise<{ status: number | null; stdout: string }> {
+    const dir = await mkdtemp(path.join(tmpdir(), "persist-hook-npx-"));
+    try {
+      const stub = path.join(dir, "npx");
+      await writeFile(stub, '#!/bin/sh\necho "npx $*"\n');
+      await chmod(stub, 0o755);
+
+      const hookPath = path.join(dir, "hook");
+      await writeFile(hookPath, hook);
+      await chmod(hookPath, 0o755);
+
+      const result = spawnSync("sh", [hookPath], {
+        env: { PATH: `${dir}${path.delimiter}/usr/bin${path.delimiter}/bin` },
+        encoding: "utf8",
+      });
+      return { status: result.status, stdout: result.stdout };
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("runs doctor through npx in the pre-commit hook", async () => {
+    // With hooks on by default, a bare `persist` call would fail every commit with
+    // "command not found" for anyone who never installed Persist globally.
+    const { status, stdout } = await runWithOnlyNpx(renderPreCommitHook([]));
+
+    expect(status).toBe(0);
+    expect(stdout).toContain("npx --yes persist-os doctor");
+  });
+
+  it("runs the test gate through npx in the pre-push hook", async () => {
+    const { status, stdout } = await runWithOnlyNpx(renderPrePushHook(null, []));
+
+    expect(status).toBe(0);
+    expect(stdout).toContain("npx --yes persist-os test-gate");
+  });
+});
+
 describe("renderPrePushHook", () => {
   it("starts with a POSIX sh shebang and runs the test gate instead of doctor", () => {
     const hook = renderPrePushHook(null, []);
     expect(hook.startsWith("#!/bin/sh\n")).toBe(true);
-    expect(hook).toContain("\npersist test-gate\n");
+    expect(hook).toContain("\nrun_persist test-gate\n");
     expect(hook).not.toContain("persist doctor");
   });
 

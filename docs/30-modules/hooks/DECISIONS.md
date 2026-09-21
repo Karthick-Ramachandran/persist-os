@@ -1,6 +1,6 @@
 # Hooks Decisions
 
-## ADR-0002: Tracked Pre-Commit Hook
+## Tracked Hooks (ADR-0014)
 
 The pre-commit hook is tracked at `.persist/hooks/pre-commit`, not written into `.git/hooks`, so it
 is shared and reviewable.
@@ -20,10 +20,14 @@ doctor's output is never redirected, because warnings nobody can see are invisib
 No config knob selects the old behaviour: teams who want warnings to block add `persist doctor`
 to their own `preCommitGates`, where `set -e` gives them exactly that.
 
-## No Git Mutation
+## Activation With Consent (ADR-0014)
 
-`persist init` proposes `git config core.hooksPath .persist/hooks` and never runs it. Activation
-stays a deliberate human step.
+`persist init` asks "Turn on the git hooks in this clone?" (default yes; `--yes` takes it) and then
+runs `git config core.hooksPath .persist/hooks`. `--no-enable-hooks` opts out. It never replaces a
+`core.hooksPath` another tool owns, and changes nothing outside git or under `--dry-run`. The
+`hooks-active` doctor check warns in any clone where the hooks are off, and stands down in CI.
+It replaced the earlier "propose, never run" rule: the printed command was the step people
+skipped, and the gates then never ran with nothing saying so.
 
 ## Trust Boundary
 

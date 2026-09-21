@@ -230,6 +230,11 @@ d7c2e09 Plan the checkout feature
                   <td class="sev-warn">warning</td>
                 </tr>
                 <tr>
+                  <td><code>hooks-active</code></td>
+                  <td class="desc">The hooks are written but not switched on in this clone, so doctor and the test gate never run on commit and push. Info, not a warning, when another hooks tool owns <code>core.hooksPath</code>. Not evaluated outside git and in CI, where hooks never apply.</td>
+                  <td class="sev-warn">warning</td>
+                </tr>
+                <tr>
                   <td><code>retired-skills</code></td>
                   <td class="desc">A skill directory holds one of the nine skills retired in 1.0 (the message gives the removal command). Custom skills you wrote yourself stay silent — <code>skill create</code> is a supported workflow.</td>
                   <td class="sev-warn">warning</td>
@@ -297,7 +302,9 @@ Result: <span class="ok">PASSED</span></code></pre>
             <code>standards</code> and <code>content</code> are listed as not evaluated with the
             reason. The config-dependent checks are all not evaluated when the config is missing
             or invalid. <code>staleness</code> and <code>fence</code> are not evaluated
-            outside a git repository (staleness also in a shallow clone); <code>hook-drift</code>
+            outside a git repository (staleness also in a shallow clone), and <code>fence</code>
+            also when nothing is staged and the branch has no upstream; <code>hooks-active</code>
+            outside git and in CI; <code>hook-drift</code>
             is not evaluated when a hook file is missing; <code>retired-skills</code> when the
             skills directories do not exist; <code>duplicate-titles</code> when the ADR directory
             does not exist. Each one carries a reason, in both the text report and the JSON.
@@ -317,7 +324,7 @@ NOT EVALUATED
 - fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
 
 Result: PASSED</code></pre>
-          <p>The same fresh memory in a folder that is not a git repository adds two more lines:</p>
+          <p>The same fresh memory in a folder that is not a git repository: every check that reads git says so.</p>
           <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
 Doctor Report
 
@@ -331,6 +338,8 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - staleness: not a git repository, so commit history is unavailable
+- ignored-files: not a git repository, so ignore rules cannot be evaluated
+- hooks-active: not a git repository, so there is no clone to switch the hooks on in
 - fence: not inside a git work tree, so the staged set is unknown
 
 Result: PASSED</code></pre>
@@ -381,8 +390,8 @@ Result: PASSED</code></pre>
               <dt>Pre-commit hook</dt>
               <dd>
                 <code>.persist/hooks/pre-commit</code> runs <code>persist doctor</code> first, then
-                your <code>preCommitGates</code>. Enable with
-                <code>git config core.hooksPath .persist/hooks</code>.
+                your <code>preCommitGates</code>. Init switches it on when you agree; other clones
+                run <code>git config core.hooksPath .persist/hooks</code> once.
               </dd>
             </div>
             <div>

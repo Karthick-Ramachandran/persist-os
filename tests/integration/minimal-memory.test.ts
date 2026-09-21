@@ -81,6 +81,17 @@ describe("minimal-by-default memory", () => {
     expect(claude).toBe("@AGENTS.md\n");
   });
 
+  it("tells agents that done means doctor passes, and how to run Persist without installing it", async () => {
+    const rootDir = await createRoot("minimal-agent-rules");
+    await runInitCommand(rootDir);
+
+    for (const file of ["AGENTS.md", ".cursor/rules/persist-memory.mdc"]) {
+      const rules = await readFile(path.join(rootDir, file), "utf8");
+      expect(rules, file).toContain("reports PASSED");
+      expect(rules, file).toContain("npx persist-os <command>");
+    }
+  });
+
   it("never replaces a CLAUDE.md the repository already has", async () => {
     const rootDir = await createRoot("minimal-claude-md-existing");
     await writeFile(path.join(rootDir, "CLAUDE.md"), "# Our own rules\n", "utf8");
@@ -95,6 +106,8 @@ describe("minimal-by-default memory", () => {
     git(rootDir, "init");
     git(rootDir, "config", "user.email", "test@example.com");
     git(rootDir, "config", "user.name", "Test");
+    // init ran before git init, so it could not switch the hooks on; do what it says to.
+    git(rootDir, "config", "core.hooksPath", ".persist/hooks");
 
     const report = await runDoctor(rootDir);
 
