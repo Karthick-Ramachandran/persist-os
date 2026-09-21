@@ -47,6 +47,7 @@ describe("generated proposed ADRs contain every required section", () => {
 
   it("covers adopt framework ADRs", () => {
     const files = generateAdoptionFiles({
+      docsDir: "docs",
       adrDir: "docs/adrs",
       signals: {
         languages: ["Go"],

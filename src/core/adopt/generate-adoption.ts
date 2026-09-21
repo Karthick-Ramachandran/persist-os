@@ -1,9 +1,18 @@
+import path from "node:path";
+
 import type { WriteFileInput } from "../filesystem/write-plan.js";
 import { summarizeSignals, type RepoSignals } from "./inspect-repo.js";
 
+/** Default adoption-report location, when the memory folder has not moved. */
 export const ADOPTION_REPORT_PATH = "docs/adopt/ADOPTION_REPORT.md";
 
+/** The report lives beside the memory it proposes: under the configured docs dir. */
+export function adoptionReportPath(docsDir: string): string {
+  return path.posix.join(docsDir, "adopt/ADOPTION_REPORT.md");
+}
+
 export type GenerateAdoptionOptions = {
+  docsDir: string;
   adrDir: string;
   signals: RepoSignals;
 };
@@ -11,7 +20,7 @@ export type GenerateAdoptionOptions = {
 export function generateAdoptionFiles(options: GenerateAdoptionOptions): WriteFileInput[] {
   const files: WriteFileInput[] = [
     {
-      path: ADOPTION_REPORT_PATH,
+      path: adoptionReportPath(options.docsDir),
       content: renderReport(options.adrDir, options.signals),
     },
   ];
@@ -19,7 +28,7 @@ export function generateAdoptionFiles(options: GenerateAdoptionOptions): WriteFi
   for (const framework of options.signals.frameworks) {
     files.push({
       path: `${options.adrDir}/proposed/ADR-PROPOSED-adopt-${frameworkSlug(framework)}.md`,
-      content: renderProposedAdr(framework),
+      content: renderProposedAdr(options.docsDir, framework),
     });
   }
 
@@ -74,7 +83,7 @@ function renderProposedDecisions(adrDir: string, signals: RepoSignals): string {
     .join("\n");
 }
 
-function renderProposedAdr(framework: string): string {
+function renderProposedAdr(docsDir: string, framework: string): string {
   return `# Proposed ADR: Use ${framework}
 
 ## Status
@@ -102,7 +111,7 @@ and is not accepted until a human reviews and accepts it.
 
 ## Related Documents
 
-- \`docs/10-architecture/ARCHITECTURE.md\` — record the accepted architecture here once promoted.
+- \`${docsDir}/10-architecture/ARCHITECTURE.md\` — record the accepted architecture here once promoted.
 - The adoption report generated alongside this proposal.
 `;
 }

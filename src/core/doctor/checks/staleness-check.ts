@@ -182,7 +182,11 @@ async function isCompletedFeature(rootDir: string, featureDir: string): Promise<
   );
 }
 
-async function isGitRepository(rootDir: string): Promise<boolean> {
+/**
+ * Shared with the ignored-files check: git-backed checks report not-evaluated outside a work
+ * tree instead of an empty pass, and both need the same definition of "inside git".
+ */
+export async function isGitRepository(rootDir: string): Promise<boolean> {
   try {
     await execFileAsync("git", ["rev-parse", "--is-inside-work-tree"], { cwd: rootDir });
     return true;

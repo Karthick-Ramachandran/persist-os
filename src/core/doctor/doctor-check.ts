@@ -6,6 +6,7 @@ import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
 import { checkFence } from "./checks/fence-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
+import { checkIgnoredFiles } from "./checks/ignored-files-check.js";
 import { checkMemoryIntegrity } from "./checks/memory-integrity-check.js";
 import { checkRequiredFiles } from "./checks/required-files-check.js";
 import { checkDuplicateTitles } from "./checks/duplicate-titles-check.js";
@@ -77,6 +78,7 @@ const CONFIG_GATED_CHECKS = [
   "superseded",
   "context-budget",
   "staleness",
+  "ignored-files",
   "hook-drift",
   "retired-skills",
   "duplicate-titles",
@@ -137,14 +139,21 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const codeReferences = await checkCodeReferences(context);
   findings.push(...codeReferences.findings);
   checks.push(codeReferences.outcome);
-  findings.push(...(await checkSuperseded(context)));
-  checks.push({ id: "superseded", status: "evaluated" });
+
+  const superseded = await checkSuperseded(context);
+  findings.push(...superseded.findings);
+  checks.push(superseded.outcome);
+
   findings.push(...(await checkContextBudget(context)));
   checks.push({ id: "context-budget", status: "evaluated" });
 
   const staleness = await checkStaleness(context);
   findings.push(...staleness.findings);
   checks.push(staleness.outcome);
+
+  const ignoredFiles = await checkIgnoredFiles(context);
+  findings.push(...ignoredFiles.findings);
+  checks.push(ignoredFiles.outcome);
 
   const hookDrift = await checkHookDrift(context);
   findings.push(...hookDrift.findings);

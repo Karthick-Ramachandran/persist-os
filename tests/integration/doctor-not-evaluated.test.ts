@@ -22,6 +22,7 @@ const GATED_CHECKS = [
   "superseded",
   "context-budget",
   "staleness",
+  "ignored-files",
   "hook-drift",
   "retired-skills",
   "duplicate-titles",
@@ -91,11 +92,11 @@ describe("doctor not-evaluated reporting", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("reports thirteen not-evaluated checks when config is missing", async () => {
+  it("reports fourteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("noteval-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(15);
+    expect(report.checks).toHaveLength(16);
     for (const check of GATED_CHECKS) {
       expect(report.checks).toContainEqual({
         id: check,
@@ -103,7 +104,7 @@ describe("doctor not-evaluated reporting", () => {
         reason: "no .persist/config.json, so configured paths are unknown",
       });
     }
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(13);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(14);
   });
 
   it("shows the NOT EVALUATED section without moving the exit code by itself", async () => {
@@ -156,7 +157,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(result.stdout).toContain("NOT EVALUATED");
   });
 
-  it("evaluates all fourteen checks with no NOT EVALUATED section in full history", async () => {
+  it("evaluates all fifteen checks with no NOT EVALUATED section in full history", async () => {
     const rootDir = await createRoot("noteval-healthy");
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
@@ -173,7 +174,7 @@ describe("doctor not-evaluated reporting", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(15);
+    expect(report.checks).toHaveLength(16);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -202,7 +203,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(15);
+    expect(parsed.checks).toHaveLength(16);
     expect(parsed.checks.find((check) => check.id === "staleness")).toMatchObject({
       status: "not-evaluated",
     });

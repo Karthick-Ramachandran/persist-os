@@ -186,7 +186,8 @@ If any signal is wrong, correct the source file noted. Run `persist adopt` to re
           <p>
             Inspects an existing repository through read-only manifest and marker files, then writes
             a proposed adoption report at <code>docs/adopt/ADOPTION_REPORT.md</code> and proposed
-            framework ADRs under <code>docs/adrs/proposed/</code>. It never executes repository code
+            framework ADRs under <code>docs/adrs/proposed/</code> — both follow the configured
+            docs and ADR directories when memory has moved. It never executes repository code
             and never produces accepted memory; every inferred signal names its source and waits
             for human review.
           </p>

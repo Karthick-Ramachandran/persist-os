@@ -253,6 +253,7 @@ deterministic, local, and read-only.
 | Code references     | Current memory citing `src/` paths that no longer exist              | warning      |
 | Staleness           | Memory citing code that changed long after the memory did            | warning      |
 | Chesterton fence    | A change to source with no recorded reason and no ADR reference      | warning      |
+| Sharing             | Memory files git-ignored so the team never receives them             | warning      |
 | Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
 | Retired skills      | Skills retired in a newer release still sitting on disk              | warning      |
 | Context budget      | The always-loaded agent files grown past 24KB                        | warning      |

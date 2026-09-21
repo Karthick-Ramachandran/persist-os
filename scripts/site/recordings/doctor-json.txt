@@ -101,6 +101,10 @@ $ persist doctor --json
       "status": "evaluated"
     },
     {
+      "id": "ignored-files",
+      "status": "evaluated"
+    },
+    {
       "id": "hook-drift",
       "status": "evaluated"
     },

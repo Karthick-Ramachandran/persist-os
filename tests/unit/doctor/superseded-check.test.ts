@@ -44,7 +44,7 @@ describe("doctor superseded-reference check", () => {
       "# Impact\n\nThis feature relies on ADR-0001 for its data store.\n",
     );
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toContainEqual(
       expect.objectContaining({
@@ -68,7 +68,7 @@ describe("doctor superseded-reference check", () => {
       "utf8",
     );
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
@@ -80,7 +80,7 @@ describe("doctor superseded-reference check", () => {
     await writeSupersededAdr(rootDir);
     await writeFeature(rootDir, "# Impact\n\nWe will follow ADR-0001.\n");
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toHaveLength(1);
   });
@@ -90,7 +90,7 @@ describe("doctor superseded-reference check", () => {
     await writeSupersededAdr(rootDir);
     await writeFeature(rootDir, "# Impact\n\nNo decision references here.\n");
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
@@ -100,9 +100,93 @@ describe("doctor superseded-reference check", () => {
     await writeSupersededAdr(rootDir);
     await writeFeature(rootDir, "# Impact\n\n```txt\nExample: ADR-0001 format\n```\n");
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
+  });
+
+  it("flags a superseded ADR cited in the default memory of a featureless repo", async () => {
+    // Since 1.0, feature and module folders are opt-in — a default repo has neither, so the
+    // old scan set was empty and the check passed without looking at anything.
+    const rootDir = await createRoot("superseded-conventions");
+    await writeSupersededAdr(rootDir);
+    const dir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "CONVENTIONS.md"),
+      "# Conventions\n\nThe ledger still follows ADR-0001 for its data store.\n",
+      "utf8",
+    );
+
+    const result = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(result.outcome).toEqual({ id: "superseded", status: "evaluated" });
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "superseded-reference",
+        message: expect.stringContaining("ADR-0001"),
+        path: "docs/60-engineering/CONVENTIONS.md",
+      }),
+    );
+  });
+
+  it("flags a superseded ADR cited in a fence Decision line", async () => {
+    const rootDir = await createRoot("superseded-fence");
+    await writeSupersededAdr(rootDir);
+    const dir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, "FENCES.md"),
+      "# Fences\n\n## `src/ledger.ts`\n\nWhy: kept for audit.\nDecision: ADR-0001\n",
+      "utf8",
+    );
+
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        check: "superseded-reference",
+        message: expect.stringContaining("ADR-0001"),
+        path: "docs/60-engineering/FENCES.md",
+      }),
+    );
+  });
+
+  it("does not flag the new ADR linking back to the one it supersedes", async () => {
+    // The supersede trail is the mechanism, not staleness: README documents that the new ADR
+    // links back, so the ADR directory is outside the scan set by design.
+    const rootDir = await createRoot("superseded-backlink");
+    await writeSupersededAdr(rootDir);
+    await writeFile(
+      path.join(rootDir, "docs/adrs/ADR-0002-use-mysql.md"),
+      "# ADR-0002: Use MySQL\n\n## Status\n\nAccepted\n\nSupersedes ADR-0001.\n",
+      "utf8",
+    );
+    const dir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, "CONVENTIONS.md"), "# Conventions\n\nNo ADR cites.\n", "utf8");
+
+    const result = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(result.outcome).toEqual({ id: "superseded", status: "evaluated" });
+    expect(result.findings).toEqual([]);
+  });
+
+  it("reports not-evaluated when no memory files exist to scan", async () => {
+    // A superseded ADR with an empty scan set used to report a pass. Silence about
+    // work not done is the failure the NOT EVALUATED section exists to prevent.
+    const rootDir = await createRoot("superseded-nothing");
+    await writeSupersededAdr(rootDir);
+
+    const result = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+
+    expect(result.findings).toEqual([]);
+    expect(result.outcome).toEqual({
+      id: "superseded",
+      status: "not-evaluated",
+      reason: expect.stringContaining("nothing to scan"),
+    });
   });
 
   it("produces no findings when there is no superseded ADR at all", async () => {
@@ -116,7 +200,7 @@ describe("doctor superseded-reference check", () => {
     );
     await writeFeature(rootDir, "# Impact\n\nRelies on ADR-0001.\n");
 
-    const findings = await checkSuperseded({ rootDir, config: createDefaultConfig() });
+    const { findings } = await checkSuperseded({ rootDir, config: createDefaultConfig() });
 
     expect(findings).toEqual([]);
   });
