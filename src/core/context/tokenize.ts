@@ -11,7 +11,8 @@
  *    question words, and generic task verbs like "make" and "fix" that carry
  *    no domain signal — the brief's own example matches "make rounding fair"
  *    on "rounding" and "fair" only).
- * 5. Apply one suffix strip, first match wins:
+ * 5. Apply suffix strips repeatedly until the token stops changing, first
+ *    match wins each pass:
  *    - `ies` (length ≥ 5) → `y` (`pennies` → `penny`).
  *    - `ing` (length ≥ 6) → strip; then collapse a trailing double consonant
  *      when the stem is still ≥ 5 long (`splitting` → `split`).
@@ -30,7 +31,11 @@
  * identically.
  */
 
-const STOPWORDS = new Set([
+/**
+ * Exported for the spelling corrector: the suggestion vocabulary is card
+ * words minus these, so a slip never "corrects" to glue like "the".
+ */
+export const STOPWORDS = new Set([
   "a",
   "an",
   "the",
@@ -182,7 +187,31 @@ function isConsonant(letter: string): boolean {
   return /^[b-df-hj-np-tv-z]$/u.test(letter);
 }
 
+/**
+ * Strip suffixes until the token stops changing. One pass turns "recordings"
+ * into "recording" while the card holds "record", so stacked suffixes need
+ * the loop. Every strip shortens the token, so this always terminates.
+ *
+ * One bound: the bare trailing-`s` fires at most once per token. Without it
+ * the loop would eat kept plurals ("class" → "clas" → "cla"); with it, only
+ * stacked derivations change ("recordings" → "recording" → "record").
+ */
 function stem(token: string): string {
+  let current = token;
+  let strippedTrailingS = false;
+  for (;;) {
+    const next = stemOnce(current, !strippedTrailingS);
+    if (next === current) {
+      return current;
+    }
+    if (current.endsWith("s") && next === current.slice(0, -1)) {
+      strippedTrailingS = true;
+    }
+    current = next;
+  }
+}
+
+function stemOnce(token: string, allowTrailingS: boolean): string {
   if (token.endsWith("ies") && token.length >= 5) {
     return `${token.slice(0, -3)}y`;
   }
@@ -207,7 +236,7 @@ function stem(token: string): string {
   if (token.length >= 5 && SIBILANT_ENDINGS.some((ending) => token.endsWith(ending))) {
     return token.slice(0, -2);
   }
-  if (token.endsWith("s") && token.length >= 4) {
+  if (allowTrailingS && token.endsWith("s") && token.length >= 4) {
     return token.slice(0, -1);
   }
   return token;

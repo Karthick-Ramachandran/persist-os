@@ -243,11 +243,12 @@ const HELD_OUT_PROMPTS: { prompt: string; expected: string }[] = [
 ];
 
 /**
- * Floors measured 2026-09-22 on this fixture: 7/16 at rank 1, 10/16 in the top 3
- * (6 prompts clear nothing). The PR reports both sets; these pin the numbers.
+ * Floors measured 2026-09-22 on this fixture: 7/16 at rank 1, 11/16 in the top 3
+ * (5 prompts clear nothing). The PR reports both sets; these pin the numbers.
+ * Corrections are fallback-only, so exact ranks cannot regress from here.
  */
 const HELD_OUT_RECALL_AT_1 = 0.4375;
-const HELD_OUT_RECALL_AT_3 = 0.625;
+const HELD_OUT_RECALL_AT_3 = 0.6875;
 
 describe("context retrieval benchmark", () => {
   const roots: string[] = [];

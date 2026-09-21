@@ -32,6 +32,26 @@ describe("context tokenizer", () => {
     expect(tokenize("tip ADR-0001")).toEqual(["tip", "adr", "0001"]);
   });
 
+  it("strips stacked suffixes until the stem stops changing", () => {
+    // One strip turns "recordings" into "recording" while the card holds
+    // "record" — a plural -ings word could never meet its own root. "settings"
+    // lands on "sett", not "set": the collapse floor that protects
+    // "called" → "call" refuses, and both sides stem the same way regardless.
+    expect(tokenize("recordings meetings bookings settings")).toEqual([
+      "record",
+      "meet",
+      "book",
+      "sett",
+    ]);
+    expect(tokenize("mornings kings evenings")).toEqual(["morn", "king", "even"]);
+  });
+
+  it("strips the bare plural only once per token", () => {
+    // The loop bound: "class" keeps the single strip it always had instead of
+    // eroding further.
+    expect(tokenize("class glass")).toEqual(["clas", "glas"]);
+  });
+
   it("strips nominal suffixes so derived nouns meet their roots", () => {
     // "reimbursement" must tokenize like "reimburse" — otherwise a task about
     // getting paid back never meets a card written about reimbursing.

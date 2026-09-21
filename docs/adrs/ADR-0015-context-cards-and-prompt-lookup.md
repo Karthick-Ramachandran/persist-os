@@ -48,17 +48,23 @@ initialised repository, like `fence add`.
 in one place (`FIELD_WEIGHTS`): Answers 3, Also Known As 2.5, Purpose 2, title 2,
 Rules/Pitfalls 1, Start Here 1. Answers dominates because it carries the asker's own words;
 Rules/Pitfalls/Start Here are code-word heavy and only disambiguate. A `git ls-files` bridge
-boosts records covering a file the task names (a task saying "tip" boosts records covering the tip module); the file list itself
-is never printed. Ties break by path, so output never reorders between runs. Below `MIN_SCORE`
-(0.9) nothing is shown — showing nothing beats showing noise. Exit 0 either way.
+boosts records covering a file the task names (a task saying "tip" boosts records covering the tip module); each boosted
+record names the files behind the boost (`matched: tip (via src/lib/tip.ts)`). The boost applies only alongside a field
+score — a file-name match alone stays silent instead of printing an empty `matched:` line. Ties break by path, so output
+never reorders between runs. Below `MIN_SCORE` (0.9) nothing is shown — showing nothing beats showing noise. Exit 0 either way.
+Suffixes strip to a fixpoint (so "recordings" meets "record"), with the bare plural firing at most once per token.
 
-When no card covers the task, the closest accepted ADRs, fences, conventions, and lessons are
-listed instead, marked as such. Output is pointers and short lines, never whole files, with
+When no card covers the task, out-of-vocabulary prompt words get one spelling suggestion each (Damerau distance, budgeted by
+length: 1 edit for 4–7 letters, 2 beyond) drawn only from card words, and the corrected query runs as a second pass — shown as
+`logn≈login`. Corrections never run first, so exact matches are preserved bit-for-bit. Only then do the closest accepted ADRs,
+fences, conventions, and lessons list instead, marked as such. Output is pointers and short lines, never whole files, with
 `--json` carrying the same content.
 
-Tuning record: the brief's weights passed the 22-prompt benchmark unchanged (recall@1 1.0,
+Tuning record: the brief's weights passed the 22-prompt stored set unchanged (recall@1 1.0,
 recall@3 1.0), so only the threshold was set, at 0.9 — high enough that an unrelated prompt
-scores nothing, low enough that every benchmark prompt clears it.
+scores nothing, low enough that every benchmark prompt clears it. A 16-prompt held-out paraphrase
+set (no stored phrases, contamination-guarded) recalls 7/16 at rank 1 and 11/16 in the top 3;
+weights and threshold were never tuned against it.
 
 ### Keeping cards honest
 

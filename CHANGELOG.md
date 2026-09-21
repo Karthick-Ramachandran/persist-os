@@ -9,7 +9,9 @@ apply. `persist context "<task>"` matches a new task against those stored phrase
 deterministic BM25 — no embeddings, no model calls, no network — and answers in pointers, never
 whole files. A 38-prompt retrieval benchmark over a Splitr fixture reports both sets honestly:
 the 22 stored task phrasings recall 1.0 at rank 1 and rank 3, while 16 held-out paraphrases
-that copy no stored phrase recall 7/16 at rank 1 and 10/16 in the top 3.
+that copy no stored phrase recall 7/16 at rank 1 and 11/16 in the top 3. Suffixes strip to a
+fixpoint, the file bridge only boosts alongside a field score and names its files, and typos
+get one Damerau suggestion each on a fallback pass shown as `logn≈login`.
 
 **The habit that makes it work.** When you finish work in an area, scaffold the card if there is
 none (`persist context add <name> --purpose "<one line>"`), then add the task you were just

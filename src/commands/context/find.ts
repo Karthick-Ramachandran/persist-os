@@ -14,6 +14,8 @@ export type FindContextCard = {
   title: string;
   file: string;
   matched: string[];
+  /** File names whose bridge boosted this card; empty when it did not fire. */
+  bridge: string[];
   startHere: { path: string; note: string }[];
   rules: string[];
   pitfalls: string[];
@@ -25,6 +27,8 @@ export type FindContextSecondary = {
   label: string;
   file: string;
   matched: string[];
+  /** File names whose bridge boosted this record; empty when it did not fire. */
+  bridge: string[];
   detail: string;
 };
 
@@ -82,6 +86,7 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
       title: hit.card.title,
       file: hit.card.file,
       matched: hit.matched,
+      bridge: hit.bridge,
       startHere: hit.card.startHere,
       rules: hit.card.rules,
       pitfalls: hit.card.pitfalls,
@@ -99,6 +104,7 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
             label: hit.doc.label,
             file: hit.doc.file,
             matched: hit.matched,
+            bridge: hit.bridge,
             detail: hit.doc.detail,
           }),
         );
@@ -133,7 +139,9 @@ function formatCards(result: FindContextResult): string {
   const style = getStyle();
   const lines = [`Start here for "${result.task}":`, ""];
   for (const card of result.cards) {
-    lines.push(`${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}`);
+    lines.push(
+      `${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}${via(card.bridge)}`,
+    );
     for (const entry of card.startHere) {
       lines.push(entry.note === "" ? `  ${entry.path}` : `  ${entry.path} — ${entry.note}`);
     }
@@ -158,11 +166,16 @@ function formatSecondary(result: FindContextResult): string {
   ];
   for (const hit of result.secondary) {
     lines.push(
-      `${style.accent(`${hit.kind} ${hit.label}`)} (${hit.file}) — matched: ${hit.matched.join(", ")}`,
+      `${style.accent(`${hit.kind} ${hit.label}`)} (${hit.file}) — matched: ${hit.matched.join(", ")}${via(hit.bridge)}`,
     );
     lines.push(`  ${clip(hit.detail)}`);
   }
   return `${lines.join("\n")}\n`;
+}
+
+/** Names the bridged files behind a boost; empty when the bridge did not fire. */
+function via(bridge: string[]): string {
+  return bridge.length === 0 ? "" : ` (via ${bridge.join(", ")})`;
 }
 
 /** Pointer lines stay short: output is pointers, never whole files. */

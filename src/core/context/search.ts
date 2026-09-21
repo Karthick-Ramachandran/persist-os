@@ -6,7 +6,8 @@ import { promisify } from "node:util";
 import { type GoverningAdr, matchesPattern, readGoverningAdrs } from "../adr/governing-adrs.js";
 import { fenceFileKey, FENCE_HEADING_PATTERN } from "../fence/generate-fence.js";
 import { CONTEXT_DIR_NAME, parseContextCard, type ContextCard } from "./context-card.js";
-import { tokenize } from "./tokenize.js";
+import { suggestCorrection } from "./spelling.js";
+import { STOPWORDS, tokenize } from "./tokenize.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,8 +38,8 @@ const B = 0.75;
 /**
  * A card boosted because the task names a file it covers ("tip" matches
  * `src/lib/tip.ts`). Sized to outrank a weak single-term field hit but not a
- * strong Answers match: the bridge resolves ambiguity, it never invents
- * relevance.
+ * strong Answers match. The boost applies only alongside a field score (see
+ * below), so the bridge resolves ambiguity but never invents relevance.
  */
 const PATH_BOOST = 1.5;
 
@@ -72,14 +73,21 @@ export type SecondaryDocument = {
 export type ScoredCard = {
   card: ContextCard;
   score: number;
-  /** Query tokens hit in any field, in query order — the match explains itself. */
+  /**
+   * Query tokens hit in any field, in query order — the match explains itself.
+   * Corrected typos show as `looks≈like`, so the substitution is visible.
+   */
   matched: string[];
+  /** Bridged file names covered by this card, present only when boosted. */
+  bridge: string[];
 };
 
 export type ScoredSecondary = {
   doc: SecondaryDocument;
   score: number;
   matched: string[];
+  /** Bridged file names covered by this record, present only when boosted. */
+  bridge: string[];
 };
 
 export type ContextSearchResult = {
@@ -363,8 +371,8 @@ async function listTrackedFiles(rootDir: string): Promise<string[]> {
 /**
  * The file-name bridge: a task token matching a tracked file's name ("tip"
  * matches `src/lib/tip.ts`), or the task naming the path outright, marks the
- * file. Records covering a marked file get the path boost. The file list
- * itself is never printed.
+ * file. Records covering a marked file get the path boost, and each boosted
+ * record names the files that boosted it — the bridge always shows its work.
  */
 function bridgeFiles(task: string, query: string[], tracked: string[]): Set<string> {
   const lowered = task.toLowerCase();
@@ -409,11 +417,6 @@ export async function searchContext(
     ...(await readLessonDocs(rootDir, dirs.docsDir)),
   ];
 
-  const tracked = await listTrackedFiles(rootDir);
-  const named = bridgeFiles(task, query, tracked);
-  const boosted = (paths: string[]): number =>
-    named.size > 0 && [...named].some((file) => covers(paths, file)) ? PATH_BOOST : 0;
-
   const fieldDocs = new Map<FieldName, string[][]>();
   const fields = cards.map(cardFields);
   for (const field of Object.keys(FIELD_WEIGHTS) as FieldName[]) {
@@ -423,25 +426,113 @@ export async function searchContext(
     );
   }
 
-  const scoredCards: ScoredCard[] = cards.map((card, index) => {
-    const { score, matched } = scoreFields(query, fieldDocs, index, Math.max(cards.length, 1));
-    return { card, score: score + boosted(cardPaths(card)), matched };
-  });
-  scoredCards.sort((a, b) => b.score - a.score || (a.card.file < b.card.file ? -1 : 1));
-
-  const secondaryScores = scoreSecondaryDocs(query, secondary);
-  const scoredSecondary: ScoredSecondary[] = secondary.map((doc, index) => {
-    const base = secondaryScores[index] ?? { score: 0, matched: [] };
-    return { doc, score: base.score + boosted(doc.paths), matched: base.matched };
-  });
-  scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
-
-  return {
-    task,
-    query,
-    cards: scoredCards.filter((hit) => hit.score >= MIN_SCORE),
-    secondary: scoredSecondary.filter((hit) => hit.score >= MIN_SCORE),
+  const tracked = await listTrackedFiles(rootDir);
+  // The boost amplifies genuine field relevance; it never invents it. A card
+  // whose fields score nothing stays silent even when a file name matches —
+  // otherwise a single common word in a file name clears the threshold alone
+  // and prints an empty matched line no one can explain.
+  const boosted = (
+    named: Set<string>,
+    paths: string[],
+    fieldScore: number,
+  ): { boost: number; bridge: string[] } => {
+    if (fieldScore <= 0 || named.size === 0) {
+      return { boost: 0, bridge: [] };
+    }
+    const bridge = [...named].filter((file) => covers(paths, file));
+    return bridge.length === 0 ? { boost: 0, bridge: [] } : { boost: PATH_BOOST, bridge };
   };
+
+  // Spelling corrections are a fallback, never a first pass. Exact search runs
+  // first; only when no card clears the threshold does the corrected query
+  // run. Correcting up front demotes genuine exact matches (a real word like
+  // "trip" "correcting" to "tip" outranks the card the asker meant), so the
+  // fallback guarantees exact behavior is preserved bit-for-bit.
+  const scoreAll = (
+    queryTerms: string[],
+    named: Set<string>,
+    display: (terms: string[]) => string[],
+  ): Pick<ContextSearchResult, "cards" | "secondary"> => {
+    const scored: ScoredCard[] = cards.map((card, index) => {
+      const { score, matched } = scoreFields(
+        queryTerms,
+        fieldDocs,
+        index,
+        Math.max(cards.length, 1),
+      );
+      const { boost, bridge } = boosted(named, cardPaths(card), score);
+      return { card, score: score + boost, matched: display(matched), bridge };
+    });
+    scored.sort((a, b) => b.score - a.score || (a.card.file < b.card.file ? -1 : 1));
+
+    const secondaryScores = scoreSecondaryDocs(queryTerms, secondary);
+    const scoredSecondary: ScoredSecondary[] = secondary.map((doc, index) => {
+      const base = secondaryScores[index] ?? { score: 0, matched: [] };
+      const { boost, bridge } = boosted(named, doc.paths, base.score);
+      return { doc, score: base.score + boost, matched: display(base.matched), bridge };
+    });
+    scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
+
+    return {
+      cards: scored.filter((hit) => hit.score >= MIN_SCORE),
+      secondary: scoredSecondary.filter((hit) => hit.score >= MIN_SCORE),
+    };
+  };
+
+  const identity = (terms: string[]): string[] => terms;
+  const exact = scoreAll(query, bridgeFiles(task, query, tracked), identity);
+  if (exact.cards.length > 0) {
+    return { task, query, ...exact };
+  }
+
+  const vocabulary = buildVocabulary(fieldDocs, cards.length);
+  const corrections = new Map<string, string>();
+  const correctedQuery = query.map((term) => {
+    const suggestion = suggestCorrection(term, vocabulary);
+    if (suggestion === null) {
+      return term;
+    }
+    if (!corrections.has(suggestion)) {
+      corrections.set(suggestion, term);
+    }
+    return suggestion;
+  });
+  if (correctedQuery.every((term, index) => term === query[index])) {
+    return { task, query, ...exact };
+  }
+  // The display maps corrections back so the output owns up to them.
+  const display = (terms: string[]): string[] =>
+    terms.map((term) => {
+      const original = corrections.get(term);
+      return original === undefined || original === term ? term : `${original}≈${term}`;
+    });
+  const corrected = scoreAll(correctedQuery, bridgeFiles(task, correctedQuery, tracked), display);
+  return { task, query: correctedQuery, ...corrected };
+}
+
+/**
+ * Card words by document frequency, stopwords excluded. The corrector may only
+ * suggest these — a slip must land on a real card word, never on glue.
+ */
+function buildVocabulary(
+  fieldDocs: Map<FieldName, string[][]>,
+  docCount: number,
+): Map<string, number> {
+  const vocabulary = new Map<string, number>();
+  for (let index = 0; index < docCount; index += 1) {
+    const terms = new Set<string>();
+    for (const docs of fieldDocs.values()) {
+      for (const token of docs[index] ?? []) {
+        if (!STOPWORDS.has(token)) {
+          terms.add(token);
+        }
+      }
+    }
+    for (const term of terms) {
+      vocabulary.set(term, (vocabulary.get(term) ?? 0) + 1);
+    }
+  }
+  return vocabulary;
 }
 
 async function readFileIfExists(

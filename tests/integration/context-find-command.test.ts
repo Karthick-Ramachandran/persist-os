@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -11,7 +12,12 @@ import {
   runInitCommand,
 } from "../helpers/init-test-helpers.js";
 
-function card(title: string, answers: string[], startHere: string[]): string {
+function card(
+  title: string,
+  answers: string[],
+  startHere: string[],
+  appliesTo: string[] = startHere,
+): string {
   return [
     `# ${title}`,
     "",
@@ -41,7 +47,7 @@ function card(title: string, answers: string[], startHere: string[]): string {
     "",
     "## Applies To",
     "",
-    ...startHere.map((s) => `- \`${s}\``),
+    ...appliesTo.map((s) => `- \`${s}\``),
     "",
   ].join("\n");
 }
@@ -99,6 +105,59 @@ describe("persist context", () => {
     expect(parsed.matched).toBe(true);
     expect(parsed.cards[0]?.title).toBe("Billing");
     expect(parsed.cards[0]?.file).toBe("docs/context/billing.md");
+  });
+
+  it("stays silent when only the file-name bridge fires", async () => {
+    // "saved" stems to the tracked file's name, but the card covers it only
+    // through Applies To — no card line says it. The old boost showed the
+    // card with an empty matched line; now nothing clears the threshold.
+    const rootDir = await createTempRoot("context-find-bridge-silent");
+    roots.push(rootDir);
+    execFileSync("git", ["init", "-q"], { cwd: rootDir, stdio: "ignore" });
+    await runInitCommand(rootDir, ["--yes"]);
+    await mkdir(path.join(rootDir, "docs/context"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/context/reports.md"),
+      card("Reports", ["monthly sales summary"], ["src/reports/index.ts"], ["src/reports/**"]),
+      "utf8",
+    );
+    await mkdir(path.join(rootDir, "src/reports"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "src/reports/saved-analytics-routes.ts"),
+      "export const routes = 1;\n",
+      "utf8",
+    );
+    execFileSync("git", ["add", "-A"], { cwd: rootDir, stdio: "ignore" });
+
+    const result = await runCommand(rootDir, ["context", "saved"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("No recorded memory matches this task.");
+  });
+
+  it("names the bridged file behind a genuine match", async () => {
+    const rootDir = await createTempRoot("context-find-bridge-named");
+    roots.push(rootDir);
+    execFileSync("git", ["init", "-q"], { cwd: rootDir, stdio: "ignore" });
+    await runInitCommand(rootDir, ["--yes"]);
+    await mkdir(path.join(rootDir, "docs/context"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "docs/context/reports.md"),
+      card("Reports", ["monthly sales summary"], ["src/reports/index.ts"], ["src/reports/**"]),
+      "utf8",
+    );
+    await mkdir(path.join(rootDir, "src/reports"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, "src/reports/saved-analytics-routes.ts"),
+      "export const routes = 1;\n",
+      "utf8",
+    );
+    execFileSync("git", ["add", "-A"], { cwd: rootDir, stdio: "ignore" });
+
+    const result = await runCommand(rootDir, ["context", "monthly summary saved"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("(via src/reports/saved-analytics-routes.ts)");
   });
 
   it("says plainly when nothing matches, and still exits 0", async () => {
