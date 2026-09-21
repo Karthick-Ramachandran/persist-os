@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted — superseded by ADR-0014-init-enables-the-git-hooks-when-the-user-agrees
 
 ## Context
 

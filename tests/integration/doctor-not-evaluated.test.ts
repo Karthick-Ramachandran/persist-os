@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { runDoctor } from "../../src/core/doctor/doctor-check.js";
 import {
@@ -88,15 +88,22 @@ describe("doctor not-evaluated reporting", () => {
     return rootDir;
   }
 
+  // The hooks-active check stands down when CI is set; clear it so these outcomes are the same
+  // locally and in GitHub Actions.
+  beforeEach(() => {
+    vi.stubEnv("CI", "");
+  });
+
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("reports fourteen not-evaluated checks when config is missing", async () => {
+  it("reports fifteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("noteval-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(16);
+    expect(report.checks).toHaveLength(17);
     for (const check of GATED_CHECKS) {
       expect(report.checks).toContainEqual({
         id: check,
@@ -104,7 +111,7 @@ describe("doctor not-evaluated reporting", () => {
         reason: "no .persist/config.json, so configured paths are unknown",
       });
     }
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(14);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(15);
   });
 
   it("shows the NOT EVALUATED section without moving the exit code by itself", async () => {
@@ -145,6 +152,9 @@ describe("doctor not-evaluated reporting", () => {
       stdio: "ignore",
     });
 
+    // A clone never carries git config, so its hooks start off; switch them on so this test
+    // stays about staleness.
+    git(cloneDir, "config", "core.hooksPath", ".persist/hooks");
     const report = await runDoctor(cloneDir);
     const staleness = report.checks.find((check) => check.id === "staleness");
 
@@ -157,7 +167,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(result.stdout).toContain("NOT EVALUATED");
   });
 
-  it("evaluates all fifteen checks with no NOT EVALUATED section in full history", async () => {
+  it("evaluates all seventeen checks with no NOT EVALUATED section in full history", async () => {
     const rootDir = await createRoot("noteval-healthy");
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
@@ -175,10 +185,12 @@ describe("doctor not-evaluated reporting", () => {
     // and a branch with no upstream has none to check.
     git(rootDir, "branch", "pushed");
     git(rootDir, "branch", "--set-upstream-to=pushed");
+    // Hooks switched on, as init does when it runs inside a git repository.
+    git(rootDir, "config", "core.hooksPath", ".persist/hooks");
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(16);
+    expect(report.checks).toHaveLength(17);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -207,7 +219,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(16);
+    expect(parsed.checks).toHaveLength(17);
     expect(parsed.checks.find((check) => check.id === "staleness")).toMatchObject({
       status: "not-evaluated",
     });

@@ -2,6 +2,29 @@
 
 ## 1.2.3
 
+The hooks now actually run, and the fence can't be skipped by committing first.
+
+**`init` switches the git hooks on (ADR-0014).** Git never activates hooks that arrive with a clone,
+and `init` used to print `git config core.hooksPath .persist/hooks` and leave it to you. That was
+the step people skipped, and then doctor never ran at commit and the test gate never ran at push,
+with nothing saying so. Interactive `init` now asks "Turn on the git hooks in this clone?" (default
+yes), `--yes` takes the default, and `--no-enable-hooks` opts out. It never replaces a
+`core.hooksPath` that another tool such as Husky owns, and changes nothing under `--dry-run` or
+outside git. ADR-0002 is superseded by ADR-0014.
+
+**New check: `hooks-active`.** Every other clone still needs the one line, so doctor warns in any
+clone where the hooks are off and prints the command. It is info rather than a warning when another
+hooks tool owns `core.hooksPath`, and not evaluated outside git and in CI (the `CI` variable), where
+hooks never apply and a warning would fail the generated workflow.
+
+**The hooks work without a global install.** They call your installed `persist`, or `npx persist-os`
+when it isn't on your PATH. Before, a project set up with `npx persist-os init` got hooks that
+failed every commit with "persist: command not found".
+
+**"Done" means doctor passes.** The generated agent rules now say work is finished only when
+`persist doctor` reports PASSED and the tests pass: errors fixed, each warning fixed or named with a
+reason. They also tell the agent to run `npx persist-os <command>` when `persist` isn't installed.
+
 **The fence asks about commits that skipped it.** The fence check judged only the staged set. Run
 doctor after committing (for example with the hooks off, which is how an agent often works) and
 nothing was staged, so the check passed a change that never met the fence. An agent then quoted that
@@ -12,6 +35,11 @@ reports **not evaluated** with the reason, instead of an empty pass.
 When something is staged, the check behaves exactly as before: only the commit being made is judged,
 so an earlier unpushed crossing isn't repeated on every later commit. A commit that only deletes
 files counts as staged.
+
+**Upgrading:** the hooks changed, so doctor shows `hook-drift` on them. Run `persist hooks sync`.
+`init` never overwrites `AGENTS.md` or the Cursor rule, so the new agent rules only reach new
+repositories; copy the changed lines across by hand if you want them. Existing clones get the
+`hooks-active` warning until the hooks are switched on.
 
 ## 1.2.2
 

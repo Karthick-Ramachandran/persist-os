@@ -5,12 +5,21 @@
 # push-only gates against everything being pushed (catching commits made with --no-verify
 # or before the pre-commit hook was active).
 # Edit the test command (testCommand) and gates (prePushGates) in .persist/config.json,
-# then re-run `persist init --force` to regenerate this hook.
+# then run `persist hooks sync` to regenerate this hook.
 # Enable once per clone with:
 #   git config core.hooksPath .persist/hooks
 set -e
 
-persist test-gate
+# Use the installed persist, or npx when it is not installed globally.
+run_persist() {
+  if command -v persist >/dev/null 2>&1; then
+    persist "$@"
+  else
+    npx --yes persist-os "$@"
+  fi
+}
+
+run_persist test-gate
 # testCommand: pnpm run test:run
 pnpm run typecheck
 pnpm run lint

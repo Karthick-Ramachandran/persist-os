@@ -248,7 +248,7 @@ describe("init command", () => {
 
   it("writes the config implied by interactive answers", async () => {
     const rootDir = await createRoot("init-answers");
-    const feed = feedFor(["codex", "y", "n", "n", "y"]);
+    const feed = feedFor(["codex", "y", "n", "n", "y", "n"]);
 
     const result = await initProject({
       rootDir,
@@ -257,7 +257,8 @@ describe("init command", () => {
     });
 
     expect(feed.written()).toContain("Which AI tools?");
-    expect(feed.written()).toContain("[1/5]");
+    expect(feed.written()).toContain("[1/6]");
+    expect(feed.written()).toContain("Turn on the git hooks in this clone?");
     expect(feed.written()).toContain("Track features?");
     expect(feed.written()).toContain("Track modules?");
     expect(feed.written()).toContain("Enable the Chesterton fence?");
@@ -276,7 +277,7 @@ describe("init command", () => {
 
   it("records a declined fence as disabled and generates nothing fence-related", async () => {
     const rootDir = await createRoot("init-fence-off");
-    const feed = feedFor(["", "n", "n", "n", "n"]);
+    const feed = feedFor(["", "n", "n", "n", "n", "n"]);
 
     const result = await initProject({
       rootDir,
@@ -292,7 +293,7 @@ describe("init command", () => {
 
   it("still asks on --dry-run without writing anything", async () => {
     const rootDir = await createRoot("init-dryrun-asks");
-    const feed = feedFor(["", "n", "n", "n", "n"]);
+    const feed = feedFor(["", "n", "n", "n", "n", "n"]);
 
     const result = await initProject({
       rootDir,

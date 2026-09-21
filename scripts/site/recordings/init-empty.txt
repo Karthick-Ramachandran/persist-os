@@ -37,7 +37,7 @@ Created:
 Executable files written: .persist/hooks/pre-commit, .persist/hooks/pre-push, .claude/hooks/session-start.sh, .claude/skills/security-review/scripts/scan-secrets.sh, and .agents/skills/security-review/scripts/scan-secrets.sh.
 
 Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
-Enable them once per clone: git config core.hooksPath .persist/hooks
+Git hooks switched on for this clone (git config core.hooksPath .persist/hooks).
 
 Next steps:
 - Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.

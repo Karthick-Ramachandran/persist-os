@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { runDoctor } from "../../src/core/doctor/doctor-check.js";
 import {
@@ -23,7 +23,14 @@ describe("init test-gate seeding", () => {
     return rootDir;
   }
 
+  // The hooks-active check stands down when CI is set; clear it so these outcomes are the same
+  // locally and in GitHub Actions.
+  beforeEach(() => {
+    vi.stubEnv("CI", "");
+  });
+
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
@@ -126,16 +133,23 @@ describe("doctor check outcomes", () => {
     return rootDir;
   }
 
+  // The hooks-active check stands down when CI is set; clear it so these outcomes are the same
+  // locally and in GitHub Actions.
+  beforeEach(() => {
+    vi.stubEnv("CI", "");
+  });
+
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("records fourteen not-evaluated checks when config is missing", async () => {
+  it("records fifteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("outcomes-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(16);
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(14);
+    expect(report.checks).toHaveLength(17);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(15);
     expect(report.checks).toContainEqual({
       id: "hook-drift",
       status: "not-evaluated",
@@ -186,10 +200,15 @@ describe("doctor check outcomes", () => {
     // and a branch with no upstream has none to check.
     execFileSync("git", ["branch", "pushed"], { cwd: rootDir, stdio: "ignore" });
     execFileSync("git", ["branch", "--set-upstream-to=pushed"], { cwd: rootDir, stdio: "ignore" });
+    // Hooks switched on, as init does when it runs inside a git repository.
+    execFileSync("git", ["config", "core.hooksPath", ".persist/hooks"], {
+      cwd: rootDir,
+      stdio: "ignore",
+    });
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(16);
+    expect(report.checks).toHaveLength(17);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -215,7 +234,7 @@ describe("doctor check outcomes", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(16);
+    expect(parsed.checks).toHaveLength(17);
   });
 
   it("has no guard command left", async () => {

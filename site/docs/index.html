@@ -150,7 +150,7 @@ Created:
 Executable files written: .persist/hooks/pre-commit, .persist/hooks/pre-push, .claude/hooks/session-start.sh, .claude/skills/security-review/scripts/scan-secrets.sh, and .agents/skills/security-review/scripts/scan-secrets.sh.
 
 Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
-Enable them once per clone: git config core.hooksPath .persist/hooks
+Git hooks switched on for this clone (git config core.hooksPath .persist/hooks).
 
 Next steps:
 - Read CLAUDE.md and AGENTS.md, then the docs/ memory they point to.
@@ -183,11 +183,12 @@ Next steps:
             <code>persist module create</code> the first time you need one.
           </p>
 
-          <h2 id="hooks">Enable the hooks</h2>
+          <h2 id="hooks">The hooks</h2>
           <p>
             The hooks are tracked files under <code>.persist/hooks/</code>, so they travel with the
-            repository. Git does not run them until you point it at that directory. Persist OS
-            prints the command and leaves running it to you:
+            repository. Git does not run them until the clone points at that directory. Init did
+            that above, because you said yes. On every other clone, teammates run the same line
+            once, and <code>persist doctor</code> reminds them until they do:
           </p>
           <pre><code><span class="p">$</span> <span class="c">git config core.hooksPath .persist/hooks</span></code></pre>
           <p>

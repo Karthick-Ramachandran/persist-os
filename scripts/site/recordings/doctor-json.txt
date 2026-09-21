@@ -109,6 +109,10 @@ $ persist doctor --json
       "status": "evaluated"
     },
     {
+      "id": "hooks-active",
+      "status": "evaluated"
+    },
+    {
       "id": "retired-skills",
       "status": "evaluated"
     },

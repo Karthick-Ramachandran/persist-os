@@ -102,7 +102,7 @@
           </div>
 
           <h2 id="init">persist init</h2>
-          <pre><code>persist init [--ai-tools &lt;list&gt;] [--features] [--modules] [--yes] [--dry-run] [--force] [--reinit]</code></pre>
+          <pre><code>persist init [--ai-tools &lt;list&gt;] [--features] [--modules] [--yes] [--no-enable-hooks] [--dry-run] [--force] [--reinit]</code></pre>
           <p>
             Writes the six memory documents and the decision directory under <code>docs/</code>,
             the agent entry points (<code>AGENTS.md</code>, <code>CLAUDE.md</code>, the Cursor
@@ -157,6 +157,14 @@
                 existing installation is never overwritten by accident. Reinit rewrites every
                 generated file, filled-in docs included, and resets the config to defaults. To
                 refresh hooks only, use <a href="#hooks-sync"><code>persist hooks sync</code></a>.
+              </dd>
+            </div>
+            <div>
+              <dt><code>--no-enable-hooks</code></dt>
+              <dd>
+                Write the hooks but leave git config alone. By default init switches the hooks on
+                for this clone (<code>git config core.hooksPath .persist/hooks</code>), and never
+                over a <code>core.hooksPath</code> another tool already owns.
               </dd>
             </div>
           </dl>

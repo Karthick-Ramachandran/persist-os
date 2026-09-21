@@ -12,6 +12,7 @@ import {
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
 import { inspectRepo, summarizeSignals, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { generateInitFiles, generateOptInFiles } from "../core/generator/generate-init.js";
+import { enableHooks, readHooksPathState } from "../core/hooks/activate-hooks.js";
 import { detectPrePushGates, detectTestCommand } from "../core/hooks/detect-gates.js";
 import {
   CLAUDE_SETTINGS_PATH,
@@ -40,6 +41,11 @@ export type InitOptions = {
   force?: boolean;
   reinit?: boolean;
   yes?: boolean;
+  /**
+   * Turn the git hooks on for this clone (ADR-0014). Defaults to yes, like the other questions;
+   * `false` (`--no-enable-hooks`) skips the change and the question, and prints the command.
+   */
+  enableHooks?: boolean;
   /** Defaults to `process.stdin.isTTY`; injectable so tests never need a real TTY. */
   stdinTTY?: boolean;
   /** Streams the interactive questions use; default to process stdin/stdout. */
@@ -59,7 +65,22 @@ export type InitResult = {
   fenceEnabled: boolean;
   // True when stdin was not a TTY and init proceeded with defaults without prompting.
   assumedNonTTYDefaults: boolean;
+  // What happened to core.hooksPath, so the output reports the change instead of assuming it.
+  hooks: HooksActivation;
 };
+
+/**
+ * - `enabled`: init pointed core.hooksPath at .persist/hooks.
+ * - `already`: it already pointed there.
+ * - `other`: another hooks tool owns core.hooksPath; left alone.
+ * - `not-git`: no git repository to configure yet.
+ * - `declined`: the user said no, or passed --no-enable-hooks.
+ * - `dry-run`: nothing changes under --dry-run.
+ * - `no-hooks`: no hook file exists to switch on.
+ */
+export type HooksActivation =
+  | { kind: "enabled" | "already" | "not-git" | "declined" | "dry-run" | "no-hooks" }
+  | { kind: "other"; value: string };
 
 export type InitErrorCode = "INVALID_AI_TOOL" | "WRITE_PLAN_ERROR" | "EXISTING_INSTALLATION";
 
@@ -102,8 +123,15 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   const detectedTestCommand = await detectTestCommand(options.rootDir);
   const prePushGates = await detectPrePushGates(options.rootDir);
 
-  const { aiTools, features, modules, testCommand, fenceEnabled, assumedNonTTYDefaults } =
-    await resolveInitAnswers(options, detectedTestCommand);
+  const {
+    aiTools,
+    features,
+    modules,
+    testCommand,
+    fenceEnabled,
+    enableHooks: wantsHooks,
+    assumedNonTTYDefaults,
+  } = await resolveInitAnswers(options, detectedTestCommand);
 
   validateAiTools(aiTools);
 
@@ -135,6 +163,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   }
 
   const writeResult = await executeWritePlan(plan, { dryRun: options.dryRun });
+  const hooks = await activateHooks(options.rootDir, wantsHooks, options.dryRun === true);
 
   return {
     dryRun: options.dryRun ?? false,
@@ -145,6 +174,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     testCommand: config.testCommand,
     fenceEnabled: config.fenceEnabled,
     assumedNonTTYDefaults,
+    hooks,
   };
 }
 
@@ -163,6 +193,7 @@ async function resolveInitAnswers(
   modules: boolean;
   testCommand: string | null;
   fenceEnabled: boolean;
+  enableHooks: boolean;
   assumedNonTTYDefaults: boolean;
 }> {
   const explicitInstruction =
@@ -179,6 +210,7 @@ async function resolveInitAnswers(
       modules: options.modules ?? false,
       testCommand: detectedTestCommand,
       fenceEnabled: true,
+      enableHooks: options.enableHooks ?? true,
       assumedNonTTYDefaults: false,
     };
   }
@@ -192,6 +224,7 @@ async function resolveInitAnswers(
       modules: options.modules ?? false,
       testCommand: detectedTestCommand,
       fenceEnabled: true,
+      enableHooks: options.enableHooks ?? true,
       assumedNonTTYDefaults: true,
     };
   }
@@ -200,26 +233,36 @@ async function resolveInitAnswers(
   const prompter = createPrompter(streams);
 
   try {
-    const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/5]");
+    const aiTools = await prompter.askAiTools([...createDefaultConfig().aiTools], "[1/6]");
     const features = await prompter.askYesNo(
       "Track features?",
       false,
-      "[2/5]",
+      "[2/6]",
       "  Adds docs/40-features/ and `persist feature create`, for planning work before building it.\n  Off: nothing is generated and doctor never asks for it.",
     );
     const modules = await prompter.askYesNo(
       "Track modules?",
       false,
-      "[3/5]",
+      "[3/6]",
       "  Adds docs/30-modules/ for ownership, boundaries and per-module decisions.\n  Off: nothing is generated and doctor never asks for it.",
     );
-    const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/5]");
+    const enableTestGate = await prompter.askTestGate(detectedTestCommand, "[4/6]");
     const fenceEnabled = await prompter.askYesNo(
       "Enable the Chesterton fence?",
       true,
-      "[5/5]",
+      "[5/6]",
       "  Records why code is shaped the way it is, for reasoning no ADR would ever cover.\n  On: when a change touches source with no recorded reason, doctor asks why before\n  you change it — a warning, never a block. The file starts empty and grows as\n  you answer.\n  Off: nothing is generated and doctor never asks. (recommended on)",
     );
+
+    const enableHooks =
+      options.enableHooks === false
+        ? false
+        : await prompter.askYesNo(
+            "Turn on the git hooks in this clone?",
+            true,
+            "[6/6]",
+            `  Runs doctor before each commit and the test gate before each push. Git never\n  turns on hooks that come with a clone, so each clone opts in once. This runs\n  ${HOOKS_PATH_ACTIVATION_COMMAND} (local, never committed).\n  No: the hooks are still written; doctor reminds you until they are on.`,
+          );
 
     return {
       aiTools,
@@ -227,6 +270,7 @@ async function resolveInitAnswers(
       modules,
       testCommand: enableTestGate ? detectedTestCommand : null,
       fenceEnabled,
+      enableHooks,
       assumedNonTTYDefaults: false,
     };
   } finally {
@@ -321,7 +365,14 @@ export function formatInitResult(result: InitResult): string {
         ? "Pre-commit and pre-push hooks will be written to .persist/hooks/."
         : "Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).",
     );
-    lines.push(`Enable them once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`);
+  }
+
+  const hooksLine = describeHooksActivation(result.hooks);
+  if (hooksLine !== undefined) {
+    if (!hookWritten) {
+      lines.push("");
+    }
+    lines.push(hooksLine);
   }
 
   if (!result.dryRun) {
@@ -588,4 +639,50 @@ function createInitWriteFiles(
   ];
 
   return files.filter((file) => keepPathForTools(file.path, config.aiTools));
+}
+
+/**
+ * Switch the hooks on for this clone when asked to (ADR-0014). Never under --dry-run, never
+ * without a generated hook to point at, and never over another tool's core.hooksPath.
+ */
+async function activateHooks(
+  rootDir: string,
+  wanted: boolean,
+  dryRun: boolean,
+): Promise<HooksActivation> {
+  if (dryRun) {
+    return { kind: "dry-run" };
+  }
+  if (!existsSync(path.join(rootDir, PRE_COMMIT_HOOK_PATH))) {
+    return { kind: "no-hooks" };
+  }
+
+  const state = wanted ? await enableHooks(rootDir) : await readHooksPathState(rootDir);
+  if (state.kind === "active") {
+    return { kind: wanted ? "enabled" : "already" };
+  }
+  if (state.kind === "other" || state.kind === "not-git") {
+    return state;
+  }
+  return { kind: "declined" };
+}
+
+/** One line on what happened to core.hooksPath, built from what happened. */
+function describeHooksActivation(hooks: HooksActivation): string | undefined {
+  switch (hooks.kind) {
+    case "enabled":
+      return `Git hooks switched on for this clone (${HOOKS_PATH_ACTIVATION_COMMAND}).`;
+    case "already":
+      return "Git hooks are already switched on for this clone.";
+    case "other":
+      return `core.hooksPath is already set to ${hooks.value} (another hooks tool), so it was left alone. To use Persist's hooks, call them from there or run: ${HOOKS_PATH_ACTIVATION_COMMAND}`;
+    case "not-git":
+      return `Not a git repository yet. After git init, switch the hooks on: ${HOOKS_PATH_ACTIVATION_COMMAND}`;
+    case "declined":
+      return `Git hooks are not switched on. Turn them on once per clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`;
+    case "dry-run":
+      return `Would switch the git hooks on for this clone: ${HOOKS_PATH_ACTIVATION_COMMAND}`;
+    case "no-hooks":
+      return undefined;
+  }
 }
