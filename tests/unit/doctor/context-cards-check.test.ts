@@ -22,11 +22,7 @@ async function write(rootDir: string, relativePath: string, content: string): Pr
   await writeFile(full, content, "utf8");
 }
 
-function card(options: {
-  startHere?: string[];
-  answers?: string[];
-  appliesTo?: string[];
-}): string {
+function card(options: { startHere?: string[]; answers?: string[]; appliesTo?: string[] }): string {
   const section = (heading: string, items: string[]): string =>
     [`## ${heading}`, "", ...items.map((item) => `- ${item}`), ""].join("\n");
   return [
@@ -38,10 +34,16 @@ function card(options: {
     "",
     section("Answers", options.answers ?? ["who pays the extra cent"]),
     section("Also Known As", ["billing"]),
-    section("Start Here", (options.startHere ?? ["`src/lib/billing.ts` — charges"]).map((s) => s)),
+    section(
+      "Start Here",
+      (options.startHere ?? ["`src/lib/billing.ts` — charges"]).map((s) => s),
+    ),
     section("Rules", ["ADR-0001 — a decision"]),
     section("Pitfalls", ["LESSONS: a mistake"]),
-    section("Applies To", (options.appliesTo ?? ["src/lib/billing.ts"]).map((p) => `\`${p}\``)),
+    section(
+      "Applies To",
+      (options.appliesTo ?? ["src/lib/billing.ts"]).map((p) => `\`${p}\``),
+    ),
   ].join("\n");
 }
 
@@ -81,7 +83,11 @@ describe("doctor context-cards check", () => {
 
   it("warns on a Start Here path that no longer exists, naming card and path", async () => {
     const rootDir = await createRoot("cards-dead");
-    await write(rootDir, "docs/context/billing.md", card({ startHere: ["`src/lib/gone.ts` — was here"] }));
+    await write(
+      rootDir,
+      "docs/context/billing.md",
+      card({ startHere: ["`src/lib/gone.ts` — was here"] }),
+    );
 
     const { findings } = await check(rootDir);
 

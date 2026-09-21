@@ -41,7 +41,9 @@ export async function checkContextCards(
   const dir = path.posix.join(context.config.docsDir, CONTEXT_DIR_NAME);
   const cards = await readCards(context.rootDir, dir);
   if (cards.length === 0) {
-    return notEvaluated("no context cards exist, so there is nothing to check for dead paths or staleness");
+    return notEvaluated(
+      "no context cards exist, so there is nothing to check for dead paths or staleness",
+    );
   }
 
   const findings: DoctorFinding[] = [];
@@ -91,7 +93,10 @@ async function readCards(
   const cards: { file: string; card: ReturnType<typeof parseContextCard> }[] = [];
   for (const name of names) {
     const file = path.posix.join(dir, name);
-    cards.push({ file, card: parseContextCard(await readFile(path.join(rootDir, file), "utf8"), file) });
+    cards.push({
+      file,
+      card: parseContextCard(await readFile(path.join(rootDir, file), "utf8"), file),
+    });
   }
   return cards;
 }
@@ -145,8 +150,7 @@ async function checkCardStaleness(
       findings.push({
         severity: "warning",
         check: "context-cards",
-        message:
-          `Context card ${file} may be stale: ${newestFile} changed long after the card was last updated — review the card's pointers.`,
+        message: `Context card ${file} may be stale: ${newestFile} changed long after the card was last updated — review the card's pointers.`,
         path: file,
       });
     }

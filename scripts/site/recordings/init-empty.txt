@@ -5,7 +5,7 @@ Persist OS init complete.
 Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`).
 Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json).
 stdin is not a TTY — proceeded with defaults without prompting (as --yes).
-Generated repository memory, 5 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Generated repository memory, 6 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
 Created:
 - .persist/config.json
 - AGENTS.md
@@ -23,6 +23,9 @@ Created:
 - .persist/hooks/pre-push
 - .claude/hooks/session-start.sh
 - .claude/settings.json
+- .claude/hooks/context-prompt.sh
+- .codex/hooks/context-prompt.sh
+- .codex/hooks.json
 - .claude/skills/plan-feature/SKILL.md
 - .agents/skills/plan-feature/SKILL.md
 - .claude/skills/security-review/SKILL.md
@@ -35,8 +38,10 @@ Created:
 - .agents/skills/chestertons-fence/SKILL.md
 - .claude/skills/adr-compliance/SKILL.md
 - .agents/skills/adr-compliance/SKILL.md
+- .claude/skills/context/SKILL.md
+- .agents/skills/context/SKILL.md
 
-Executable files written: .persist/hooks/pre-commit, .persist/hooks/pre-push, .claude/hooks/session-start.sh, .claude/skills/security-review/scripts/scan-secrets.sh, and .agents/skills/security-review/scripts/scan-secrets.sh.
+Executable files written: .persist/hooks/pre-commit, .persist/hooks/pre-push, .claude/hooks/session-start.sh, .claude/hooks/context-prompt.sh, .codex/hooks/context-prompt.sh, .claude/skills/security-review/scripts/scan-secrets.sh, and .agents/skills/security-review/scripts/scan-secrets.sh.
 
 Pre-commit and pre-push hooks written to .persist/hooks/ (pre-push is the final regression gate before you push).
 Git hooks switched on for this clone (git config core.hooksPath .persist/hooks).

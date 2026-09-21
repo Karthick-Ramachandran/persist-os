@@ -12,6 +12,7 @@ NOT EVALUATED
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
 - governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
+- context-cards: no context cards exist, so there is nothing to check for dead paths or staleness
 
 Result: PASSED
 [exit 0]

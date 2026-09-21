@@ -68,7 +68,12 @@ export async function hookContext(options: HookContextOptions): Promise<HookCont
     const found = await findContext({ rootDir: options.rootDir, task: prompt, limit: HOOK_LIMIT });
     if (found.cards.length > 0) {
       pointers = capBytes(
-        formatFindContextResult({ task: found.task, cards: found.cards, secondary: [], matched: true }),
+        formatFindContextResult({
+          task: found.task,
+          cards: found.cards,
+          secondary: [],
+          matched: true,
+        }),
         HOOK_MAX_BYTES,
       );
     }
@@ -103,11 +108,9 @@ function parseHookTool(raw: string): ContextHookTool {
   if (tool === "claude" || tool === "codex") {
     return tool;
   }
-  throw new ContextHookError(
-    "UNKNOWN_HOOK_TOOL",
-    `Unknown prompt-hook tool "${raw}".`,
-    [`Supported tools: claude, codex. Cursor has no documented context-return channel (see the context-cards ADR), so it is covered by the skill and the rule line instead.`],
-  );
+  throw new ContextHookError("UNKNOWN_HOOK_TOOL", `Unknown prompt-hook tool "${raw}".`, [
+    `Supported tools: claude, codex. Cursor has no documented context-return channel (see the context-cards ADR), so it is covered by the skill and the rule line instead.`,
+  ]);
 }
 
 /** Both tools hand the hook its input as JSON on stdin with a `prompt` field. */

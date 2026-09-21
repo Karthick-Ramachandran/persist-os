@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/context-prompt.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

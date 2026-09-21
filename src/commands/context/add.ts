@@ -25,7 +25,11 @@ export type ContextAddResult = {
   writeResult: WriteResult;
 };
 
-export type ContextAddErrorCode = "INVALID_CARD" | "CARD_EXISTS" | "WRITE_PLAN_ERROR" | "NOT_INITIALIZED";
+export type ContextAddErrorCode =
+  | "INVALID_CARD"
+  | "CARD_EXISTS"
+  | "WRITE_PLAN_ERROR"
+  | "NOT_INITIALIZED";
 
 export class ContextAddError extends Error {
   readonly code: ContextAddErrorCode;

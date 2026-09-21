@@ -4,20 +4,23 @@ Usage: persist [options] [command]
 Initialize and maintain repository memory for AI-assisted software work.
 
 Options:
-  -h, --help        display help for command
+  -h, --help                display help for command
 
 Commands:
-  init [options]    Initialize Persist OS repository memory.
-  adopt [options]   Inspect an existing repository and propose reviewable
-                    memory.
-  feature           Manage Persist OS feature memory.
-  adr               Manage Persist OS ADR memory.
-  module            Manage Persist OS module memory.
-  doctor [options]  Check whether Persist OS repository memory is healthy.
-  test-gate         Run the configured test command and require it to pass.
-  mcp               Manage Persist OS MCP context memory.
-  skill             Manage Persist OS agent skills.
-  fence             Record why code is shaped the way it is.
-  hooks             Manage the generated git and Claude hooks.
-  help [command]    display help for command
+  init [options]            Initialize Persist OS repository memory.
+  adopt [options]           Inspect an existing repository and propose
+                            reviewable memory.
+  feature                   Manage Persist OS feature memory.
+  adr                       Manage Persist OS ADR memory.
+  module                    Manage Persist OS module memory.
+  doctor [options]          Check whether Persist OS repository memory is
+                            healthy.
+  test-gate                 Run the configured test command and require it to
+                            pass.
+  mcp                       Manage Persist OS MCP context memory.
+  skill                     Manage Persist OS agent skills.
+  fence                     Record why code is shaped the way it is.
+  context [options] [task]  Record and find area memory (context cards).
+  hooks                     Manage the generated git and Claude hooks.
+  help [command]            display help for command
 [exit 0]

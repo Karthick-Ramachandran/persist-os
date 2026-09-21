@@ -5,11 +5,7 @@ import { promisify } from "node:util";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import {
-  createTempRoot,
-  removeTempRoot,
-  runInitCommand,
-} from "../helpers/init-test-helpers.js";
+import { createTempRoot, removeTempRoot, runInitCommand } from "../helpers/init-test-helpers.js";
 
 const execFileAsync = promisify(execFile);
 const cliPath = path.join(process.cwd(), "dist", "cli.js");

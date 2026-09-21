@@ -244,6 +244,8 @@ The hooks run your installed `persist`, or `npx persist-os` when it isn't instal
 | `persist doctor`                    | Validate memory health, evidence, and drift.                                   |
 | `persist test-gate`                 | Run the configured test command and require it to pass.                        |
 | `persist fence add <path> --why`    | Record why a path is shaped the way it is.                                     |
+| `persist context "<task>"`          | Find the area memory a task needs: cards first, decisions second.              |
+| `persist context add <name>`        | Scaffold a context card for an area (`--purpose "<one line>"`, `--dry-run`).   |
 | `persist hooks sync`                | Regenerate the hooks from the config. Never touches docs or config.            |
 
 ## What Doctor Checks
@@ -264,6 +266,7 @@ deterministic, local, and read-only.
 | Code references     | Current memory citing `src/` paths that no longer exist              | warning      |
 | Staleness           | Memory citing code that changed long after the memory did            | warning      |
 | Chesterton fence    | A change to source with no recorded reason and no ADR reference      | warning      |
+| Context cards       | A card pointing at missing paths, stale pointers, or no Answers      | warning/info |
 | Sharing             | Memory files git-ignored so the team never receives them             | warning      |
 | Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
 | Hooks active        | Hooks written but not switched on in this clone (skipped in CI)      | warning      |
@@ -338,26 +341,106 @@ WARNING
 
 It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config.json`.
 
+## Context cards
+
+ADRs record decisions, fences record why code is shaped the way it is — but when a new task lands,
+nothing connects it to the right records. A context card is one small Markdown file per area of the
+codebase (`docs/context/<name>.md`) holding what the agent that just finished work there knows: what
+the area is for, which task phrasings it answers, the words people use for it, where to start
+reading, and which rules apply.
+
+```markdown
+# Splitting and rounding
+
+## Purpose
+
+How an expense is divided between members, and where leftover cents go.
+
+## Answers
+
+- make rounding fair
+- change how an expense is split
+- who pays the extra cent
+- shares don't add up to the total
+
+## Also Known As
+
+- split, splitting, shares, rounding, remainder, leftover cent, penny
+
+## Start Here
+
+- `src/lib/split.ts` — splitEvenly: divides a total, hands out leftover cents
+- `src/lib/ledger.ts` — sharesFor/balances: where splits become balances
+- `tests/split.test.ts` — the invariants the split must keep
+
+## Rules
+
+- ADR-0001 — money is integer cents, including intermediate calculations
+- Fence `src/lib/split.ts` — leftover cents go to the earliest joiner, and why
+- CONVENTIONS: `splitEvenly` is the only place an amount is divided
+
+## Pitfalls
+
+- LESSONS: duplicate member ids in splitAmong lose a share silently
+
+## Applies To
+
+- `src/lib/split.ts`
+- `src/lib/ledger.ts`
+```
+
+**Answers is the field that matters.** It holds task phrasings in the words someone would type, not
+code words — that is where the "semantic" quality comes from. Rules and Pitfalls are pointers, never
+copies: a card that duplicates an ADR goes stale when the ADR changes.
+
+The workflow is one habit: when you finish work in an area, scaffold the card if there is none
+(`persist context add "splitting and rounding" --purpose "How an expense is divided."`), then add
+the task you were just given to its Answers list, phrased the way it was asked. That single habit
+makes the next lookup succeed.
+
+Later, a deterministic lookup matches a new task against those stored phrases — no embeddings, no
+model calls, no network. Every match explains itself, and the output is pointers, never whole files:
+
+```console
+$ persist context "make rounding fair"
+Start here for "make rounding fair":
+
+Splitting and rounding (docs/context/splitting-and-rounding.md) — matched: rounding, fair
+  src/lib/split.ts — splitEvenly: divides a total, hands out leftover cents
+  src/lib/ledger.ts — sharesFor/balances: where splits become balances
+  Rules: ADR-0001 (money is integer cents…) · fence src/lib/split.ts (leftover cents go to…)
+  Pitfall: duplicate member ids in splitAmong lose a share silently
+```
+
+When no card covers the task, the closest recorded decisions and fences are listed instead, marked
+as such; when nothing matches at all, the lookup says so plainly.
+
+Delivery is layered so nothing depends on one tool: a prompt hook injects the pointers in Claude
+Code and Codex (Cursor's hook API cannot return context, so it is deliberately skipped), the
+`context` skill holds the look-up-first procedure everywhere, and one rule line in `AGENTS.md` and
+the Cursor rule carries the habit into every tool. Doctor keeps cards honest: dead Start Here paths,
+pointers older than the code they cover, and cards no task can find.
+
 ## How agents load the memory
 
 Writing memory only helps if the agent reads it, so `persist init` wires each tool with its own
 native mechanism:
 
-| Tool            | How memory loads                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Claude Code** | `CLAUDE.md` (auto) imports `AGENTS.md`; a SessionStart hook injects a live map of accepted ADRs and modules every session. |
-| **Cursor**      | `.cursor/rules/persist-memory.mdc` is an always-apply rule that loads the memory rules into every request.                 |
-| **Codex**       | `AGENTS.md` is auto-discovered and loaded.                                                                                 |
+| Tool            | How memory loads                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Claude Code** | `CLAUDE.md` (auto) imports `AGENTS.md`; a SessionStart hook injects a live map of accepted ADRs and modules every session, plus a prompt hook that looks up context cards per prompt. |
+| **Cursor**      | `.cursor/rules/persist-memory.mdc` is an always-apply rule that loads the memory rules into every request.                                                                            |
+| **Codex**       | `AGENTS.md` is auto-discovered and loaded, plus a prompt hook that looks up context cards per prompt.                                                                                 |
 
 The portable guarantee across every tool is `AGENTS.md` plus the generated Agent Skills
 (`.agents/skills/`). The dynamic per-session ADR/module map is a Claude Code bonus; the Cursor rule
 and `AGENTS.md` carry the same rules everywhere else.
 
-Three workflow skills ship in the catalog (`plan-feature`, `security-review`,
-`conventions-adherence`); each states when it activates and what it returns. One skill ships an
-executable helper (`security-review/scripts/scan-secrets.sh`): it is read-only and local,
-`persist init` names every executable file it writes, and deleting it degrades to the documented
-prose path.
+Six workflow skills ship in the catalog (`plan-feature`, `security-review`, `conventions-adherence`,
+`chestertons-fence`, `adr-compliance`, `context`); each states when it activates and what it
+returns. One skill ships an executable helper (`security-review/scripts/scan-secrets.sh`): it is
+read-only and local, `persist init` names every executable file it writes, and deleting it degrades
+to the documented prose path.
 
 `AGENTS.md` leads with a short, imperative **Rules** block (read memory first, reuse the
 conventions, record lessons, don't contradict accepted ADRs, run `persist doctor` before "done") —

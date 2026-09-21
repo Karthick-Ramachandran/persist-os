@@ -4,11 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { ContextHookError, hookContext } from "../../../src/commands/context/hook.js";
-import {
-  createTempRoot,
-  removeTempRoot,
-  runInitCommand,
-} from "../../helpers/init-test-helpers.js";
+import { createTempRoot, removeTempRoot, runInitCommand } from "../../helpers/init-test-helpers.js";
 
 function card(title: string, answers: string[], startHere: string[]): string {
   return [
@@ -186,8 +182,8 @@ describe("persist context --hook", () => {
     });
 
     expect(result.matched).toBe(true);
-    expect(Buffer.byteLength(envelope(result.output).additionalContext, "utf8")).toBeLessThanOrEqual(
-      1500,
-    );
+    expect(
+      Buffer.byteLength(envelope(result.output).additionalContext, "utf8"),
+    ).toBeLessThanOrEqual(1500);
   });
 });

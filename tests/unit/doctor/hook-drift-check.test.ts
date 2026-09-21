@@ -209,16 +209,8 @@ describe("hook-drift check", () => {
     // The toggle-off shapes: session start without the prompt entry, and no
     // prompt script anywhere. Expecting either would punish the opt-out.
     await mkdir(path.join(rootDir, ".claude/hooks"), { recursive: true });
-    await writeFile(
-      path.join(rootDir, SESSION_START_HOOK_PATH),
-      renderSessionStartHook(),
-      "utf8",
-    );
-    await writeFile(
-      path.join(rootDir, CLAUDE_SETTINGS_PATH),
-      renderClaudeSettings(false),
-      "utf8",
-    );
+    await writeFile(path.join(rootDir, SESSION_START_HOOK_PATH), renderSessionStartHook(), "utf8");
+    await writeFile(path.join(rootDir, CLAUDE_SETTINGS_PATH), renderClaudeSettings(false), "utf8");
 
     const { findings, outcome } = await checkHookDrift(context);
 

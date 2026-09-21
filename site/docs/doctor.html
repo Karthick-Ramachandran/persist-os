@@ -142,12 +142,12 @@ INFO
 - 0 ADRs detected.
 
 Result: <span class="warn">WARNINGS</span>
-[main eaa3b2d] Plan the checkout feature
+[main 305fdb2] Plan the checkout feature
  2 files changed, 50 insertions(+)
 <span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-eaa3b2d Plan the checkout feature
-ac9d9f8 Add repository memory</code></pre>
+305fdb2 Plan the checkout feature
+8c93abe Add repository memory</code></pre>
 
           <h2 id="checks">Every check</h2>
           <p>
@@ -206,7 +206,7 @@ ac9d9f8 Add repository memory</code></pre>
                 </tr>
                 <tr>
                   <td><code>superseded</code></td>
-                  <td class="desc">Memory still cites an ADR that has been superseded by a newer decision.</td>
+                  <td class="desc">Memory — feature and module docs, context cards, and the required documents — still cites an ADR that has been superseded by a newer decision.</td>
                   <td class="sev-warn">warning</td>
                 </tr>
                 <tr>
@@ -252,6 +252,11 @@ ac9d9f8 Add repository memory</code></pre>
                 <tr>
                   <td><code>fence</code></td>
                   <td class="desc">A staged source change, or an unpushed one when nothing is staged, crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). A second crossing surfaces the recorded reason as info.</td>
+                  <td class="sev-mixed">warning / info</td>
+                </tr>
+                <tr>
+                  <td><code>context-cards</code></td>
+                  <td class="desc">A context card lists a Start Here path that no longer exists (warning), the files under its Applies To changed long after the card did (warning, the staleness check's 90-day gap), or its Answers list is empty so no task can find it (info). Not evaluated when no cards exist — cards are optional.</td>
                   <td class="sev-mixed">warning / info</td>
                 </tr>
               </tbody>

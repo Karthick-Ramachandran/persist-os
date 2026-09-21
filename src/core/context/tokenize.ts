@@ -189,10 +189,7 @@ function stem(token: string): string {
   if (token.endsWith("ed") && token.length >= 5) {
     return collapseDouble(token.slice(0, -2));
   }
-  if (
-    token.length >= 5 &&
-    SIBILANT_ENDINGS.some((ending) => token.endsWith(ending))
-  ) {
+  if (token.length >= 5 && SIBILANT_ENDINGS.some((ending) => token.endsWith(ending))) {
     return token.slice(0, -2);
   }
   if (token.endsWith("s") && token.length >= 4) {

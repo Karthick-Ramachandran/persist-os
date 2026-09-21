@@ -20,8 +20,7 @@ function card(
   pitfalls: string[],
   appliesTo: string[],
 ): string {
-  const bullets = (items: string[]): string =>
-    items.map((item) => `- ${item}`).join("\n");
+  const bullets = (items: string[]): string => items.map((item) => `- ${item}`).join("\n");
   return [
     `# ${title}`,
     "",
@@ -172,11 +171,7 @@ const CARDS: [string, string][] = [
     card(
       "Money",
       "How amounts are stored and computed so cents never drift.",
-      [
-        "totals are off by a cent",
-        "store dollar amounts as floats",
-        "why is money integer cents",
-      ],
+      ["totals are off by a cent", "store dollar amounts as floats", "why is money integer cents"],
       ["cent, cents, penny, money, currency, float, integer"],
       ["`src/lib/money.ts` — toCents/fromCents: the only float boundary"],
       ["ADR-0001 — money is integer cents, including intermediate calculations"],
@@ -319,8 +314,13 @@ describe("context retrieval benchmark", () => {
         rank,
         top: found.cards[0]?.card.file ?? "(none)",
       });
-      expect(rank, `"${prompt}" → rank ${rank}, top ${found.cards[0]?.card.file}`).toBeGreaterThan(0);
-      expect(rank, `"${prompt}" → rank ${rank}, top ${found.cards[0]?.card.file}`).toBeLessThanOrEqual(3);
+      expect(rank, `"${prompt}" → rank ${rank}, top ${found.cards[0]?.card.file}`).toBeGreaterThan(
+        0,
+      );
+      expect(
+        rank,
+        `"${prompt}" → rank ${rank}, top ${found.cards[0]?.card.file}`,
+      ).toBeLessThanOrEqual(3);
     }
 
     const at1 = ranks.filter((r) => r.rank === 1).length / ranks.length;

@@ -65,7 +65,10 @@ describe("context card reader", () => {
   });
 
   it("treats missing sections as empty", () => {
-    const card = parseContextCard("# Billing\n\n## Purpose\n\nCharges.\n", "docs/context/billing.md");
+    const card = parseContextCard(
+      "# Billing\n\n## Purpose\n\nCharges.\n",
+      "docs/context/billing.md",
+    );
 
     expect(card.title).toBe("Billing");
     expect(card.purpose).toBe("Charges.");

@@ -119,12 +119,7 @@ function idf(docFreq: number, docCount: number): number {
   return Math.log(1 + (docCount - docFreq + 0.5) / (docFreq + 0.5));
 }
 
-function bm25Term(
-  termFreq: number,
-  docLength: number,
-  avgLength: number,
-  termIdf: number,
-): number {
+function bm25Term(termFreq: number, docLength: number, avgLength: number, termIdf: number): number {
   if (termFreq === 0 || avgLength === 0) {
     return 0;
   }
@@ -204,7 +199,12 @@ function scoreSecondaryDocs(
       if (termFreq === 0) {
         continue;
       }
-      score += bm25Term(termFreq, tokens.length, avgLength, idf(docFreq.get(term) ?? 0, docs.length));
+      score += bm25Term(
+        termFreq,
+        tokens.length,
+        avgLength,
+        idf(docFreq.get(term) ?? 0, docs.length),
+      );
       matched.push(term);
     }
     return { score, matched };

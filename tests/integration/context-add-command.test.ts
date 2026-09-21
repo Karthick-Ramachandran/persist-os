@@ -68,13 +68,7 @@ describe("persist context add", () => {
   it("refuses to overwrite an existing card", async () => {
     const rootDir = await initializedRepo("context-add-exists");
 
-    await runCommand(rootDir, [
-      "context",
-      "add",
-      "billing",
-      "--purpose",
-      "Charges.",
-    ]);
+    await runCommand(rootDir, ["context", "add", "billing", "--purpose", "Charges."]);
     const cardPath = path.join(rootDir, "docs/context/billing.md");
     await writeFile(cardPath, `${await readFile(cardPath, "utf8")}\n- hand edit\n`, "utf8");
 
@@ -153,13 +147,7 @@ describe("persist context add", () => {
   it("refuses a card with no purpose", async () => {
     const rootDir = await initializedRepo("context-add-no-purpose");
 
-    const result = await runCommand(rootDir, [
-      "context",
-      "add",
-      "billing",
-      "--purpose",
-      "   ",
-    ]);
+    const result = await runCommand(rootDir, ["context", "add", "billing", "--purpose", "   "]);
 
     expect(result.exitCode).not.toBe(0);
   });

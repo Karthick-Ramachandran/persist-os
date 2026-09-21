@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Commands — Persist OS docs</title>
-    <meta name="description" content="Reference for every persist command: init, adopt, feature create, adr create, adr accept, adr supersede, module create, doctor, test-gate, mcp add, skill create, skill list." />
+    <meta name="description" content="Reference for every persist command: init, adopt, feature create, adr create, adr accept, adr supersede, module create, doctor, test-gate, mcp add, skill create, skill list, context, context add." />
     <link rel="canonical" href="https://persist-os.pages.dev/docs/commands" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#fafafa" />
@@ -96,6 +96,8 @@
                 <tr><td class="cmd-cell"><a href="#skill-create"><code>persist skill create &lt;name&gt;</code></a></td><td class="desc">Generate an agent skill for Claude Code and the portable Agent Skills target.</td></tr>
                 <tr><td class="cmd-cell"><a href="#skill-list"><code>persist skill list</code></a></td><td class="desc">List built-in catalog skills.</td></tr>
                 <tr><td class="cmd-cell"><a href="#fence-add"><code>persist fence add</code></a></td><td class="desc">Record the human-confirmed reason a path is shaped the way it is.</td></tr>
+                <tr><td class="cmd-cell"><a href="#context"><code>persist context</code></a></td><td class="desc">Find the area memory a task needs: cards first, decisions second.</td></tr>
+                <tr><td class="cmd-cell"><a href="#context-add"><code>persist context add</code></a></td><td class="desc">Scaffold a context card for an area of the codebase.</td></tr>
                 <tr><td class="cmd-cell"><a href="#hooks-sync"><code>persist hooks sync</code></a></td><td class="desc">Regenerate the generated hooks from the config. Never touches docs or config.</td></tr>
               </tbody>
             </table>
@@ -383,6 +385,48 @@ Created:
             <a href="doctor.html#fence">Doctor</a>.
           </p>
 
+          <h2 id="context">persist context</h2>
+          <pre><code>persist context "&lt;task&gt;" [--json] [--limit &lt;n&gt;]</code></pre>
+          <p>
+            Looks up the area memory a task needs. Context cards
+            (<code>docs/context/</code>) are scored first with deterministic BM25 over their
+            Answers, Also Known As, Purpose, title, Rules, Pitfalls, and Start Here fields —
+            no embeddings, no model calls, no network. The answer is pointers, never whole
+            files, and every match names the terms it matched on. When no card covers the task,
+            the closest recorded decisions and fences are listed instead, marked as such.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist context "simplify the billing write"</span>
+Start here for "simplify the billing write":
+
+Billing (docs/context/billing.md) — matched: simplify, bill, write
+  src/billing.js — writeOrder: the four-collection write and its reason
+  Rules: Fence `src/billing.js` — four collections land in one transaction, and why
+  Pitfall: LESSONS: simplifying the write splits the ledger from the audit trail</code></pre>
+          <p>
+            The habit around it: run the lookup before starting, read only what it points at,
+            and when the work is done add the task to the area card's Answers list, phrased the
+            way it was asked. A prompt hook (<code>persist context --hook</code>) injects the
+            pointers per prompt in Claude Code and Codex.
+          </p>
+
+          <h2 id="context-add">persist context add</h2>
+          <pre><code>persist context add &lt;name&gt; --purpose "&lt;one line&gt;" [--dry-run]</code></pre>
+          <p>
+            Scaffolds a context card with the exact shape the lookup parses and empty sections
+            for the agent to fill by hand. It refuses to overwrite an existing card, and refuses
+            to run outside an initialised repository, because a card recorded there is never
+            loaded.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist context add billing --purpose How billing writes land.</span>
+Persist OS context add complete.
+Card: docs/context/billing.md
+Created:
+- docs/context/billing.md
+
+Next steps:
+- Fill the sections in docs/context/billing.md: Start Here paths, Rules pointers, and above all the Answers list with the task you were just given, phrased the way it was asked.
+- Run persist context "&lt;task&gt;" to check the card is found before calling the work done.</code></pre>
+
           <h2 id="hooks-sync">persist hooks sync</h2>
           <pre><code>persist hooks sync [--dry-run]</code></pre>
           <p>
@@ -436,7 +480,8 @@ Persist OS skill catalog
 - security-review: Security Review
 - conventions-adherence: Conventions Adherence
 - chestertons-fence: Chesterton's Fence
-- adr-compliance: ADR Compliance</code></pre>
+- adr-compliance: ADR Compliance
+- context: Context Lookup</code></pre>
           <p>
             Skills from earlier releases that are no longer in the catalog are not deleted on
             upgrade; <code>persist doctor</code> names each of the nine skills retired in 1.0 and

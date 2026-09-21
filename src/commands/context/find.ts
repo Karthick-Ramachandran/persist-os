@@ -1,11 +1,7 @@
 import { getStyle } from "../../cli/style.js";
 import { ConfigValidationError } from "../../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../../core/config/load-config.js";
-import {
-  searchContext,
-  type ScoredCard,
-  type ScoredSecondary,
-} from "../../core/context/search.js";
+import { searchContext, type ScoredCard, type ScoredSecondary } from "../../core/context/search.js";
 
 export type FindContextOptions = {
   rootDir: string;
@@ -137,9 +133,7 @@ function formatCards(result: FindContextResult): string {
   const style = getStyle();
   const lines = [`Start here for "${result.task}":`, ""];
   for (const card of result.cards) {
-    lines.push(
-      `${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}`,
-    );
+    lines.push(`${style.accent(card.title)} (${card.file}) — matched: ${card.matched.join(", ")}`);
     for (const entry of card.startHere) {
       lines.push(entry.note === "" ? `  ${entry.path}` : `  ${entry.path} — ${entry.note}`);
     }

@@ -374,7 +374,9 @@ export function createCliProgram(
           limit: options.limit === undefined ? undefined : Number.parseInt(options.limit, 10),
         });
 
-        stdout.write(options.json === true ? formatFindContextJson(result) : formatFindContextResult(result));
+        stdout.write(
+          options.json === true ? formatFindContextJson(result) : formatFindContextResult(result),
+        );
       },
     );
 
@@ -384,18 +386,16 @@ export function createCliProgram(
     .argument("<name>", 'Area name, e.g. "splitting and rounding".')
     .requiredOption("--purpose <purpose>", "One line: what the area is for.")
     .option("--dry-run", "Show planned writes without writing files.")
-    .action(
-      async (name: string, options: { purpose: string; dryRun?: boolean }) => {
-        const result = await addContext({
-          rootDir: cwd,
-          name,
-          purpose: options.purpose,
-          dryRun: options.dryRun,
-        });
+    .action(async (name: string, options: { purpose: string; dryRun?: boolean }) => {
+      const result = await addContext({
+        rootDir: cwd,
+        name,
+        purpose: options.purpose,
+        dryRun: options.dryRun,
+      });
 
-        stdout.write(formatAddContextResult(result));
-      },
-    );
+      stdout.write(formatAddContextResult(result));
+    });
 
   const hooksCommand = program
     .command("hooks")

@@ -11,24 +11,30 @@ NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
 - governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
+- context-cards: no context cards exist, so there is nothing to check for dead paths or staleness
 
 Result: PASSED
-[main (root-commit) ac9d9f8] Add repository memory
- 28 files changed, 901 insertions(+)
+[main (root-commit) 8c93abe] Add repository memory
+ 33 files changed, 1040 insertions(+)
  create mode 100644 .agents/skills/adr-compliance/SKILL.md
  create mode 100644 .agents/skills/chestertons-fence/SKILL.md
+ create mode 100644 .agents/skills/context/SKILL.md
  create mode 100644 .agents/skills/conventions-adherence/SKILL.md
  create mode 100644 .agents/skills/plan-feature/SKILL.md
  create mode 100644 .agents/skills/security-review/SKILL.md
  create mode 100755 .agents/skills/security-review/scripts/scan-secrets.sh
+ create mode 100755 .claude/hooks/context-prompt.sh
  create mode 100755 .claude/hooks/session-start.sh
  create mode 100644 .claude/settings.json
  create mode 100644 .claude/skills/adr-compliance/SKILL.md
  create mode 100644 .claude/skills/chestertons-fence/SKILL.md
+ create mode 100644 .claude/skills/context/SKILL.md
  create mode 100644 .claude/skills/conventions-adherence/SKILL.md
  create mode 100644 .claude/skills/plan-feature/SKILL.md
  create mode 100644 .claude/skills/security-review/SKILL.md
  create mode 100755 .claude/skills/security-review/scripts/scan-secrets.sh
+ create mode 100644 .codex/hooks.json
+ create mode 100755 .codex/hooks/context-prompt.sh
  create mode 100644 .cursor/rules/persist-memory.mdc
  create mode 100644 .github/workflows/persist.yml
  create mode 100644 .persist/config.json
