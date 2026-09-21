@@ -18,6 +18,7 @@ INFO
 NOT EVALUATED
 - hook-drift: no generated file at .persist/hooks/pre-push, so drift cannot be measured — run `persist hooks sync` to generate it
 - fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: WARNINGS
 [exit 1]

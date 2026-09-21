@@ -4,7 +4,7 @@ persist repository memory for AI-assisted software work
 Persist OS init complete.
 Test gate: npm run test:run (saved as testCommand in .persist/config.json).
 Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json).
-Generated repository memory, 4 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
+Generated repository memory, 5 agent skills (.claude/skills/ and .agents/skills/), pre-commit and pre-push hooks, a CI workflow, a Claude SessionStart hook, and a Cursor rule that load memory automatically.
 Created:
 - .persist/config.json
 - AGENTS.md
@@ -33,6 +33,8 @@ Created:
 - .agents/skills/conventions-adherence/SKILL.md
 - .claude/skills/chestertons-fence/SKILL.md
 - .agents/skills/chestertons-fence/SKILL.md
+- .claude/skills/adr-compliance/SKILL.md
+- .agents/skills/adr-compliance/SKILL.md
 
 Executable files written: .persist/hooks/pre-commit, .persist/hooks/pre-push, .claude/hooks/session-start.sh, .claude/skills/security-review/scripts/scan-secrets.sh, and .agents/skills/security-review/scripts/scan-secrets.sh.
 

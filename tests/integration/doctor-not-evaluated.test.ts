@@ -99,11 +99,11 @@ describe("doctor not-evaluated reporting", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("reports fifteen not-evaluated checks when config is missing", async () => {
+  it("reports sixteen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("noteval-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(17);
+    expect(report.checks).toHaveLength(18);
     for (const check of GATED_CHECKS) {
       expect(report.checks).toContainEqual({
         id: check,
@@ -111,7 +111,7 @@ describe("doctor not-evaluated reporting", () => {
         reason: "no .persist/config.json, so configured paths are unknown",
       });
     }
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(15);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(16);
   });
 
   it("shows the NOT EVALUATED section without moving the exit code by itself", async () => {
@@ -167,13 +167,15 @@ describe("doctor not-evaluated reporting", () => {
     expect(result.stdout).toContain("NOT EVALUATED");
   });
 
-  it("evaluates all seventeen checks with no NOT EVALUATED section in full history", async () => {
+  it("evaluates all eighteen checks with no NOT EVALUATED section in full history", async () => {
     const rootDir = await createRoot("noteval-healthy");
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
     await runCommand(rootDir, ["module", "create", "billing"]);
     await runCommand(rootDir, ["adr", "create", "use-postgres"]);
     await runCommand(rootDir, ["adr", "accept", "use-postgres"]);
+    // A healthy repository's decision says which code it governs, so governing-adrs evaluates.
+    await scopeAdr(rootDir, "docs/adrs/ADR-0001-use-postgres.md", "src/db/**");
     await fillModuleDoc(rootDir, "billing");
     await fillScaffoldDocs(rootDir);
     git(rootDir, "init");
@@ -190,7 +192,7 @@ describe("doctor not-evaluated reporting", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(17);
+    expect(report.checks).toHaveLength(18);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -219,7 +221,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(17);
+    expect(parsed.checks).toHaveLength(18);
     expect(parsed.checks.find((check) => check.id === "staleness")).toMatchObject({
       status: "not-evaluated",
     });
@@ -230,3 +232,17 @@ describe("doctor not-evaluated reporting", () => {
     ).toBe(true);
   });
 });
+
+/** Replace a generated ADR's Applies To placeholder with one governed path. */
+async function scopeAdr(rootDir: string, adrPath: string, pattern: string): Promise<void> {
+  const file = path.join(rootDir, adrPath);
+  const content = await readFile(file, "utf8");
+  await writeFile(
+    file,
+    content.replace(
+      /## Applies To\n\n[\s\S]*?\n\n## /u,
+      `## Applies To\n\n- \`${pattern}\`\n\n## `,
+    ),
+    "utf8",
+  );
+}

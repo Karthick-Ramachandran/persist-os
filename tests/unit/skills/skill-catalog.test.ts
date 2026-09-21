@@ -57,12 +57,13 @@ const MUST_NOT_ACTIVATE: Record<string, string[]> = {
 };
 
 describe("skill catalog", () => {
-  it("ships exactly the four rewritten skills", () => {
+  it("ships exactly the five catalog skills", () => {
     expect(SKILL_CATALOG.map((skill) => skill.name)).toEqual([
       "plan-feature",
       "security-review",
       "conventions-adherence",
       "chestertons-fence",
+      "adr-compliance",
     ]);
   });
 

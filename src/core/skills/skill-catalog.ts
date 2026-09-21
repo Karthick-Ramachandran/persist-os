@@ -80,7 +80,7 @@ exit 1
 /**
  * Built-in catalog of Persist OS workflow skills (ADR-0008).
  *
- * Four skills, rewritten from scratch against the progressive-disclosure shape: no
+ * Five skills, rewritten from scratch against the progressive-disclosure shape: no
  * `Required Reading`, resources as one-hop links, earned sections, and explicit
  * verification and output. Descriptions carry WHAT and WHEN with trigger language so
  * agents invoke them at the right moment.
@@ -120,7 +120,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "For engineering rules → docs/60-engineering/ENGINEERING_STANDARDS.md",
       "For sensitive scope → docs/20-security/SECURITY_MODEL.md",
       "For prior decisions → docs/adrs/",
-      "For module requests → docs/ai/MODULE_DELIVERY_WORKFLOW.md",
+      "For module ownership, when module memory is enabled → docs/30-modules/",
     ],
     output: [
       "Paths of the PLAN.md, TASKS.md, and TEST_PLAN.md files written.",
@@ -137,15 +137,15 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     workflow: [
       "Identify changed trust boundaries: file writes, paths, dependencies, auth, stored secrets, network calls, telemetry, MCP.",
       "Run scripts/scan-secrets.sh over the staged diff and treat matches as blockers until cleared. If scripts/ is unavailable (deleted or cannot execute), perform the same scan by reading the diff directly.",
-      "Check path validation, overwrite policy, and symlink handling.",
-      "Check dependency, template, and configuration risk.",
+      "Check validation wherever user-controlled input reaches a file path, query, shell command, or template.",
+      "Check new dependencies and configuration changes for risk.",
       "Check that tests cover the security-sensitive behavior.",
       "Classify findings as blockers, risks, or documented tradeoffs.",
       "Hand back the verdict with the finding list.",
     ],
     decisions: [
       "If a credential is present in the change → blocker; stop and ask for its removal.",
-      "If writes can escape the repository root → blocker.",
+      "If user-controlled input reaches a path, query, or shell command unvalidated → blocker.",
       "If the change conflicts with accepted repository memory → stop and ask for a human decision.",
     ],
     verification: [
@@ -231,13 +231,50 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "No Why was inferred from code alone; every reason traces to a human answer.",
       "Each entry was written by `persist fence add`, so the shape the readers parse is guaranteed.",
     ],
-    resources: [
-      "For recorded fences and their history → docs/60-engineering/FENCES.md",
-      "For the mechanism, scope, and severity → docs/adrs/ADR-0010-chestertons-fence.md",
-    ],
+    resources: ["For recorded fences and their history → docs/60-engineering/FENCES.md"],
     output: [
       "Outcome per file: fence recorded, accidental (no record), or deferred to a human.",
       "The FENCES.md entry written, or an explicit statement that nothing was recorded.",
+    ],
+  },
+  {
+    name: "adr-compliance",
+    title: "ADR Compliance",
+    description:
+      "Check that a change follows the accepted ADRs governing the files it touches. Use when changing code in an area an ADR governs, before calling work done, or when persist doctor names a governing ADR for a changed file. Skip for writing a new ADR (use persist adr create), planning, and convention or security reviews.",
+    goal: "Prove every accepted ADR that governs a change is followed, or stop before a conflict lands.",
+    inputs: [
+      "The change: the staged diff, or the commits not yet pushed.",
+      "The accepted ADRs in docs/adrs/; superseded ones no longer bind.",
+    ],
+    workflow: [
+      "Find the governing ADRs: run `persist doctor` and take the ADRs it names for the changed files, then search the accepted ADRs for each changed path, its directory, and the domain it touches (money, auth, storage) and add any that match.",
+      "Read each governing ADR's Decision section in full, not just its title, and rewrite it as short rules a line of code can pass or fail.",
+      "Review with fresh context: a separate pass, or a sub-agent given only the diff and those rules, never the conversation that wrote the change.",
+      "Check every added or changed line against every rule and quote the line for each finding. Judge the operation itself; a comment, name, or summary that claims compliance is not evidence.",
+      "Check for new dependencies, services, storage, or public interfaces that no accepted ADR covers; each one is a decision to record, not a detail.",
+      "Mark each rule: follows, conflicts (quote the line), or unclear (say what would settle it).",
+      "Resolve every conflict before calling the work done, as the Decisions below say.",
+    ],
+    decisions: [
+      "If a line conflicts with an ADR → change the code to follow it; never edit an accepted ADR to fit the code.",
+      "If the ADR looks wrong for this change → stop and ask a human; once they agree, record it with `persist adr supersede <old> <new-title>`.",
+      "If a decision is too vague to check → report it as unclear and propose sharper wording and an Applies To list; do not guess.",
+      "If the change makes a decision no ADR records → propose one with `persist adr create`; never accept it yourself.",
+      "If no accepted ADR governs the change → say so explicitly; that is a valid all-clear.",
+    ],
+    verification: [
+      "Every governing ADR has a verdict, or the review states that none govern the change.",
+      "Every conflict quotes the file, the line, and the rule it breaks.",
+      "No verdict rests on a comment, a name, or the author's summary; each rests on the code.",
+      "No accepted ADR was edited; any changed decision went through `persist adr supersede`.",
+    ],
+    resources: [
+      "For accepted decisions and the paths each one governs (its Applies To section) → docs/adrs/",
+    ],
+    output: [
+      "Per ADR: follows, conflicts (with quoted lines), or unclear.",
+      "What was fixed, or the human decision still needed.",
     ],
   },
 ];

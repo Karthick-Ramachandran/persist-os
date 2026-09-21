@@ -25,6 +25,11 @@ What decision needs to be made, and why now?
 
 What option is proposed?
 
+## Applies To
+
+List the paths this decision governs, one per line, such as \`- src/billing/**\`. Doctor names
+this ADR when a change touches them. Leave the list empty if it governs no code.
+
 ## Alternatives Considered
 
 What other options were considered?
@@ -82,6 +87,11 @@ What changed, and why the previous decision no longer holds?
 ## Decision
 
 What is the new decision?
+
+## Applies To
+
+List the paths this decision governs, one per line, such as \`- src/billing/**\`. Doctor names
+this ADR when a change touches them. Leave the list empty if it governs no code.
 
 ## Alternatives Considered
 

@@ -168,10 +168,11 @@ INFO
 NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED
-[main (root-commit) 2751edb] Add repository memory
- 26 files changed, 776 insertions(+)
+[main (root-commit) ac9d9f8] Add repository memory
+ 28 files changed, 901 insertions(+)
 <span class="m">  …</span></code></pre>
           <p>A commit that deletes a required document is refused with an error:</p>
           <pre><code><span class="p">$</span> <span class="c">git commit -m "Remove the product file"</span>
@@ -205,12 +206,12 @@ Doctor Report
 - Conventions canonical-primitives section is still an unfilled template. (docs/60-engineering/CONVENTIONS.md)
 <span class="m">  …</span>
 Result: <span class="warn">WARNINGS</span>
-[main d7c2e09] Plan the checkout feature
+[main eaa3b2d] Plan the checkout feature
  2 files changed, 50 insertions(+)
 <span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-d7c2e09 Plan the checkout feature
-2751edb Add repository memory</code></pre>
+eaa3b2d Plan the checkout feature
+ac9d9f8 Add repository memory</code></pre>
           <p>
             Pre-push runs the test gate. With a failing suite the push is refused, and git says so
             after the gate's output:

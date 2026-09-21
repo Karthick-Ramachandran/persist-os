@@ -23,7 +23,7 @@ modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\n' '
 # Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.
 # A missing file means no fence crossed yet (FENCES.md is never required), and an empty index
 # injects nothing — silence is the correct signal in both cases.
-base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Work is done only when 'persist doctor' reports PASSED."
+base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED."
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')
 if [ -n "$full" ]; then

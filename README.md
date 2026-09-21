@@ -37,7 +37,7 @@ your-repo/
 │   │   ├── CONVENTIONS.md                 # the vocabulary agents must reuse
 │   │   └── LESSONS.md                     # what broke, and why
 │   └── adrs/                              # decisions: proposed → accepted → superseded
-├── .claude/skills/, .agents/skills/       # 4 skills, loaded on trigger
+├── .claude/skills/, .agents/skills/       # 5 skills, loaded on trigger
 ├── .persist/hooks/                        # doctor at commit, tests at push
 └── .github/workflows/persist.yml
 ```
@@ -86,6 +86,10 @@ Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
 
 Generating a decision does not accept it. Changed your mind later? `persist adr supersede` records
 the replacement and keeps the trail.
+
+Give an ADR an `## Applies To` list (`- src/billing/**`) and doctor names it, decision included,
+whenever a change touches those files. The agent checks its diff against the decision, not just the
+title.
 
 </details>
 
@@ -263,6 +267,7 @@ deterministic, local, and read-only.
 | Sharing             | Memory files git-ignored so the team never receives them             | warning      |
 | Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
 | Hooks active        | Hooks written but not switched on in this clone (skipped in CI)      | warning      |
+| Governing ADRs      | Names the accepted ADRs whose Applies To paths a change touches      | info         |
 | Retired skills      | Skills retired in a newer release still sitting on disk              | warning      |
 | Context budget      | The always-loaded agent files grown past 24KB                        | warning      |
 | Content             | Required memory left as an unedited template once real work exists   | warning      |

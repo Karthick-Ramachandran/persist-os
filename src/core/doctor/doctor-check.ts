@@ -5,6 +5,7 @@ import { checkContextBudget } from "./checks/context-budget-check.js";
 import { checkConventions } from "./checks/conventions-check.js";
 import { checkDrift } from "./checks/drift-check.js";
 import { checkFence } from "./checks/fence-check.js";
+import { checkGoverningAdrs } from "./checks/governing-adrs-check.js";
 import { checkHookDrift } from "./checks/hook-drift-check.js";
 import { checkHooksActive } from "./checks/hooks-active-check.js";
 import { checkIgnoredFiles } from "./checks/ignored-files-check.js";
@@ -85,6 +86,7 @@ const CONFIG_GATED_CHECKS = [
   "retired-skills",
   "duplicate-titles",
   "fence",
+  "governing-adrs",
 ] as const;
 
 export async function runDoctor(rootDir: string): Promise<DoctorReport> {
@@ -176,6 +178,10 @@ export async function runDoctor(rootDir: string): Promise<DoctorReport> {
   const fence = await checkFence(context);
   findings.push(...fence.findings);
   checks.push(fence.outcome);
+
+  const governingAdrs = await checkGoverningAdrs(context);
+  findings.push(...governingAdrs.findings);
+  checks.push(governingAdrs.outcome);
 
   return createDoctorReport(findings, checks);
 }

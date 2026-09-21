@@ -43,6 +43,12 @@ Activation changes:
   the command. It reports not-evaluated outside git and when the `CI` environment variable is set,
   because hooks are a per-clone setting for developer machines and a CI checkout never has them.
 
+## Applies To
+
+- `src/core/hooks/**`
+- `src/commands/init.ts`
+- `src/core/doctor/checks/hooks-active-check.ts`
+
 ## Alternatives Considered
 
 - **Keep printing the command (ADR-0002).** Rejected: the step was skipped, and the gates it guards

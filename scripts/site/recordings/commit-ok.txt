@@ -10,10 +10,12 @@ INFO
 NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- governing-adrs: no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision
 
 Result: PASSED
-[main (root-commit) 2751edb] Add repository memory
- 26 files changed, 776 insertions(+)
+[main (root-commit) ac9d9f8] Add repository memory
+ 28 files changed, 901 insertions(+)
+ create mode 100644 .agents/skills/adr-compliance/SKILL.md
  create mode 100644 .agents/skills/chestertons-fence/SKILL.md
  create mode 100644 .agents/skills/conventions-adherence/SKILL.md
  create mode 100644 .agents/skills/plan-feature/SKILL.md
@@ -21,6 +23,7 @@ Result: PASSED
  create mode 100755 .agents/skills/security-review/scripts/scan-secrets.sh
  create mode 100755 .claude/hooks/session-start.sh
  create mode 100644 .claude/settings.json
+ create mode 100644 .claude/skills/adr-compliance/SKILL.md
  create mode 100644 .claude/skills/chestertons-fence/SKILL.md
  create mode 100644 .claude/skills/conventions-adherence/SKILL.md
  create mode 100644 .claude/skills/plan-feature/SKILL.md

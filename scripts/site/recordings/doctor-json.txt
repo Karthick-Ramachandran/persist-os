@@ -124,6 +124,11 @@ $ persist doctor --json
       "id": "fence",
       "status": "not-evaluated",
       "reason": "nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made"
+    },
+    {
+      "id": "governing-adrs",
+      "status": "not-evaluated",
+      "reason": "no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision"
     }
   ]
 }

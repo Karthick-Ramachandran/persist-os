@@ -205,9 +205,11 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
 
           <h2 id="skills">Skills</h2>
           <p>
-            Four workflow skills are written to <code>.claude/skills/</code> and
+            Five workflow skills are written to <code>.claude/skills/</code> and
             <code>.agents/skills/</code>: <code>plan-feature</code>, <code>security-review</code>,
-            <code>conventions-adherence</code>, and <code>chestertons-fence</code>. Each is a
+            <code>conventions-adherence</code>, <code>chestertons-fence</code>, and
+            <code>adr-compliance</code>, which checks a change against the accepted ADRs that
+            govern the files it touches. Each is a
             short <code>SKILL.md</code> that points at the memory it needs rather than repeating
             it. <code>security-review</code> also ships
             <code>scripts/scan-secrets.sh</code>, a read-only scan for common accidentally

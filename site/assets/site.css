@@ -1382,7 +1382,8 @@ pre .copy[data-copied="true"] {
   color: var(--warn);
 }
 
-.sev-mixed {
+.sev-mixed,
+.sev-info {
   color: var(--muted);
 }
 
@@ -1394,7 +1395,8 @@ pre .copy[data-copied="true"] {
   color: var(--dark-warn);
 }
 
-.section-dark .sev-mixed {
+.section-dark .sev-mixed,
+.section-dark .sev-info {
   color: var(--dark-muted);
 }
 
