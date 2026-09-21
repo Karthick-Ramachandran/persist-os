@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
-import { lstat } from "node:fs/promises";
+import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { CONTEXT_DIR_NAME } from "../../context/context-card.js";
 import { CLAUDE_SETTINGS_PATH, SESSION_START_HOOK_PATH } from "../../hooks/generate-hook.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 import { advisoryToolFiles, requiredDocs, requiredRootFiles } from "./required-files-check.js";
@@ -41,6 +42,7 @@ export async function checkIgnoredFiles(
     ...requiredRootFiles(config.aiTools),
     ...advisoryToolFiles(config.aiTools),
     ...requiredDocs.map((doc) => path.posix.join(config.docsDir, doc)),
+    ...(await listContextCards(context.rootDir, config.docsDir)),
     path.posix.join(config.adrDir, "README.md"),
     SESSION_START_HOOK_PATH,
     CLAUDE_SETTINGS_PATH,
@@ -106,6 +108,22 @@ function splitPaths(stdout: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line !== "");
+}
+
+/** Every context card file, so a git-ignored card warns like any other memory. */
+async function listContextCards(rootDir: string, docsDir: string): Promise<string[]> {
+  const dir = path.posix.join(docsDir, CONTEXT_DIR_NAME);
+  try {
+    return (await readdir(path.join(rootDir, dir), { withFileTypes: true }))
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+      .map((entry) => path.posix.join(dir, entry.name));
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
 }
 
 async function isFile(rootDir: string, relativePath: string): Promise<boolean> {

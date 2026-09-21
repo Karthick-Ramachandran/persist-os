@@ -124,6 +124,19 @@ async function fillModuleDoc(rootDir: string, name: string): Promise<void> {
     "utf8",
   );
 }
+
+async function addHealthyCard(rootDir: string): Promise<void> {
+  // A healthy repository records its areas: scaffold a card, then fill the Answers list
+  // (the hand-edit habit). Start Here stays empty, so no path can be dead.
+  await runCommand(rootDir, ["context", "add", "billing", "--purpose", "Charges."]);
+  const cardPath = path.join(rootDir, "docs/context/billing.md");
+  const card = await readFile(cardPath, "utf8");
+  await writeFile(
+    cardPath,
+    card.replace("## Answers\n\n<!--", "## Answers\n\n- who pays the extra cent\n\n<!--"),
+    "utf8",
+  );
+}
 describe("doctor check outcomes", () => {
   const roots: string[] = [];
 
@@ -144,12 +157,12 @@ describe("doctor check outcomes", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("records sixteen not-evaluated checks when config is missing", async () => {
+  it("records seventeen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("outcomes-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(18);
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(16);
+    expect(report.checks).toHaveLength(19);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(17);
     expect(report.checks).toContainEqual({
       id: "hook-drift",
       status: "not-evaluated",
@@ -188,6 +201,7 @@ describe("doctor check outcomes", () => {
     await scopeAdr(rootDir, "docs/adrs/ADR-0001-use-postgres.md", "src/db/**");
     await fillModuleDoc(rootDir, "billing");
     await fillScaffoldDocs(rootDir);
+    await addHealthyCard(rootDir);
     // staleness needs real commit history, so a "healthy" repo is a git repo with
     // full history — otherwise it correctly reports not-evaluated.
     execFileSync("git", ["init"], { cwd: rootDir, stdio: "ignore" });
@@ -210,7 +224,7 @@ describe("doctor check outcomes", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(18);
+    expect(report.checks).toHaveLength(19);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -236,7 +250,7 @@ describe("doctor check outcomes", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(18);
+    expect(parsed.checks).toHaveLength(19);
   });
 
   it("has no guard command left", async () => {

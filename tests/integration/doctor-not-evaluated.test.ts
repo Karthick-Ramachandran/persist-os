@@ -27,6 +27,7 @@ const GATED_CHECKS = [
   "retired-skills",
   "duplicate-titles",
   "fence",
+  "context-cards",
 ];
 
 async function fillScaffoldDocs(rootDir: string): Promise<void> {
@@ -79,6 +80,19 @@ function git(rootDir: string, ...args: string[]): void {
   execFileSync("git", args, { cwd: rootDir, stdio: "ignore" });
 }
 
+async function addHealthyCard(rootDir: string): Promise<void> {
+  // A healthy repository records its areas: scaffold a card, then fill the Answers list
+  // (the hand-edit habit). Start Here stays empty, so no path can be dead.
+  await runCommand(rootDir, ["context", "add", "billing", "--purpose", "Charges."]);
+  const cardPath = path.join(rootDir, "docs/context/billing.md");
+  const card = await readFile(cardPath, "utf8");
+  await writeFile(
+    cardPath,
+    card.replace("## Answers\n\n<!--", "## Answers\n\n- who pays the extra cent\n\n<!--"),
+    "utf8",
+  );
+}
+
 describe("doctor not-evaluated reporting", () => {
   const roots: string[] = [];
 
@@ -99,11 +113,11 @@ describe("doctor not-evaluated reporting", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("reports sixteen not-evaluated checks when config is missing", async () => {
+  it("reports seventeen not-evaluated checks when config is missing", async () => {
     const rootDir = await createRoot("noteval-noconfig");
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(18);
+    expect(report.checks).toHaveLength(19);
     for (const check of GATED_CHECKS) {
       expect(report.checks).toContainEqual({
         id: check,
@@ -111,7 +125,7 @@ describe("doctor not-evaluated reporting", () => {
         reason: "no .persist/config.json, so configured paths are unknown",
       });
     }
-    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(16);
+    expect(report.checks.filter((check) => check.status === "not-evaluated")).toHaveLength(17);
   });
 
   it("shows the NOT EVALUATED section without moving the exit code by itself", async () => {
@@ -167,7 +181,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(result.stdout).toContain("NOT EVALUATED");
   });
 
-  it("evaluates all eighteen checks with no NOT EVALUATED section in full history", async () => {
+  it("evaluates all nineteen checks with no NOT EVALUATED section in full history", async () => {
     const rootDir = await createRoot("noteval-healthy");
     await runInitCommand(rootDir);
     await runCommand(rootDir, ["feature", "create", "auth-provider"]);
@@ -178,6 +192,7 @@ describe("doctor not-evaluated reporting", () => {
     await scopeAdr(rootDir, "docs/adrs/ADR-0001-use-postgres.md", "src/db/**");
     await fillModuleDoc(rootDir, "billing");
     await fillScaffoldDocs(rootDir);
+    await addHealthyCard(rootDir);
     git(rootDir, "init");
     git(rootDir, "config", "user.email", "test@example.com");
     git(rootDir, "config", "user.name", "Test");
@@ -192,7 +207,7 @@ describe("doctor not-evaluated reporting", () => {
 
     const report = await runDoctor(rootDir);
 
-    expect(report.checks).toHaveLength(18);
+    expect(report.checks).toHaveLength(19);
     expect(report.checks.every((check) => check.status === "evaluated")).toBe(true);
 
     const result = await runCommand(rootDir, ["doctor"]);
@@ -221,7 +236,7 @@ describe("doctor not-evaluated reporting", () => {
     expect(parsed.exitCode).toBe(0);
     expect(parsed.summary).toMatchObject({ errors: 0, warnings: 0 });
     expect(Array.isArray(parsed.findings)).toBe(true);
-    expect(parsed.checks).toHaveLength(18);
+    expect(parsed.checks).toHaveLength(19);
     expect(parsed.checks.find((check) => check.id === "staleness")).toMatchObject({
       status: "not-evaluated",
     });
