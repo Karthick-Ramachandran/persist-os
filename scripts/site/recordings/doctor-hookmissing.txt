@@ -16,7 +16,7 @@ INFO
 - 2 ADRs detected.
 
 NOT EVALUATED
-- hook-drift: no generated hook at .persist/hooks/pre-push, so drift cannot be measured — run `persist init` to generate hooks
+- hook-drift: no generated file at .persist/hooks/pre-push, so drift cannot be measured — run `persist init` to generate it
 
 Result: WARNINGS
 [exit 1]

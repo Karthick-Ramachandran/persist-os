@@ -95,6 +95,7 @@
                 <tr><td class="cmd-cell"><a href="#mcp-add"><code>persist mcp add &lt;server&gt;</code></a></td><td class="desc">Generate proposed, offline memory for an MCP server.</td></tr>
                 <tr><td class="cmd-cell"><a href="#skill-create"><code>persist skill create &lt;name&gt;</code></a></td><td class="desc">Generate an agent skill for Claude Code and the portable Agent Skills target.</td></tr>
                 <tr><td class="cmd-cell"><a href="#skill-list"><code>persist skill list</code></a></td><td class="desc">List built-in catalog skills.</td></tr>
+                <tr><td class="cmd-cell"><a href="#fence-add"><code>persist fence add</code></a></td><td class="desc">Record the human-confirmed reason a path is shaped the way it is.</td></tr>
               </tbody>
             </table>
           </div>
@@ -349,6 +350,26 @@ Next steps:
           <pre><code><span class="p">$</span> <span class="c">persist test-gate</span>
 Persist OS test gate skipped: the gate is off — set testCommand in .persist/config.json to a one-shot test command (e.g. "pnpm run test:run") or re-run `persist init` to detect one.</code></pre>
           <p>The generated pre-push hook runs this command. Details in <a href="hooks.html">Hooks, test gate, CI</a>.</p>
+
+          <h2 id="fence-add">persist fence add</h2>
+          <pre><code>persist fence add &lt;path&gt; --why "&lt;reason&gt;" [--by &lt;name&gt;] [--adr &lt;link&gt;] [--dry-run]</code></pre>
+          <p>
+            Records why a path is shaped the way it is, for reasoning that never rose to an ADR.
+            The reason comes from a person; the command writes it in the exact shape doctor and the
+            SessionStart hook read. It refuses a path that does not exist, and refuses to run
+            outside an initialised repository, because a fence recorded there is never loaded.
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist fence add src/billing.js --why "Writes four collections in one transaction so the ledger and the audit trail cannot diverge." --by Priya</span>
+Persist OS fence add complete.
+Fenced: src/billing.js
+Created:
+- docs/60-engineering/FENCES.md</code></pre>
+          <p>
+            Fencing a path that is already fenced keeps the standing reason and adds a dated
+            crossing. A path may carry a symbol &mdash; <code>src/billing.js:writeOrder</code>
+            &mdash; which matches changes to the file. The loop end to end is in
+            <a href="doctor.html#fence">Doctor</a>.
+          </p>
 
           <h2 id="mcp-add">persist mcp add</h2>
           <pre><code>persist mcp add &lt;server&gt; [--dry-run] [--force]</code></pre>

@@ -17,5 +17,6 @@ Commands:
   test-gate         Run the configured test command and require it to pass.
   mcp               Manage Persist OS MCP context memory.
   skill             Manage Persist OS agent skills.
+  fence             Record why code is shaped the way it is.
   help [command]    display help for command
 [exit 0]
