@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.1
+
+Three checks that looked like they worked, found while scripting a demo on a real repository.
+
+**`adopt` follows a moved memory folder.** It wrote its report to a fixed `docs/adopt/`, printed
+fixed `docs/` paths in its next steps, and always suggested running `persist init`, even in an
+initialised repository. The report now goes to `<docsDir>/adopt/`, the next steps name the real
+paths, and the init hint only appears when there is no config. Output for the default layout is
+unchanged.
+
+**The superseded check reads the memory that is always loaded.** It only scanned feature and module
+folders, which are opt-in since 1.0, so in a default repository it scanned nothing and still
+reported a pass. A superseded ADR cited in `CONVENTIONS.md`, which loads into every session, went
+unflagged. It now also scans the required docs and `FENCES.md`, and reports **not evaluated** when
+there is nothing to scan. The ADR folder is left out on purpose, because a new ADR legitimately
+links back to the one it replaces.
+
+**New check: memory that git won't share.** A `.gitignore` that excludes `CLAUDE.md` or `.claude/`
+keeps the memory on one machine while the rest of the team starts with nothing. Doctor now warns for
+every memory file that exists but is ignored. It reports **not evaluated** outside a git repository.
+
 ## 1.2.0
 
 **A relocated memory folder keeps loading into sessions.** `docsDir`, `adrDir` and `modulesDir` in

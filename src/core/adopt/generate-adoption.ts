@@ -21,7 +21,7 @@ export function generateAdoptionFiles(options: GenerateAdoptionOptions): WriteFi
   const files: WriteFileInput[] = [
     {
       path: adoptionReportPath(options.docsDir),
-      content: renderReport(options.docsDir, options.adrDir, options.signals),
+      content: renderReport(options.adrDir, options.signals),
     },
   ];
 
@@ -35,7 +35,7 @@ export function generateAdoptionFiles(options: GenerateAdoptionOptions): WriteFi
   return files;
 }
 
-function renderReport(docsDir: string, adrDir: string, signals: RepoSignals): string {
+function renderReport(adrDir: string, signals: RepoSignals): string {
   return `# Adoption Report
 
 ## Status
