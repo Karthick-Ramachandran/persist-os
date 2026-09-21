@@ -151,4 +151,16 @@ rec adopt persist adopt
 recsh adopt-report "sed -n '1,40p' docs/adopt/ADOPTION_REPORT.md"
 recsh adopt-proposed "ls docs/adrs/proposed"
 
+# --- The Chesterton fence loop: a crossing, the recorded reason, and the reason coming back ---
+mkdir -p "$WORK/fence" && cd "$WORK/fence" && gitsetup
+persist init --yes > /dev/null 2>&1
+mkdir -p src && printf 'export function writeOrder(order) {\n  // ledger and audit trail in one transaction\n}\n' > src/billing.js
+git add -A > /dev/null && git commit -qm "Add billing" > /dev/null
+printf 'export function writeOrder(order) {\n  // simplified\n}\n' > src/billing.js
+git add src/billing.js
+rec fence-crossing persist doctor
+rec fence-add persist fence add src/billing.js --why "Writes four collections in one transaction so the ledger and the audit trail cannot diverge." --by "Priya"
+rec fence-answered persist doctor
+recsh fence-file "cat docs/60-engineering/FENCES.md"
+
 echo "recorded $(ls "$OUT" | wc -l | tr -d ' ') blocks into $OUT (work dir: $WORK)"

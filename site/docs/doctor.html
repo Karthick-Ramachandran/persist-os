@@ -142,12 +142,12 @@ INFO
 - 0 ADRs detected.
 
 Result: <span class="warn">WARNINGS</span>
-[main 37dc89f] Plan the checkout feature
+[main d7c2e09] Plan the checkout feature
  2 files changed, 50 insertions(+)
 <span class="ok">[exit 0]</span>
 <span class="p">$</span> <span class="c">git log --oneline</span>
-37dc89f Plan the checkout feature
-922b092 Add repository memory</code></pre>
+d7c2e09 Plan the checkout feature
+2751edb Add repository memory</code></pre>
 
           <h2 id="checks">Every check</h2>
           <p>
@@ -242,6 +242,46 @@ Result: <span class="warn">WARNINGS</span>
               </tbody>
             </table>
           </div>
+
+          <h2 id="fence">The fence loop</h2>
+          <p>
+            A staged change to source with no recorded reason and no ADR reference is a fence
+            crossing. Doctor asks why the logic is shaped the way it is, and warns rather than
+            blocks. Trimmed to the finding:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+<span class="warn">WARNING</span>
+- Change crosses the Chesterton fence with no record: no entry in docs/60-engineering/FENCES.md and no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence skill walks through it) and record the human-confirmed reason. (src/billing.js)
+…
+Result: <span class="warn">WARNINGS</span></code></pre>
+          <p>
+            The answer comes from a person, because the constraint lives in someone&rsquo;s memory
+            rather than in the code. <code>persist fence add</code> writes it in the exact shape
+            doctor and the SessionStart hook read, and refuses a path that does not exist:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist fence add src/billing.js --why "Writes four collections in one transaction so the ledger and the audit trail cannot diverge." --by Priya</span>
+Persist OS fence add complete.
+Fenced: src/billing.js
+Created:
+- docs/60-engineering/FENCES.md</code></pre>
+          <p>
+            From then on, a change to that path hands the reason back instead of asking again:
+          </p>
+          <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
+Doctor Report
+
+INFO
+…
+- Change touches a recorded fence: Writes four collections in one transaction so the ledger and the audit trail cannot diverge. (see docs/60-engineering/FENCES.md). Confirm the reason still holds before changing the logic. (src/billing.js)
+…
+Result: <span class="ok">PASSED</span></code></pre>
+          <p>
+            The file starts empty and grows only through <code>fence add</code>; nothing generates
+            it. Rename or delete a fenced file and doctor names the entry that now points at
+            nothing.
+          </p>
 
           <h2 id="not-evaluated">Not evaluated is not a pass</h2>
           <p>

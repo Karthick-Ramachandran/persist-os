@@ -1,0 +1,10 @@
+$ persist fence add src/billing.js --why Writes four collections in one transaction so the ledger and the audit trail cannot diverge. --by Priya
+Persist OS fence add complete.
+Fenced: src/billing.js
+Created:
+- docs/60-engineering/FENCES.md
+
+Next steps:
+- The reason is in docs/60-engineering/FENCES.md and loads into every session from now on.
+- A change to this path no longer raises a fence warning; doctor surfaces the reason instead.
+[exit 0]
