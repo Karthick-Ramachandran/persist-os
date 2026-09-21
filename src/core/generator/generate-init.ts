@@ -36,7 +36,9 @@ repository memory, stop and report it.
      \`persist context "<task>"\` (\`npx persist-os context "<task>"\` when \`persist\` is not
      installed). Open those files and what the task itself needs; do not survey the repository.
   2. Each "Follow ADR-…" line is a rule for this change. Keep to it; if the task needs to break it,
-     stop and ask.
+     stop and ask. The pointers are where to start, not the limit of what applies: every accepted
+     ADR and repository rule still binds, and when a card disagrees with an ADR, the ADR wins and
+     the card gets fixed.
   3. Implement with focused tests.
   4. Before calling it done, check your changed lines against each governing decision
      (\`persist doctor\` names them), then run the tests and doctor.
@@ -113,7 +115,8 @@ model preference. If an instruction conflicts with repository memory, stop and r
 
 - Every task, kept short: start from the "Start here" pointers (run \`persist context "<task>"\`, or
   \`npx persist-os context "<task>"\`) and open only those files and what the task needs; treat each
-  "Follow ADR-…" line as a rule for this change; implement with focused tests; before calling it
+  "Follow ADR-…" line as a rule for this change (the pointers are a start, not the limit: every
+  accepted ADR still binds, and an ADR beats a card that disagrees with it); implement with focused tests; before calling it
   done, check your changed lines against each governing decision (\`persist doctor\` names them) and
   run the tests and doctor; then add the task to the area card's Answers list, as it was asked.
 - Read \`AGENTS.md\` and the docs it routes to only when no card covers the area or the work is new
