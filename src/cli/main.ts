@@ -28,6 +28,7 @@ import {
   SkillCreateError,
 } from "../commands/skill/create.js";
 import { addFence, formatFenceAddResult } from "../commands/fence/add.js";
+import { addContext, ContextAddError, formatAddContextResult } from "../commands/context/add.js";
 import { formatSyncHooksResult, HooksSyncError, syncHooks } from "../commands/hooks/sync.js";
 import { formatSkillListResult } from "../commands/skill/list.js";
 
@@ -328,6 +329,29 @@ export function createCliProgram(
       },
     );
 
+  const contextCommand = program
+    .command("context")
+    .description("Record and find area memory (context cards).");
+
+  contextCommand
+    .command("add")
+    .description("Scaffold a context card for an area of the codebase.")
+    .argument("<name>", 'Area name, e.g. "splitting and rounding".')
+    .requiredOption("--purpose <purpose>", "One line: what the area is for.")
+    .option("--dry-run", "Show planned writes without writing files.")
+    .action(
+      async (name: string, options: { purpose: string; dryRun?: boolean }) => {
+        const result = await addContext({
+          rootDir: cwd,
+          name,
+          purpose: options.purpose,
+          dryRun: options.dryRun,
+        });
+
+        stdout.write(formatAddContextResult(result));
+      },
+    );
+
   const hooksCommand = program
     .command("hooks")
     .description("Manage the generated git and Claude hooks.");
@@ -424,6 +448,14 @@ export async function main(
     }
 
     if (error instanceof McpAddError) {
+      stderr.write(`${error.message}\n`);
+      for (const detail of error.details) {
+        stderr.write(`- ${detail}\n`);
+      }
+      return 1;
+    }
+
+    if (error instanceof ContextAddError) {
       stderr.write(`${error.message}\n`);
       for (const detail of error.details) {
         stderr.write(`- ${detail}\n`);
