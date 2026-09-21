@@ -18,5 +18,6 @@ Commands:
   mcp               Manage Persist OS MCP context memory.
   skill             Manage Persist OS agent skills.
   fence             Record why code is shaped the way it is.
+  hooks             Manage the generated git and Claude hooks.
   help [command]    display help for command
 [exit 0]

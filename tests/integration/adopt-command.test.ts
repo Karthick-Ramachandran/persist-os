@@ -53,6 +53,37 @@ describe("adopt command", () => {
     expect(adr).toContain("## Status\n\nProposed");
   });
 
+  it("follows a moved memory folder instead of hardcoded docs/ paths", async () => {
+    // With docsDir/adrDir moved, adopt wrote the report to docs/adopt/, printed docs/ paths
+    // in its next steps, and told an initialized repo to run init. Everything follows config.
+    const rootDir = await createRoot("adopt-moved-memory");
+    await writeRepo(rootDir);
+    await mkdir(path.join(rootDir, ".persist"), { recursive: true });
+    await writeFile(
+      path.join(rootDir, ".persist/config.json"),
+      JSON.stringify({
+        version: "1.1.1",
+        templateVersion: "1.1.1",
+        aiTools: ["claude"],
+        docsDir: "memory",
+        featuresDir: "docs/40-features",
+        modulesDir: "docs/30-modules",
+        adrDir: "memory/decisions",
+      }),
+      "utf8",
+    );
+
+    const result = await runCommand(rootDir, ["adopt"]);
+
+    expect(result.exitCode).toBe(0);
+    const report = await readFile(path.join(rootDir, "memory/adopt/ADOPTION_REPORT.md"), "utf8");
+    expect(report).toContain("memory/decisions/proposed/ADR-PROPOSED-adopt-nextjs.md");
+    expect(await listRelativeFiles(rootDir)).not.toContain("docs/adopt/ADOPTION_REPORT.md");
+    expect(result.stdout).toContain("Review memory/adopt/ADOPTION_REPORT.md");
+    expect(result.stdout).toContain("memory/decisions/proposed/");
+    expect(result.stdout).not.toContain("persist init");
+  });
+
   it("writes nothing on dry run", async () => {
     const rootDir = await createRoot("adopt-dry-run");
     await writeRepo(rootDir);

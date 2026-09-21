@@ -8,6 +8,7 @@ import {
 describe("generateAdoptionFiles", () => {
   it("writes a proposed adoption report listing detected signals", () => {
     const files = generateAdoptionFiles({
+      docsDir: "docs",
       adrDir: "docs/adrs",
       signals: {
         languages: ["TypeScript"],
@@ -34,6 +35,7 @@ describe("generateAdoptionFiles", () => {
 
   it("emits a proposed ADR per framework, never accepted", () => {
     const files = generateAdoptionFiles({
+      docsDir: "docs",
       adrDir: "docs/adrs",
       signals: {
         languages: ["Python"],
@@ -55,8 +57,9 @@ describe("generateAdoptionFiles", () => {
     expect(adr!.content).not.toContain("Accepted");
   });
 
-  it("references the configured adrDir in the report, not a hardcoded path", () => {
+  it("follows the configured docsDir and adrDir, not hardcoded paths", () => {
     const files = generateAdoptionFiles({
+      docsDir: "memory",
       adrDir: "docs/decisions",
       signals: {
         languages: ["TypeScript"],
@@ -70,13 +73,20 @@ describe("generateAdoptionFiles", () => {
       },
     });
 
-    const report = files.find((file) => file.path === ADOPTION_REPORT_PATH);
+    const report = files.find((file) => file.path === "memory/adopt/ADOPTION_REPORT.md");
+    expect(report).toBeDefined();
     expect(report!.content).toContain("docs/decisions/proposed/ADR-PROPOSED-adopt-nextjs.md");
     expect(report!.content).not.toContain("docs/adrs/proposed");
+    const adr = files.find(
+      (file) => file.path === "docs/decisions/proposed/ADR-PROPOSED-adopt-nextjs.md",
+    );
+    expect(adr!.content).toContain("memory/10-architecture/ARCHITECTURE.md");
+    expect(adr!.content).not.toContain("docs/10-architecture/ARCHITECTURE.md");
   });
 
   it("produces only the report when no frameworks are detected", () => {
     const files = generateAdoptionFiles({
+      docsDir: "docs",
       adrDir: "docs/adrs",
       signals: {
         languages: [],

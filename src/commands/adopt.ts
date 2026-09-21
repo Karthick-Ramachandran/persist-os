@@ -1,7 +1,7 @@
 import { createDefaultConfig } from "../core/config/default-config.js";
 import { ConfigValidationError } from "../core/config/config-schema.js";
 import { loadConfig, ConfigLoadError } from "../core/config/load-config.js";
-import { generateAdoptionFiles } from "../core/adopt/generate-adoption.js";
+import { adoptionReportPath, generateAdoptionFiles } from "../core/adopt/generate-adoption.js";
 import { inspectRepo, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { createWritePlan, type WritePlan } from "../core/filesystem/write-plan.js";
 import { executeWritePlan, type WriteResult } from "../core/filesystem/write-file-safe.js";
@@ -16,6 +16,12 @@ export type AdoptOptions = {
 
 export type AdoptResult = {
   signals: RepoSignals;
+  /** Where the report actually went: under the configured docs dir, not hardcoded docs/. */
+  reportPath: string;
+  /** Configured ADR dir, so next steps point at the real proposed/ folder. */
+  adrDir: string;
+  /** Whether a config file was found — init has run, so "run init" advice would be stale. */
+  initialized: boolean;
   dryRun: boolean;
   plan: WritePlan;
   writeResult: WriteResult;
@@ -36,9 +42,13 @@ export class AdoptError extends Error {
 }
 
 export async function adoptProject(options: AdoptOptions): Promise<AdoptResult> {
-  const config = await loadConfigOrDefault(options.rootDir);
+  const { config, initialized } = await loadConfigOrDefault(options.rootDir);
   const signals = await inspectRepo(options.rootDir);
-  const files = generateAdoptionFiles({ adrDir: config.adrDir, signals });
+  const files = generateAdoptionFiles({
+    docsDir: config.docsDir,
+    adrDir: config.adrDir,
+    signals,
+  });
   const plan = createWritePlan({
     rootDir: options.rootDir,
     files,
@@ -59,6 +69,9 @@ export async function adoptProject(options: AdoptOptions): Promise<AdoptResult> 
 
   return {
     signals,
+    reportPath: adoptionReportPath(config.docsDir),
+    adrDir: config.adrDir,
+    initialized,
     dryRun: options.dryRun ?? false,
     plan,
     writeResult,
@@ -82,11 +95,18 @@ export function formatAdoptResult(result: AdoptResult): string {
   });
 
   if (!result.dryRun) {
-    appendNextSteps(lines, [
-      "Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.",
-      "Run `persist init` to establish neutral repository memory if it does not exist yet.",
-      "Accept or reject each proposed ADR under docs/adrs/proposed/.",
-    ]);
+    const nextSteps = [
+      `Review ${result.reportPath} — everything in it is proposed.`,
+      `Accept or reject each proposed ADR under ${result.adrDir}/proposed/.`,
+    ];
+    if (!result.initialized) {
+      nextSteps.splice(
+        1,
+        0,
+        "Run `persist init` to establish neutral repository memory if it does not exist yet.",
+      );
+    }
+    appendNextSteps(lines, nextSteps);
   }
 
   return `${lines.join("\n")}\n`;
@@ -94,10 +114,10 @@ export function formatAdoptResult(result: AdoptResult): string {
 
 async function loadConfigOrDefault(rootDir: string) {
   try {
-    return await loadConfig(rootDir);
+    return { config: await loadConfig(rootDir), initialized: true };
   } catch (error) {
     if (error instanceof ConfigLoadError || error instanceof ConfigValidationError) {
-      return createDefaultConfig();
+      return { config: createDefaultConfig(), initialized: false };
     }
 
     throw error;

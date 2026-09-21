@@ -1,40 +1,79 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
-import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
+import { FENCES_FILE } from "../../fence/generate-fence.js";
+import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
+import { requiredDocs } from "./required-files-check.js";
 
 const adrFilePattern = /^ADR-(\d{4,})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/iu;
 const adrReferencePattern = /ADR-\d{4,}/giu;
+
+export type SupersededCheckResult = {
+  findings: DoctorFinding[];
+  outcome: DoctorCheckOutcome;
+};
 
 /**
  * Deterministic, local, read-only superseded-reference check.
  *
  * When a decision changes, `persist adr supersede` marks the old ADR "Accepted — superseded by …" and
- * records a new accepted ADR. This check flags feature or module memory that still cites the
+ * records a new accepted ADR. This check flags current-state memory that still cites the
  * superseded ADR as authority, so the reasoning trail gets updated instead of silently going stale.
  * It only fires when a superseded ADR exists and is still referenced — a repository with none stays
  * green. Semantic agreement between docs is left to the agent; this only follows the explicit
  * supersede trail.
+ *
+ * Scanned: the required default docs, FENCES.md, and in-progress feature and module memory —
+ * the current-state set the code-reference check reads. Not scanned: the ADR directory itself
+ * (the new ADR legitimately links back to the one it supersedes, and the old one's status
+ * section names its replacement — flagging either would punish the trail), the ADR index
+ * (a catalog, not authority), and the agent entry files (routing, not reasoning).
  */
-export async function checkSuperseded(context: DoctorCheckContext): Promise<DoctorFinding[]> {
+export async function checkSuperseded(context: DoctorCheckContext): Promise<SupersededCheckResult> {
   if (context.config === undefined) {
-    return [];
+    return notEvaluated("no validated Persist OS config, so the memory to scan is unknown");
   }
 
   const supersededIds = await loadSupersededAdrIds(context.rootDir, context.config.adrDir);
-  if (supersededIds.size === 0) {
-    return [];
+
+  // Bound after the guard: narrowing does not reach into the closures below.
+  const config = context.config;
+  const findings: DoctorFinding[] = [];
+  let scanned = 0;
+
+  for (const referenceDir of [config.featuresDir, config.modulesDir]) {
+    const result = await checkReferences(context.rootDir, referenceDir, supersededIds);
+    findings.push(...result.findings);
+    scanned += result.scanned;
   }
 
-  const findings: DoctorFinding[] = [];
-  findings.push(
-    ...(await checkReferences(context.rootDir, context.config.featuresDir, supersededIds)),
-  );
-  findings.push(
-    ...(await checkReferences(context.rootDir, context.config.modulesDir, supersededIds)),
-  );
+  const defaultFiles = [
+    ...requiredDocs.map((doc) => path.posix.join(config.docsDir, doc)),
+    path.posix.join(config.docsDir, FENCES_FILE),
+  ];
+  for (const file of defaultFiles) {
+    const content = await readFileIfExists(context.rootDir, file);
+    if (content === undefined) {
+      continue;
+    }
+    scanned += 1;
+    for (const id of findSupersededReferences(content, supersededIds)) {
+      findings.push({
+        severity: "warning",
+        check: "superseded-reference",
+        message: `Repository memory references ${id}, which has been superseded — update it to the current decision.`,
+        path: file,
+      });
+    }
+  }
 
-  return findings;
+  if (scanned === 0) {
+    return notEvaluated(
+      "no feature, module, or default memory files exist, so there is nothing to scan for superseded references",
+    );
+  }
+
+  return { findings, outcome: { id: "superseded", status: "evaluated" } };
 }
 
 async function loadSupersededAdrIds(rootDir: string, adrDir: string): Promise<Set<string>> {
@@ -78,8 +117,9 @@ async function checkReferences(
   rootDir: string,
   referenceDir: string,
   supersededIds: Set<string>,
-): Promise<DoctorFinding[]> {
+): Promise<{ findings: DoctorFinding[]; scanned: number }> {
   const findings: DoctorFinding[] = [];
+  let scanned = 0;
   const files = await readMarkdownFiles(rootDir, referenceDir);
   const completed = new Map<string, boolean>();
 
@@ -97,26 +137,28 @@ async function checkReferences(
     }
 
     const content = await readFile(path.join(rootDir, file), "utf8");
-    const referenced = new Set<string>();
+    scanned += 1;
 
-    // Ignore ADR identifiers inside fenced code blocks and inline code (illustrative examples).
-    for (const match of stripCode(content).matchAll(adrReferencePattern)) {
-      referenced.add(match[0].toUpperCase());
-    }
-
-    for (const id of referenced) {
-      if (supersededIds.has(id)) {
-        findings.push({
-          severity: "warning",
-          check: "superseded-reference",
-          message: `Repository memory references ${id}, which has been superseded — update it to the current decision.`,
-          path: file,
-        });
-      }
+    for (const id of findSupersededReferences(content, supersededIds)) {
+      findings.push({
+        severity: "warning",
+        check: "superseded-reference",
+        message: `Repository memory references ${id}, which has been superseded — update it to the current decision.`,
+        path: file,
+      });
     }
   }
 
-  return findings;
+  return { findings, scanned };
+}
+
+/** ADR identifiers outside fenced code blocks and inline code (illustrative examples). */
+function findSupersededReferences(content: string, supersededIds: Set<string>): string[] {
+  const referenced = new Set<string>();
+  for (const match of stripCode(content).matchAll(adrReferencePattern)) {
+    referenced.add(match[0].toUpperCase());
+  }
+  return [...referenced].filter((id) => supersededIds.has(id));
 }
 
 function statusContains(content: string, pattern: RegExp): boolean {
@@ -142,6 +184,28 @@ function stripCode(content: string): string {
     .replace(/```[\s\S]*?```/gu, " ")
     .replace(/~~~[\s\S]*?~~~/gu, " ")
     .replace(/`[^`]*`/gu, " ");
+}
+
+function notEvaluated(reason: string): SupersededCheckResult {
+  return {
+    findings: [],
+    outcome: { id: "superseded", status: "not-evaluated", reason },
+  };
+}
+
+async function readFileIfExists(
+  rootDir: string,
+  relativePath: string,
+): Promise<string | undefined> {
+  try {
+    return await readFile(path.join(rootDir, relativePath), "utf8");
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === "ENOENT") {
+      return undefined;
+    }
+    throw error;
+  }
 }
 
 async function readMarkdownFiles(rootDir: string, relativeDir: string): Promise<string[]> {
