@@ -71,16 +71,11 @@ repository memory, stop and report it.
 `,
   },
   {
+    // Only the import. Claude loads this file every session, so anything else here is paid for
+    // every time: AGENTS.md already carries the rules, and the SessionStart hook the memory map.
+    // It is only written when no CLAUDE.md exists, so the import is always present when it is.
     path: "CLAUDE.md",
-    content: `# {{repositoryName}} Claude Instructions
-
-This file is loaded automatically every Claude session. The durable project memory lives in \`docs/\`;
-do not rely on chat history as source of truth, and repository rules override model preference.
-
-@AGENTS.md
-
-Read the docs that \`AGENTS.md\` routes to before changing code or repository memory. A SessionStart
-hook (\`.claude/hooks/session-start.sh\`) also injects a memory map at the start of each session.
+    content: `@AGENTS.md
 `,
   },
   {

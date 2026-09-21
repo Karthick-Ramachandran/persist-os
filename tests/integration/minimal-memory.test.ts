@@ -70,6 +70,25 @@ describe("minimal-by-default memory", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
+  it("writes CLAUDE.md as the AGENTS.md import and nothing else", async () => {
+    // Claude loads CLAUDE.md every session, so every line in it is paid for every time. The
+    // rules live in AGENTS.md and the memory map in the SessionStart hook; prose here only
+    // repeated them, and hardcoded docs/ paths that went wrong when the memory moved.
+    const rootDir = await createRoot("minimal-claude-md");
+    await runInitCommand(rootDir);
+
+    const claude = await readFile(path.join(rootDir, "CLAUDE.md"), "utf8");
+    expect(claude).toBe("@AGENTS.md\n");
+  });
+
+  it("never replaces a CLAUDE.md the repository already has", async () => {
+    const rootDir = await createRoot("minimal-claude-md-existing");
+    await writeFile(path.join(rootDir, "CLAUDE.md"), "# Our own rules\n", "utf8");
+    await runInitCommand(rootDir);
+
+    expect(await readFile(path.join(rootDir, "CLAUDE.md"), "utf8")).toBe("# Our own rules\n");
+  });
+
   it("evaluates the re-pointed checks on a minimal repo", async () => {
     const rootDir = await createRoot("minimal-doctor");
     await runInitCommand(rootDir);

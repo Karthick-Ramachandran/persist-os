@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2
+
+**The generated `CLAUDE.md` is one line: `@AGENTS.md`.** Claude loads `CLAUDE.md` in every session,
+so everything in it is paid for every time. The old file explained itself ("this file is loaded
+automatically…"), repeated the rules `AGENTS.md` already carries, described the SessionStart hook,
+and hardcoded `docs/`, which was wrong once the memory moved. The import does the whole job.
+
+`init` still never replaces a `CLAUDE.md` that exists, so existing repositories keep theirs; replace
+it by hand if you want the lean version. The SessionStart hook's text is unchanged on purpose: in a
+repository that already had its own `CLAUDE.md`, nothing imports `AGENTS.md`, and the hook is what
+tells the agent Persist is there.
+
 ## 1.2.1
 
 Three checks that looked like they worked, found while scripting a demo on a real repository.
