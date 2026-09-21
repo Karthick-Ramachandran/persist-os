@@ -196,3 +196,50 @@ export function renderPrePushHook(testCommand: string | null, gates: string[]): 
 
   return lines.join("\n");
 }
+
+export type GeneratedHookFile = {
+  path: string;
+  content: string;
+  executable?: boolean;
+  /**
+   * The file may hold the user's own settings alongside ours, so it is written only when
+   * missing. Everything else here is pure rendered output and safe to regenerate.
+   */
+  userOwned?: boolean;
+};
+
+/**
+ * Every generated hook file a config expects, in one list. `hook-drift` diffs against it and
+ * `hooks sync` writes from it, so what doctor calls drift is exactly what sync repairs. Claude
+ * files follow `aiTools`, so a Codex-only repository is never handed files it did not ask for.
+ */
+export function expectedHookFiles(config: {
+  aiTools?: readonly string[];
+  preCommitGates?: string[];
+  prePushGates?: string[];
+  testCommand?: string | null;
+}): GeneratedHookFile[] {
+  const files: GeneratedHookFile[] = [
+    {
+      path: PRE_COMMIT_HOOK_PATH,
+      content: renderPreCommitHook(config.preCommitGates ?? []),
+      executable: true,
+    },
+    {
+      path: PRE_PUSH_HOOK_PATH,
+      content: renderPrePushHook(config.testCommand ?? null, config.prePushGates ?? []),
+      executable: true,
+    },
+  ];
+
+  if ((config.aiTools ?? []).includes("claude")) {
+    files.push({
+      path: SESSION_START_HOOK_PATH,
+      content: renderSessionStartHook(),
+      executable: true,
+    });
+    files.push({ path: CLAUDE_SETTINGS_PATH, content: renderClaudeSettings(), userOwned: true });
+  }
+
+  return files;
+}

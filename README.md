@@ -233,6 +233,7 @@ git config core.hooksPath .persist/hooks
 | `persist doctor`                    | Validate memory health, evidence, and drift.                                   |
 | `persist test-gate`                 | Run the configured test command and require it to pass.                        |
 | `persist fence add <path> --why`    | Record why a path is shaped the way it is.                                     |
+| `persist hooks sync`                | Regenerate the hooks from the config. Never touches docs or config.            |
 
 ## What Doctor Checks
 
@@ -412,8 +413,11 @@ so moving the folder never means regenerating it.
 **What doesn't:** the prose in `CLAUDE.md`, `AGENTS.md`, the Cursor rule and the generated skills
 still says `docs/`. Those files are yours to edit, so update the paths in them after a move.
 
-**Careful with `persist init --force --reinit`.** It writes a fresh config, and that config uses the
-default paths. Re-apply your paths afterwards, or review the diff before committing.
+**Don't use `persist init --force --reinit` to refresh anything.** It rewrites every generated file,
+filled-in docs included, and writes a fresh config with the default paths. After an upgrade or a
+config edit, run `persist hooks sync` instead: it regenerates the hooks and nothing else. A plain
+`persist init` (no `--force`) only adds files that are missing, which in a relocated repository
+means the default `docs/` skeleton comes back, so skip it once you've moved.
 
 ## Local-First Guarantees
 
