@@ -1,559 +1,168 @@
 # Persist OS
 
-**Durable, AI-ready engineering memory for your repository — and a deterministic `doctor` that
-proves it stays healthy.**
+Memory for AI coding agents that lives in your repository, and a `doctor` that checks it stays true.
 
+[![npm](https://img.shields.io/npm/v/persist-os)](https://www.npmjs.com/package/persist-os)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
-![Local-first](https://img.shields.io/badge/local--first-yes-success)
-![Telemetry](https://img.shields.io/badge/telemetry-none-success)
-![Network](https://img.shields.io/badge/network%20calls-none-success)
 
-Persist OS is a local-first CLI that turns a repository into the source of truth for **why** it is
-built the way it is. It creates structured, reviewable memory — product intent, architecture
-decisions, module ownership, testing and security expectations, AI agent rules — and then
-**validates** that memory with `persist doctor`. Architecture-neutral. No network, no telemetry, no
-code generation.
+Persist is a local CLI. It writes your decisions, rules, and lessons into plain Markdown in the
+repo, loads them into Claude Code, Codex, and Cursor, and checks on every commit that the memory
+still matches the code.
 
-[Website](https://persist-os.pages.dev) · [Install](#install) · [Quickstart](#quickstart) ·
-[Commands](#commands) · [What Doctor Checks](#what-doctor-checks) ·
-[Chesterton's Fence](#chestertons-fence) · [Why I built this](PHILOSOPHY.md) ·
-[Contributing](CONTRIBUTING.md)
+[Website](https://persist-os.pages.dev) · [Docs](https://persist-os.pages.dev/docs/) ·
+[Why I built this](PHILOSOPHY.md) · [Contributing](CONTRIBUTING.md)
 
-![Persist OS — creating repository memory, the Chesterton fence catching an unexplained change, recording the reason, and that reason coming back on the next run](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.1.gif)
-
-What it writes — plain files, tracked in Git, reviewed in pull requests like any other change:
-
-```txt
-your-repo/
-├── AGENTS.md                              # entry point every agent reads
-├── CLAUDE.md                              # Claude Code's entry point
-├── docs/
-│   ├── 00-product/PRODUCT.md              # what this is and is not
-│   ├── 20-security/SECURITY_MODEL.md
-│   ├── 50-quality/QUALITY_GATES.md
-│   ├── 60-engineering/
-│   │   ├── ENGINEERING_STANDARDS.md
-│   │   ├── CONVENTIONS.md                 # the vocabulary agents must reuse
-│   │   └── LESSONS.md                     # what broke, and why
-│   └── adrs/                              # decisions: proposed → accepted → superseded
-├── .claude/skills/, .agents/skills/       # 5 skills, loaded on trigger
-├── .persist/hooks/                        # doctor at commit, tests at push
-└── .github/workflows/persist.yml
-```
-
-Six documents and a decision log. Nothing else is required.
-
-<details>
-<summary><strong>Adopt an existing repository</strong> — it proposes, you decide</summary>
-
-```console
-$ persist adopt
-Persist OS adopt complete.
-Inferred signals are proposed and require human review.
-Languages: TypeScript
-Package manager: pnpm
-Frameworks: Next.js
-Created:
-- docs/adopt/ADOPTION_REPORT.md
-- docs/adrs/proposed/ADR-PROPOSED-adopt-nextjs.md
-
-Next steps:
-- Review docs/adopt/ADOPTION_REPORT.md — everything in it is proposed.
-- Accept or reject each proposed ADR under docs/adrs/proposed/.
-```
-
-Signals come from manifests and lockfiles, runtime dependencies only. Nothing it writes is accepted
-repository memory until a human says so.
-
-</details>
-
-<details>
-<summary><strong>Record a decision</strong> — proposed, then accepted</summary>
-
-```console
-$ persist adr create "Use PostgreSQL for primary storage"
-ADR: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
-
-Next steps:
-- Open it and fill: Context, Decision, Alternatives, Consequences.
-
-$ persist adr accept use-postgresql-for-primary-storage
-Accepted: docs/adrs/ADR-0001-use-postgresql-for-primary-storage.md
-
-- It is now repository source of truth. Other memory can cite it.
-```
-
-Generating a decision does not accept it. Changed your mind later? `persist adr supersede` records
-the replacement and keeps the trail.
-
-Give an ADR an `## Applies To` list (`- src/billing/**`) and doctor names it, decision included,
-whenever a change touches those files. The agent checks its diff against the decision, not just the
-title.
-
-</details>
-
-<details>
-<summary><strong>Check for drift</strong> — warnings print, only errors block</summary>
-
-```console
-$ persist doctor
-Doctor Report
-
-WARNING
-- Product purpose is still an unfilled template. (docs/00-product/PRODUCT.md)
-- Conventions canonical-primitives section is still an unfilled template.
-  (docs/60-engineering/CONVENTIONS.md)
-
-Result: WARNINGS
-```
-
-```txt
-Exit codes:  0 = healthy   1 = warnings only   2 = errors
-```
-
-The generated pre-commit hook fails on errors. Warnings print and the commit proceeds, so the two
-severities mean different things.
-
-</details>
-
----
-
-AI can write code fast, but its context is temporary — it forgets decisions, compacts conversations,
-and drifts from earlier intent. Git records **what** changed. Persist OS records **why**, in a form
-humans and agents can re-read and validate before and after work.
-
-```txt
-What are we building?   Why did we decide this?
-What must not drift?    What evidence proves this work is complete?
-```
-
-When these questions live in the repository instead of a chat window, the repository can answer
-them.
-
-> **Not a vector memory engine.** Tools like supermemory or mem0 _retrieve_ information with
-> embeddings; Persist OS writes the **decisions** themselves — reviewable files, not vectors — and
-> checks they stay consistent. They're complementary, not competitors. →
-> [Why I built this](PHILOSOPHY.md)
-
-## Why Persist OS
-
-- **Memory that outlives the conversation.** Decisions, constraints, and ownership are committed to
-  the repo, not trapped in an agent's context window.
-- **A gate, not just docs.** `persist doctor` is deterministic and returns an exit code, so "is this
-  work actually finished and consistent?" becomes a check you can run in a hook or CI.
-- **Decisions change safely.** When a decision changes, `persist adr supersede` records it (the old
-  ADR is marked superseded, the new one links back) and Doctor flags any memory still citing the old
-  one — so the trail stays auditable instead of silently contradicted. The generated agent rules
-  even carry the CLI commands inline, so your AI tool uses them itself.
-- **Fights context rot.** Doctor warns when the always-loaded memory bloats into a wall of text, or
-  when it still points at `src/` code that changed long after the memory did — so memory stays a
-  lean, current map, not a stale dump.
-- **Reuse over reinvent.** Generated `CONVENTIONS.md` (your canonical, reusable vocabulary) and
-  `LESSONS.md` (durable pitfalls) load into every agent session, and the agent is told to keep them
-  current itself — so it reuses your components and patterns instead of reinventing them, and stops
-  repeating mistakes you already solved. It works even on vibe-coded projects, because the agent
-  maintains the memory, not you.
-- **Architecture-neutral by design.** Persist OS records and protects _your_ decisions. It never
-  silently picks a framework, database, or pattern for you.
-- **Local-first and private.** No network calls, no telemetry, no AI API calls, no remote templates.
-  It runs entirely on your machine.
-- **Safe by default.** Non-destructive writes, path-traversal and symlink protection, and a refusal
-  to overwrite an existing installation without explicit intent.
-
-## Install
-
-Run it without installing — the quickest way to try it:
+![Persist OS: creating repository memory, the Chesterton fence catching an unexplained change, recording the reason, and that reason coming back on the next run](https://raw.githubusercontent.com/Karthick-Ramachandran/persist-os/main/docs/media/persist-1.1.gif)
 
 ```bash
 npx persist-os@latest init
 ```
 
-Every command works the same way: `npx persist-os <command>` (e.g. `npx persist-os doctor`).
+## Why
 
-Or install the CLI globally:
+An agent starts every session knowing nothing about your project. It doesn't know you decided to
+store money as integer cents, that the odd ordering in `split.ts` is deliberate, or how the last
+change to billing went wrong. You can write all of that in a `CLAUDE.md`, and agents will read it.
+Nobody finds out when that file goes stale, though. Teammates on Codex or Cursor never see it, and a
+decision edited in place loses its history.
 
-```bash
-npm install -g persist-os
-persist --help
-```
+Persist keeps that knowledge in the repository, reviewed in pull requests like code, and checks it
+on every commit.
 
-(Requires Node.js >= 20. Published at
-[npmjs.com/package/persist-os](https://www.npmjs.com/package/persist-os).)
+## What it does
 
-## Quickstart
+### Decisions agents follow
 
-```bash
-# 1. Create repository memory — init asks four questions, then writes the minimum
-persist init
-persist init --yes                     # take every default without prompting
-persist init --ai-tools claude,cursor  # flags are a complete instruction: no prompting
+`persist adr create` records a decision and `persist adr accept` makes it binding. Give an ADR the
+paths it governs, and doctor names it, with the decision itself, whenever a change touches those
+files. The `adr-compliance` skill then has the agent check its diff against the decision line by
+line. When a decision changes, `persist adr supersede` marks the old one and flags any memory that
+still cites it.
 
-# 2. Capture intent and decisions as you work
-persist feature create checkout
-persist adr create payment-provider
-persist adr accept payment-provider    # promote a proposal to accepted memory
+### Why odd code is odd
 
-# 3. Bring an MCP server's context into durable memory (offline)
-persist mcp add figma
-
-# 4. Validate the memory is healthy and complete
-persist doctor
-```
-
-Every command guides you — it names the file it created, where it is, and what to do next.
-
-Generate files only for the AI tools you use: `persist init --ai-tools claude,cursor` (default: all
-of `claude`, `codex`, `cursor`; `AGENTS.md` is always written).
-
-`persist init` also generates tracked **pre-commit and pre-push hooks** in `.persist/hooks/`. The
-pre-commit hook runs `persist doctor` plus any `preCommitGates` you configure; the pre-push hook
-runs `persist test-gate` (your configured `testCommand`) plus `prePushGates`. The pre-push hook is
-the final regression gate before code leaves your machine (it catches commits made with
-`--no-verify` or before the hook was active).
-
-Git never switches on hooks that come with a clone, so each clone opts in once. `init` asks and does
-it for you (the default; `--yes` takes it, `--no-enable-hooks` skips it). It never replaces a
-`core.hooksPath` that another hooks tool, such as Husky, already owns. Teammates on other clones run
-the same one line, and `persist doctor` reminds them until they do:
-
-```bash
-git config core.hooksPath .persist/hooks
-```
-
-The hooks run your installed `persist`, or `npx persist-os` when it isn't installed globally.
-
-## Commands
-
-| Command                             | Purpose                                                                        |
-| ----------------------------------- | ------------------------------------------------------------------------------ |
-| `persist init`                      | Create repository memory. Asks four questions, then writes the minimum.        |
-| `persist init --ai-tools <list>`    | Generate files only for the AI tools you use (claude, codex, cursor, generic). |
-| `persist init --features --modules` | Also generate the opt-in feature/module workflow scaffolding.                  |
-| `persist init --yes`                | Take every default without prompting (CI, scripts, non-TTY stdin).             |
-| `persist init --no-enable-hooks`    | Write the hooks but leave git config alone (switch them on yourself).          |
-| `persist adopt`                     | Inspect an existing repo and propose reviewable memory.                        |
-| `persist feature create <name>`     | Scaffold feature memory (plan, tasks, test evidence).                          |
-| `persist adr create <title>`        | Create a proposed architecture decision record.                                |
-| `persist adr accept <name>`         | Promote a proposed ADR to accepted source-of-truth.                            |
-| `persist adr supersede <old> <new>` | Record a changed decision: mark the old ADR superseded by a new accepted ADR.  |
-| `persist module create <name>`      | Scaffold module memory (ownership, boundaries, tests).                         |
-| `persist skill create <name>`       | Generate a portable AI agent skill (Claude + Agent Skills).                    |
-| `persist skill list`                | List the built-in agent skill catalog.                                         |
-| `persist mcp add <server>`          | Generate offline, proposed memory for an MCP server.                           |
-| `persist doctor`                    | Validate memory health, evidence, and drift.                                   |
-| `persist test-gate`                 | Run the configured test command and require it to pass.                        |
-| `persist fence add <path> --why`    | Record why a path is shaped the way it is.                                     |
-| `persist context "<task>"`          | Find the area memory a task needs: cards first, decisions second.              |
-| `persist context add <name>`        | Scaffold a context card for an area (`--purpose "<one line>"`, `--dry-run`).   |
-| `persist hooks sync`                | Regenerate the hooks from the config. Never touches docs or config.            |
-
-## What Doctor Checks
-
-`persist doctor` is the part that makes Persist OS more than a template. Every check is
-deterministic, local, and read-only.
-
-| Category            | Detects                                                              | Severity     |
-| ------------------- | -------------------------------------------------------------------- | ------------ |
-| Structure           | Missing config or required documents                                 | error        |
-| Memory integrity    | Memory referencing documents or ADRs that do not exist               | error        |
-| Completion evidence | Work marked complete with review pending or no test evidence         | error        |
-| ADR quality         | An accepted decision with no meaningful consequences or alternatives | error / warn |
-| Duplicate decisions | Two ADRs accepted under the same title                               | error / warn |
-| Security            | A security-sensitive decision that links no security memory          | warning      |
-| Drift               | Memory referencing a missing, or not-yet-accepted, ADR               | error / warn |
-| Superseded          | Memory still citing a decision replaced by a newer ADR               | warning      |
-| Code references     | Current memory citing `src/` paths that no longer exist              | warning      |
-| Staleness           | Memory citing code that changed long after the memory did            | warning      |
-| Chesterton fence    | A change to source with no recorded reason and no ADR reference      | warning      |
-| Context cards       | A card pointing at missing paths, stale pointers, or no Answers      | warning/info |
-| Sharing             | Memory files git-ignored so the team never receives them             | warning      |
-| Hook drift          | Generated hooks no longer matching the config that produced them     | warning      |
-| Hooks active        | Hooks written but not switched on in this clone (skipped in CI)      | warning      |
-| Governing ADRs      | Names the accepted ADRs whose Applies To paths a change touches      | info         |
-| Retired skills      | Skills retired in a newer release still sitting on disk              | warning      |
-| Context budget      | The always-loaded agent files grown past 24KB                        | warning      |
-| Content             | Required memory left as an unedited template once real work exists   | warning      |
-
-A check that **cannot** evaluate its input says so — `NOT EVALUATED`, with the reason — instead of
-reporting success for work it did not do. A gate that silently passes is worse than no gate.
-
-```txt
-Exit codes:  0 = healthy   1 = warnings only   2 = errors
-```
-
-Because it returns an exit code, Doctor drops straight into the completion loop:
-
-```bash
-pnpm test:run && pnpm typecheck && persist doctor
-```
-
-The generated pre-commit hook runs Doctor and fails only on **errors** — warnings print and let the
-commit through, so the two severities mean different things. Add `persist doctor` to
-`preCommitGates` if you want warnings to block too.
-
-Use it locally via the generated hooks, or add `persist doctor` as a step in CI. Add `--json`
-(`persist doctor --json`) for a stable, machine-readable report — handy for CI artifacts, hooks, and
-agent handoffs.
-
-## Opt-In Memory
-
-`persist init` generates the minimal set by default: six documents plus the ADR directory. Feature
-and module workflow memory is opt-in — pass `persist init --features --modules`, or run
-`persist feature create` / `persist module create` whenever you need them. Doctor treats absent
-opt-in memory as not-evaluated (with a reason), never as an error.
-
-## Chesterton's Fence
-
-Git records what changed. ADRs record the decisions worth a document. Neither records why a piece of
-code is _shaped_ the way it is when that reasoning never rose to that level.
-
-You wrote a query that hits four collections instead of one, deliberately, because of a constraint.
-Months later nobody remembers it — including you. An agent reads the code, concludes one call would
-be simpler, and removes the constraint. Nothing notices until production does.
-
-`docs/60-engineering/FENCES.md` is where that reasoning lives. It **starts empty and grows through
-use**: nothing generates it, not `init`, not `adopt`, not an agent sweeping your codebase. A file of
-confident guesses about why code exists is worse than an empty one.
-
-When a change touches source with no recorded reason and no ADR reference, Doctor says so. The
-`chestertons-fence` skill walks an agent through the three questions — what is changing, what logic
-was already there and why, what might break — and a human confirms the answer, because the whole
-premise is that the constraint lives in someone's memory rather than in the code.
-
-When you answer, record it:
+Some code looks wrong on purpose. When a commit touches source with no recorded reason, doctor asks
+why. You answer once:
 
 ```sh
 persist fence add src/billing.ts \
-  --why "Four collection writes are deliberate; ledger and audit trail land in one transaction." \
-  --by "Karthick"
+  --why "Four writes are deliberate: the ledger and the audit trail land in one transaction."
 ```
 
-From then on, a change to that path hands the reason back instead of asking again:
+From then on, every session gets that reason before anyone "simplifies" the code.
 
-```console
-$ persist doctor
-WARNING
-- Change touches a recorded fence: Four collection writes are deliberate; ledger and
-  audit trail land in one transaction. Confirm the reason still holds before changing
-  the logic. (src/billing.ts)
-```
+### The right place to start
 
-It warns; it does not block. Turn it off with `fenceEnabled` in `.persist/config.json`.
+A context card is a short file for one area of the code: what it's for, the tasks it covers in plain
+words, the files to open first, and the rules that apply there. When you give an agent a task,
+Persist matches it against the cards and tells the agent where to start. In Claude Code and Codex
+that happens through a prompt hook; other tools run `persist context "<task>"` from a skill.
+Matching is keyword search, with no model involved, and every result shows the words it matched.
+Agents add to the cards as they finish work, so matches improve with use.
 
-## Context cards
+### A check on every commit
 
-ADRs record decisions, fences record why code is shaped the way it is — but when a new task lands,
-nothing connects it to the right records. A context card is one small Markdown file per area of the
-codebase (`docs/context/<name>.md`) holding what the agent that just finished work there knows: what
-the area is for, which task phrasings it answers, the words people use for it, where to start
-reading, and which rules apply.
+`persist doctor` runs 19 deterministic checks and returns an exit code. It catches memory that
+points at deleted files, docs that cite a replaced decision, notes that went stale while the code
+moved on, and work marked done without test evidence. When a check can't run, it reports "not
+evaluated" with the reason instead of passing. `init` also switches on git hooks: doctor runs before
+each commit and your tests run before each push.
 
-```markdown
-# Splitting and rounding
+## Everything it does
 
-## Purpose
+| Feature                         | What it does for you                                                                                                                                |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Remembering**                 |                                                                                                                                                     |
+| Six-document memory             | `init` writes product, security, quality, standards, conventions, and lessons docs. Nothing else is required.                                       |
+| Decision records                | `adr create`, `accept`, and `supersede` keep every decision and the reason it changed.                                                              |
+| Chesterton fences               | `fence add` records why odd-looking code is shaped that way, in a person's words.                                                                   |
+| Context cards                   | `context add` gives each area of the code a card: what it's for, what tasks it covers, where to start.                                              |
+| Conventions and lessons         | Agents reuse the helpers you've listed and avoid mistakes already recorded. They keep both files current.                                           |
+| Existing codebases              | `adopt` reads your manifests and proposes decisions. Nothing is accepted until you agree.                                                           |
+| MCP context                     | `mcp add` saves what an MCP server knows as reviewable files, offline.                                                                              |
+| **Getting it to the agent**     |                                                                                                                                                     |
+| One set of rules for every tool | `AGENTS.md` holds the rules. `CLAUDE.md` imports it, Cursor gets an always-on rule, and Codex reads it directly.                                    |
+| Session start map               | Each Claude Code session opens with the accepted decisions, modules, and fence reasons.                                                             |
+| Task lookup                     | A prompt hook in Claude Code and Codex matches your task against the context cards and adds where to start.                                         |
+| Workflow skills                 | Skills for planning a feature, security review with a secret scan, reusing conventions, fence questions, ADR compliance, and context lookup.        |
+| **Keeping agents honest**       |                                                                                                                                                     |
+| Governing decisions             | Changing a file names the ADR that governs it, with the decision itself.                                                                            |
+| ADR compliance                  | The agent checks its diff against each governing decision, quoting the lines.                                                                       |
+| Definition of done              | Agents are told work is done only when doctor passes and the tests pass.                                                                            |
+| **Checking**                    |                                                                                                                                                     |
+| Doctor                          | 19 checks: missing files, broken links, decisions cited after they were replaced, stale memory, dead card paths, work marked done without evidence. |
+| Honest results                  | A check that can't run says "not evaluated" and why, and it never counts that as a pass.                                                            |
+| Git hooks                       | Doctor runs before each commit and your tests before each push. `init` switches them on; they fall back to `npx` if Persist isn't installed.        |
+| Team checks                     | Doctor warns when memory is git-ignored, when a clone has hooks off, and when always-loaded memory grows past 24 KB.                                |
+| CI                              | `init` writes a GitHub Actions workflow, and `doctor --json` gives CI a machine-readable report.                                                    |
+| **Fitting in**                  |                                                                                                                                                     |
+| Your layout                     | Move the memory out of `docs/` by setting four paths in the config.                                                                                 |
+| Safe by default                 | Persist never overwrites a file you have. `hooks sync` refreshes hooks without touching docs or config.                                             |
+| Local only                      | No network calls, no telemetry, and no AI API. It runs on your machine and doesn't choose your framework, database, or architecture.                |
 
-How an expense is divided between members, and where leftover cents go.
-
-## Answers
-
-- make rounding fair
-- change how an expense is split
-- who pays the extra cent
-- shares don't add up to the total
-
-## Also Known As
-
-- split, splitting, shares, rounding, remainder, leftover cent, penny
-
-## Start Here
-
-- `src/lib/split.ts` — splitEvenly: divides a total, hands out leftover cents
-- `src/lib/ledger.ts` — sharesFor/balances: where splits become balances
-- `tests/split.test.ts` — the invariants the split must keep
-
-## Rules
-
-- ADR-0001 — money is integer cents, including intermediate calculations
-- Fence `src/lib/split.ts` — leftover cents go to the earliest joiner, and why
-- CONVENTIONS: `splitEvenly` is the only place an amount is divided
-
-## Pitfalls
-
-- LESSONS: duplicate member ids in splitAmong lose a share silently
-
-## Applies To
-
-- `src/lib/split.ts`
-- `src/lib/ledger.ts`
-```
-
-**Answers is the field that matters.** It holds task phrasings in the words someone would type, not
-code words — that is where the "semantic" quality comes from. Rules and Pitfalls are pointers, never
-copies: a card that duplicates an ADR goes stale when the ADR changes.
-
-The workflow is one habit: when you finish work in an area, scaffold the card if there is none
-(`persist context add "splitting and rounding" --purpose "How an expense is divided."`), then add
-the task you were just given to its Answers list, phrased the way it was asked. That single habit
-makes the next lookup succeed.
-
-Later, a deterministic lookup matches a new task against those stored phrases — no embeddings, no
-model calls, no network. Every match explains itself, and the output is pointers, never whole files:
-
-```console
-$ persist context "make rounding fair"
-Start here for "make rounding fair":
-
-Splitting and rounding (docs/context/splitting-and-rounding.md) — matched: rounding, fair
-  src/lib/split.ts — splitEvenly: divides a total, hands out leftover cents
-  src/lib/ledger.ts — sharesFor/balances: where splits become balances
-  Rules: ADR-0001 (money is integer cents…) · fence src/lib/split.ts (leftover cents go to…)
-  Pitfall: duplicate member ids in splitAmong lose a share silently
-```
-
-When no card covers the task, the closest recorded decisions and fences are listed instead, marked
-as such; when nothing matches at all, the lookup says so plainly.
-
-Delivery is layered so nothing depends on one tool: a prompt hook injects the pointers in Claude
-Code and Codex (Cursor's hook API cannot return context, so it is deliberately skipped), the
-`context` skill holds the look-up-first procedure everywhere, and one rule line in `AGENTS.md` and
-the Cursor rule carries the habit into every tool. Doctor keeps cards honest: dead Start Here paths,
-pointers older than the code they cover, and cards no task can find.
-
-## How agents load the memory
-
-Writing memory only helps if the agent reads it, so `persist init` wires each tool with its own
-native mechanism:
-
-| Tool            | How memory loads                                                                                                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Claude Code** | `CLAUDE.md` (auto) imports `AGENTS.md`; a SessionStart hook injects a live map of accepted ADRs and modules every session, plus a prompt hook that looks up context cards per prompt. |
-| **Cursor**      | `.cursor/rules/persist-memory.mdc` is an always-apply rule that loads the memory rules into every request.                                                                            |
-| **Codex**       | `AGENTS.md` is auto-discovered and loaded, plus a prompt hook that looks up context cards per prompt.                                                                                 |
-
-The portable guarantee across every tool is `AGENTS.md` plus the generated Agent Skills
-(`.agents/skills/`). The dynamic per-session ADR/module map is a Claude Code bonus; the Cursor rule
-and `AGENTS.md` carry the same rules everywhere else.
-
-Six workflow skills ship in the catalog (`plan-feature`, `security-review`, `conventions-adherence`,
-`chestertons-fence`, `adr-compliance`, `context`); each states when it activates and what it
-returns. One skill ships an executable helper (`security-review/scripts/scan-secrets.sh`): it is
-read-only and local, `persist init` names every executable file it writes, and deleting it degrades
-to the documented prose path.
-
-`AGENTS.md` leads with a short, imperative **Rules** block (read memory first, reuse the
-conventions, record lessons, don't contradict accepted ADRs, run `persist doctor` before "done") —
-and instructs the agent to keep `CONVENTIONS.md` and `LESSONS.md` current itself, so that memory
-stays useful without anyone hand-writing it. The human just reviews the agent's edits in the pull
-request.
-
-## Repository Memory
-
-Persist OS creates a memory structure under `docs/` and `.persist/config.json`, with an explicit
-source-of-truth order:
+## What it writes
 
 ```txt
-1. Accepted ADRs and repository decisions     5. Module docs
-2. Product memory (PRODUCT.md)                6. Feature plans
-3. Engineering standards                      7. Task files
-4. Security and testing docs                  8. External context
-                                              9. Chat history
+your-repo/
+├── AGENTS.md                         # rules every agent reads
+├── CLAUDE.md                         # one line: @AGENTS.md
+├── docs/
+│   ├── 00-product/PRODUCT.md         # what this is, and what it isn't
+│   ├── 20-security/SECURITY_MODEL.md
+│   ├── 50-quality/QUALITY_GATES.md
+│   ├── 60-engineering/
+│   │   ├── ENGINEERING_STANDARDS.md
+│   │   ├── CONVENTIONS.md            # helpers and patterns to reuse
+│   │   └── LESSONS.md                # what broke, and why
+│   ├── adrs/                         # decisions
+│   └── context/                      # context cards, added as you work
+├── .claude/skills/, .agents/skills/  # workflow skills, loaded when needed
+├── .persist/hooks/                   # doctor at commit, tests at push
+└── .github/workflows/persist.yml
 ```
 
-If external context or chat history conflicts with repository memory, **repository memory wins**.
+Six documents and a decision log are all that's required. Everything else grows as you work. The
+folder can live somewhere other than `docs/`; see
+[memory layout](https://persist-os.pages.dev/docs/memory).
 
-### Putting memory somewhere other than `docs/`
-
-If `docs/` is already taken, or you want the memory out of the way, move it and tell
-`.persist/config.json` where it went. Four keys set the layout. Each is a path relative to the
-repository root:
-
-| Key           | Default            | What lives there                                   |
-| ------------- | ------------------ | -------------------------------------------------- |
-| `docsDir`     | `docs`             | The required docs, plus `60-engineering/FENCES.md` |
-| `adrDir`      | `docs/adrs`        | ADRs and the ADR index (`README.md`)               |
-| `modulesDir`  | `docs/30-modules`  | Module memory (opt-in)                             |
-| `featuresDir` | `docs/40-features` | Feature plans (opt-in)                             |
-
-`init` always writes the default layout, so relocate after it:
+## Get started
 
 ```bash
-persist init
-mv docs .memory
+npx persist-os@latest init                          # six questions, then the minimum files
+npx persist-os adr create "Store money as integer cents"
+npx persist-os doctor
 ```
 
-```jsonc
-// .persist/config.json
-{
-  "docsDir": ".memory",
-  "adrDir": ".memory/adrs",
-  "modulesDir": ".memory/30-modules",
-  "featuresDir": ".memory/40-features",
-  // ...leave the other keys as they are
-}
-```
+Install it globally with `npm install -g persist-os` to type `persist` instead. Node 20 or newer.
 
-```bash
-persist doctor   # should pass exactly as it did before the move
-```
+For an existing codebase, `persist adopt` reads your manifests and proposes decisions; nothing is
+accepted until you say so. Every command prints what it wrote and what to do next. The full list is
+in [Commands](https://persist-os.pages.dev/docs/commands).
 
-The four keys are independent. `adrDir` can be a top-level `decisions/` while everything else stays
-under `docs/`. Inside `docsDir` the layout is fixed: the required docs stay at
-`00-product/PRODUCT.md`, `60-engineering/CONVENTIONS.md` and so on, because doctor looks for them by
-those names.
+## Documentation
 
-**What follows the config:** doctor, every `create` command, `adr accept` / `supersede`,
-`fence add`, and the Claude SessionStart hook. The hook reads the config each time a session starts,
-so moving the folder never means regenerating it.
-
-**What doesn't:** the prose in `CLAUDE.md`, `AGENTS.md`, the Cursor rule and the generated skills
-still says `docs/`. Those files are yours to edit, so update the paths in them after a move.
-
-**Don't use `persist init --force --reinit` to refresh anything.** It rewrites every generated file,
-filled-in docs included, and writes a fresh config with the default paths. After an upgrade or a
-config edit, run `persist hooks sync` instead: it regenerates the hooks and nothing else. A plain
-`persist init` (no `--force`) only adds files that are missing, which in a relocated repository
-means the default `docs/` skeleton comes back, so skip it once you've moved.
-
-## Local-First Guarantees
-
-Persist OS does not:
-
-- make network calls at runtime;
-- collect telemetry;
-- connect to MCP servers or call AI APIs;
-- generate production application code;
-- install dependencies into your repository;
-- overwrite existing files by default.
-
-## Examples
-
-The exact memory `persist init` writes today is goldened in
-`tests/golden/generated-minimal.test.ts`. The `examples/` directory holds generated output from the
-retired preset era (0.5 and 0.6); it is kept for history and is not published with the package.
+- [Commands](https://persist-os.pages.dev/docs/commands)
+- [What doctor checks](https://persist-os.pages.dev/docs/doctor)
+- [Decisions](https://persist-os.pages.dev/docs/decisions)
+- [Hooks, test gate, and CI](https://persist-os.pages.dev/docs/hooks)
+- [Memory layout and loading](https://persist-os.pages.dev/docs/memory)
 
 ## Development
 
 ```bash
 pnpm install
-pnpm lint
-pnpm format:check
-pnpm test:run
-pnpm typecheck
-pnpm build
-pnpm pack:check
+pnpm test:run && pnpm typecheck && pnpm lint && pnpm build
 ```
 
-Run the gates above and `persist doctor` before claiming work is complete. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow, and [SECURITY.md](SECURITY.md) for the
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [SECURITY.md](SECURITY.md) for the
 security model.
 
 ## Acknowledgments
 
-The [landing page](https://persist-os.pages.dev) is deployed with
-[Pagecast](https://github.com/Amal-David/pagecast) — thank you.
+The [website](https://persist-os.pages.dev) is deployed with
+[Pagecast](https://github.com/Amal-David/pagecast).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
