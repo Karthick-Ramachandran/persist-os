@@ -57,6 +57,111 @@ describe("doctor fence integration", () => {
     );
   });
 
+  /**
+   * An initialised repository with one commit, marked as pushed: a local branch stands in for
+   * the upstream, so "unpushed" means "committed after this point".
+   */
+  async function pushedRepo(prefix: string): Promise<string> {
+    const rootDir = await createRoot(prefix);
+    await runInitCommand(rootDir);
+    git(rootDir, "init");
+    git(rootDir, "config", "user.email", "test@example.com");
+    git(rootDir, "config", "user.name", "Test");
+    git(rootDir, "add", "-A");
+    git(rootDir, "commit", "-m", "init");
+    git(rootDir, "branch", "pushed");
+    git(rootDir, "branch", "--set-upstream-to=pushed");
+    return rootDir;
+  }
+
+  it("asks about a crossing that was committed without the hook", async () => {
+    // Hooks off, the agent commits, then runs doctor as evidence. Judging the empty staged set
+    // passed a change that never met the fence; the unpushed commits are what is pending.
+    const rootDir = await pushedRepo("fence-unpushed");
+    await write(rootDir, "src/split.ts", "export const split = 1;\n");
+    git(rootDir, "add", "src/split.ts");
+    git(rootDir, "commit", "-m", "change split");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({ id: "fence", status: "evaluated" });
+    expect(report.findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "fence",
+        path: "src/split.ts",
+        message: expect.stringContaining("Unpushed change crosses the Chesterton fence"),
+      }),
+    );
+  });
+
+  it("stops asking once the crossing is pushed", async () => {
+    const rootDir = await pushedRepo("fence-pushed");
+    await write(rootDir, "src/split.ts", "export const split = 1;\n");
+    git(rootDir, "add", "src/split.ts");
+    git(rootDir, "commit", "-m", "change split");
+    git(rootDir, "branch", "-f", "pushed", "HEAD");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({ id: "fence", status: "evaluated" });
+    expect(report.findings.filter((finding) => finding.check === "fence")).toEqual([]);
+  });
+
+  it("judges only the staged set when something is staged", async () => {
+    // The pre-commit hook's view is unchanged: an earlier unpushed crossing is not repeated on
+    // every later commit.
+    const rootDir = await pushedRepo("fence-staged-wins");
+    await write(rootDir, "src/split.ts", "export const split = 1;\n");
+    git(rootDir, "add", "src/split.ts");
+    git(rootDir, "commit", "-m", "change split");
+    await write(rootDir, "src/ledger.ts", "export const ledger = 1;\n");
+    git(rootDir, "add", "src/ledger.ts");
+
+    const report = await runDoctor(rootDir);
+    const fencePaths = report.findings
+      .filter((finding) => finding.check === "fence")
+      .map((finding) => finding.path);
+
+    expect(fencePaths).toEqual(["src/ledger.ts"]);
+  });
+
+  it("treats a commit that only deletes as staged, not as nothing staged", async () => {
+    // Deletions need no fence, but they are still a commit in progress: falling through to the
+    // "nothing staged" path would misreport a deletion-only commit as having no change at all.
+    const rootDir = await createRoot("fence-delete-only");
+    await runInitCommand(rootDir);
+    git(rootDir, "init");
+    git(rootDir, "config", "user.email", "test@example.com");
+    git(rootDir, "config", "user.name", "Test");
+    git(rootDir, "add", "-A");
+    git(rootDir, "commit", "-m", "init");
+    git(rootDir, "rm", "-q", "docs/00-product/PRODUCT.md");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({ id: "fence", status: "evaluated" });
+    expect(report.findings.filter((finding) => finding.check === "fence")).toEqual([]);
+  });
+
+  it("reports not-evaluated when nothing is staged and there is no upstream", async () => {
+    const rootDir = await createRoot("fence-no-upstream");
+    await runInitCommand(rootDir);
+    git(rootDir, "init");
+    git(rootDir, "config", "user.email", "test@example.com");
+    git(rootDir, "config", "user.name", "Test");
+    git(rootDir, "add", "-A");
+    git(rootDir, "commit", "-m", "init");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({
+      id: "fence",
+      status: "not-evaluated",
+      reason: expect.stringContaining("no upstream"),
+    });
+  });
+
   it("reports not-evaluated for a disabled fence and exits without fence findings", async () => {
     const rootDir = await createRoot("fence-off");
     await runInitCommand(rootDir);

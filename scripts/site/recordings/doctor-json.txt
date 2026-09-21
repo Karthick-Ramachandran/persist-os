@@ -118,7 +118,8 @@ $ persist doctor --json
     },
     {
       "id": "fence",
-      "status": "evaluated"
+      "status": "not-evaluated",
+      "reason": "nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made"
     }
   ]
 }

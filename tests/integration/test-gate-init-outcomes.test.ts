@@ -182,6 +182,10 @@ describe("doctor check outcomes", () => {
     execFileSync("git", ["config", "user.name", "Test"], { cwd: rootDir, stdio: "ignore" });
     execFileSync("git", ["add", "-A"], { cwd: rootDir, stdio: "ignore" });
     execFileSync("git", ["commit", "-m", "init"], { cwd: rootDir, stdio: "ignore" });
+    // An upstream to compare against: with nothing staged, the fence checks unpushed work,
+    // and a branch with no upstream has none to check.
+    execFileSync("git", ["branch", "pushed"], { cwd: rootDir, stdio: "ignore" });
+    execFileSync("git", ["branch", "--set-upstream-to=pushed"], { cwd: rootDir, stdio: "ignore" });
 
     const report = await runDoctor(rootDir);
 

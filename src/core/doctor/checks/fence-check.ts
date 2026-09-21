@@ -70,7 +70,24 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
     return notEvaluated("not inside a git work tree, so the staged set is unknown");
   }
 
-  const inScope = staged.filter((file) => isInScope(file));
+  // Nothing staged means doctor is running outside a commit — often right after one, with the
+  // hooks off. Judging the empty staged set would pass a change that never met the fence, so
+  // look at what the branch has not pushed yet instead. With no upstream there is nothing to
+  // compare against, and saying so beats an empty pass.
+  let changed = staged.paths;
+  let unpushed = false;
+  if (!staged.any) {
+    const pending = await unpushedFiles(context.rootDir);
+    if (pending === null) {
+      return notEvaluated(
+        "nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made",
+      );
+    }
+    changed = pending;
+    unpushed = true;
+  }
+
+  const inScope = changed.filter((file) => isInScope(file));
   if (inScope.length === 0) {
     return { findings: [], outcome: { id: "fence", status: "evaluated" } };
   }
@@ -87,7 +104,7 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
         severity: "info",
         check: "fence",
         message:
-          `Change touches a recorded fence: ${reason} ` +
+          `${unpushed ? "Unpushed change" : "Change"} touches a recorded fence: ${reason} ` +
           `(see ${fencesPath}). Confirm the reason still holds before changing the logic.`,
         path: file,
       });
@@ -102,7 +119,7 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
       severity: "warning",
       check: "fence",
       message:
-        `Change crosses the Chesterton fence with no record: no entry in ${fencesPath} and ` +
+        `${unpushed ? "Unpushed change" : "Change"} crosses the Chesterton fence with no record: no entry in ${fencesPath} and ` +
         `no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence ` +
         `skill walks through it) and record the human-confirmed reason.`,
       path: file,
@@ -158,15 +175,43 @@ export function isInScope(repoRelativePath: string): boolean {
 }
 
 /**
- * Staged added/copied/modified/renamed paths (NUL-separated for hostile filenames). Deleted
- * files need no fence: there is no logic left to misunderstand. null when git cannot run —
- * non-git repo, no git binary, or any other failure reads as "cannot run", never as clean.
+ * The staged set. `paths` holds added/copied/modified/renamed paths (NUL-separated for hostile
+ * filenames); deleted files need no fence, since there is no logic left to misunderstand.
+ * `any` says whether anything is staged at all — a commit that only deletes is still a commit,
+ * and must not be mistaken for "nothing staged". null when git cannot run — non-git repo, no
+ * git binary, or any other failure reads as "cannot run", never as clean.
  */
-async function stagedFiles(rootDir: string): Promise<string[] | null> {
+async function stagedFiles(rootDir: string): Promise<{ any: boolean; paths: string[] } | null> {
   try {
+    const names = async (filter: string[]) =>
+      (
+        await execFileAsync("git", ["diff", "--cached", "--name-only", "-z", ...filter], {
+          cwd: rootDir,
+        })
+      ).stdout
+        .split("\0")
+        .filter((entry) => entry.length > 0);
+    const paths = await names(["--diff-filter=ACMR"]);
+    const any = paths.length > 0 || (await names([])).length > 0;
+    return { any, paths };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Paths the branch changed since its upstream, when nothing is staged. `@{upstream}...HEAD`
+ * diffs from the merge base, so commits that arrived from the remote are not counted as ours.
+ * null when there is no upstream (a new branch, a detached CI checkout) or git cannot answer.
+ */
+async function unpushedFiles(rootDir: string): Promise<string[] | null> {
+  try {
+    await execFileAsync("git", ["rev-parse", "--verify", "--quiet", "@{upstream}"], {
+      cwd: rootDir,
+    });
     const { stdout } = await execFileAsync(
       "git",
-      ["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"],
+      ["diff", "--name-only", "-z", "--diff-filter=ACMR", "@{upstream}...HEAD"],
       { cwd: rootDir },
     );
     return stdout.split("\0").filter((entry) => entry.length > 0);

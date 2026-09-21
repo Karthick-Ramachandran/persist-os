@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.3
+
+**The fence asks about commits that skipped it.** The fence check judged only the staged set. Run
+doctor after committing (for example with the hooks off, which is how an agent often works) and
+nothing was staged, so the check passed a change that never met the fence. An agent then quoted that
+pass as evidence. With nothing staged, doctor now checks the commits the branch hasn't pushed yet,
+and says "Unpushed change crosses the Chesterton fence". With no upstream to compare against it
+reports **not evaluated** with the reason, instead of an empty pass.
+
+When something is staged, the check behaves exactly as before: only the commit being made is judged,
+so an earlier unpushed crossing isn't repeated on every later commit. A commit that only deletes
+files counts as staged.
+
 ## 1.2.2
 
 **The generated `CLAUDE.md` is one line: `@AGENTS.md`.** Claude loads `CLAUDE.md` in every session,

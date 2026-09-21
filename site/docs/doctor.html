@@ -241,7 +241,7 @@ d7c2e09 Plan the checkout feature
                 </tr>
                 <tr>
                   <td><code>fence</code></td>
-                  <td class="desc">A staged source change crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). A second crossing surfaces the recorded reason as info.</td>
+                  <td class="desc">A staged source change, or an unpushed one when nothing is staged, crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). A second crossing surfaces the recorded reason as info.</td>
                   <td class="sev-mixed">warning / info</td>
                 </tr>
               </tbody>
@@ -252,7 +252,9 @@ d7c2e09 Plan the checkout feature
           <p>
             A staged change to source with no recorded reason and no ADR reference is a fence
             crossing. Doctor asks why the logic is shaped the way it is, and warns rather than
-            blocks. Trimmed to the finding:
+            blocks. When nothing is staged, for example because a commit was made with the hooks
+            off, doctor checks the commits the branch hasn't pushed yet, so the question still
+            comes up. Trimmed to the finding:
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
 Doctor Report
@@ -312,6 +314,7 @@ INFO
 NOT EVALUATED
 - standards: no feature folders or ADRs exist, so there are no completion claims or decisions to check
 - content: no feature folders, module folders, or ADRs exist, so there is no memory content to check
+- fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
 
 Result: PASSED</code></pre>
           <p>The same fresh memory in a folder that is not a git repository adds two more lines:</p>
