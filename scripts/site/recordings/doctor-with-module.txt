@@ -15,5 +15,8 @@ INFO
 - 1 module folders detected.
 - 2 ADRs detected.
 
+NOT EVALUATED
+- fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
+
 Result: WARNINGS
 [exit 1]

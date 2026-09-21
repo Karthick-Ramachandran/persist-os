@@ -17,6 +17,7 @@ INFO
 
 NOT EVALUATED
 - hook-drift: no generated file at .persist/hooks/pre-push, so drift cannot be measured — run `persist hooks sync` to generate it
+- fence: nothing is staged and the branch has no upstream, so there is no change to check — the pre-commit hook checks each commit as it is made
 
 Result: WARNINGS
 [exit 1]

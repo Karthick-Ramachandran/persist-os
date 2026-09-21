@@ -171,6 +171,10 @@ describe("doctor not-evaluated reporting", () => {
     git(rootDir, "config", "user.name", "Test");
     git(rootDir, "add", "-A");
     git(rootDir, "commit", "-m", "init");
+    // An upstream to compare against: with nothing staged, the fence checks unpushed work,
+    // and a branch with no upstream has none to check.
+    git(rootDir, "branch", "pushed");
+    git(rootDir, "branch", "--set-upstream-to=pushed");
 
     const report = await runDoctor(rootDir);
 
