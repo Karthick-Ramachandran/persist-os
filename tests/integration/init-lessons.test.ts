@@ -23,14 +23,15 @@ describe("init LESSONS.md", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  it("writes the sectioned template with Always, an example area, and the tiers comment", async () => {
+  it("writes the sectioned template with Always and the area format in comments", async () => {
     const rootDir = await createTempRoot("init-lessons-template");
     roots.push(rootDir);
     await runInitCommand(rootDir, ["--yes"]);
 
     const lessons = await readGeneratedFile(rootDir, "docs/60-engineering/LESSONS.md");
     expect(lessons).toContain("## Always");
-    expect(lessons).toContain("## Example area");
+    // The area format is explained in a comment, never shipped as a live example area.
+    expect(lessons).not.toMatch(/^## (?!Always)/mu);
     expect(lessons).toContain("Applies To:");
     expect(lessons).toContain("Also Known As:");
     expect(lessons).toContain("Always loads into every session");

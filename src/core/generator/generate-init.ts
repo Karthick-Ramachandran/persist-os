@@ -399,16 +399,9 @@ model preferences.
 
 ## Always
 
-- (example) Replace this line with the first lesson every task in this repository needs.
+<!-- One bullet per lesson that every task in this repository needs. Keep this list short. -->
 
-## Example area
-
-Applies To:
-- \`src/example/**\`
-
-Also Known As: example, sample
-
-- (example) What broke here, why, and what to do instead.
+<!-- Add an area for each part of the codebase: a "## Billing" heading, an "Applies To:" list of paths such as \`src/billing/**\`, an optional "Also Known As:" line, then one bullet per lesson. -->
 `,
   },
   {

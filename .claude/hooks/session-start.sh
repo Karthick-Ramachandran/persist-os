@@ -27,7 +27,7 @@ base="Persist OS repository memory is the source of truth over chat history. Bef
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')
 lessons_file="$docs_dir/60-engineering/LESSONS.md"
-always=$(awk 'BEGIN{w=0} /^##[ \t]/{w=(tolower($0) ~ /^##[ \t]+always[ \t]*$/);next} w{print}' "$lessons_file" 2>/dev/null | sed -e 's/<!--.*-->//g' -e 's/^[[:space:]]*[-*][[:space:]]*//' -e 's/^[[:space:]]*//' | tr '\n' ' ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')
+always=$(tr -d '\r' < "$lessons_file" 2>/dev/null | awk 'BEGIN{w=0} /^##[ \t]/{w=(tolower($0) ~ /^##[ \t]+always[ \t]*$/);next} w{print}' | sed -e 's/<!--.*-->//g' -e 's/^[[:space:]]*[-*][[:space:]]*//' -e 's/^[[:space:]]*//' | tr '\n\t' '  ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//' -e 's/\\/\\\\/g' -e 's/"/\\"/g')
 if [ -n "$always" ]; then
   always="$always "
 fi
