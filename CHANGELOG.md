@@ -3,22 +3,28 @@
 ## 1.6.1
 
 **The fence counts only a decision that holds.** An ADR reference now means an Accepted, not
-superseded ADR naming the changed path as a whole path. A change named only by a Proposed ADR
-is reported for review as info ("covered only by Proposed ADR-0019 (Title), pending review")
-instead of going quiet, and a substring or near-miss mention (`src/a.tsx` for a change to
-`src/a.ts`) warns exactly as an unrecorded crossing. Files under `docs/adrs/proposed/`
-(`ADR-PROPOSED-<slug>.md`) count as Proposed; the ADR index, the template, and any other note
-in the folder no longer count. ADR-0019 records the rule and refines ADR-0010.
+superseded ADR naming the changed path as a whole path. A change named only by a Proposed ADR is
+reported for review as info ("covered only by Proposed ADR-0019 (Title), pending review") instead of
+going quiet, and a substring or near-miss mention (`src/a.tsx` for a change to `src/a.ts`) warns
+exactly as an unrecorded crossing. Files under `docs/adrs/proposed/` (`ADR-PROPOSED-<slug>.md`)
+count as Proposed; the ADR index, the template, and any other note in the folder no longer count.
+ADR-0019 records the rule and refines ADR-0010.
 
-**Upgrading:** if doctor reports a new fence info finding on a Proposed ADR, accept the ADR
-when it records why the code is shaped that way, or record the reason with
-`persist fence add`. The fence stays read-only with no new configuration, the warning stays a
-warning, and the config schema is unchanged.
+**Pending proposals are visible.** The ADR count now reads
+`2 ADRs detected (1 accepted, 1 proposed).`, and each Proposed ADR — numbered or under
+`docs/adrs/proposed/` — gets an info line naming it and the `persist adr accept <slug>` command,
+until a human accepts or rejects it. Info only: a pending proposal never warns, never errors, and
+never blocks a commit.
+
+**Upgrading:** if doctor reports a new fence info finding on a Proposed ADR, accept the ADR when it
+records why the code is shaped that way, or record the reason with `persist fence add`. The fence
+stays read-only with no new configuration, the warning stays a warning, and the config schema is
+unchanged.
 
 ## 1.6.0
 
-**Lessons arrive by area, not as one long list.** `LESSONS.md` keeps every lesson but groups them:
-a short `Always` section for what every task needs, area sections with `Applies To` lists for the
+**Lessons arrive by area, not as one long list.** `LESSONS.md` keeps every lesson but groups them: a
+short `Always` section for what every task needs, area sections with `Applies To` lists for the
 rest. The `Always` bullets load into every session after the fence index, inside the same 24 KB
 always-loaded budget. `persist context` and the prompt hook hand over only the matching areas (at
 most two, three lessons each) after the decisions and Start Here files, with a one-line
@@ -31,9 +37,9 @@ re-running it never touches your `LESSONS.md`. The config schema is unchanged.
 
 **Doctor keeps the shape honest.** The content check warns when `Always` outgrows the few lessons
 every task needs (12 bullets or about 1.5 KB), when the whole file passes about 12 KB, and when an
-area's `Applies To` matches no file in the repository — and notes when a 20-lesson file has no
-areas at all. The code-reference check now scans `LESSONS.md` too, so a lesson citing a deleted
-file is flagged like any other stale pointer.
+area's `Applies To` matches no file in the repository — and notes when a 20-lesson file has no areas
+at all. The code-reference check now scans `LESSONS.md` too, so a lesson citing a deleted file is
+flagged like any other stale pointer.
 
 ## 1.5.0
 

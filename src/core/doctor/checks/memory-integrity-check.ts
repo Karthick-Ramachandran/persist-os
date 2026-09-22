@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { REQUIRED_ADR_SECTIONS } from "../../adr/adr-sections.js";
+import { PROPOSED_ADR_FILE_PATTERN, adrStandingOf, adrTitleOf } from "../../adr/governing-adrs.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 import { requiredDocs } from "./required-files-check.js";
 
@@ -34,12 +35,14 @@ export async function checkMemoryIntegrity(
   const featureFolders = await listFeatureFolders(rootDir, config.featuresDir);
   const moduleFolders = await listModuleFolders(rootDir, config.modulesDir);
   const adrFiles = await listAdrFiles(rootDir, config.adrDir);
+  const proposedFiles = await listProposedFiles(rootDir, config.adrDir);
   const requiredDocPaths = await listRequiredDocs(rootDir, config.docsDir);
 
   if (
     featureFolders.length === 0 &&
     moduleFolders.length === 0 &&
     adrFiles.length === 0 &&
+    proposedFiles.length === 0 &&
     requiredDocPaths.length === 0
   ) {
     return notEvaluated(
@@ -89,6 +92,13 @@ async function listAdrFiles(rootDir: string, adrDir: string): Promise<string[]> 
   const entries = await readDirIfExists(rootDir, adrDir);
   return entries
     .filter((entry) => entry.isFile() && adrFilePattern.test(entry.name))
+    .map((entry) => entry.name);
+}
+
+async function listProposedFiles(rootDir: string, adrDir: string): Promise<string[]> {
+  const entries = await readDirIfExists(rootDir, path.posix.join(adrDir, "proposed"));
+  return entries
+    .filter((entry) => entry.isFile() && PROPOSED_ADR_FILE_PATTERN.test(entry.name))
     .map((entry) => entry.name);
 }
 
@@ -170,10 +180,17 @@ async function checkModuleFolders(rootDir: string, modulesDir: string): Promise<
 async function checkAdrFiles(rootDir: string, adrDir: string): Promise<DoctorFinding[]> {
   const findings: DoctorFinding[] = [];
   const entries = await readDirIfExists(rootDir, adrDir);
-  const adrFiles = entries.filter((entry) => entry.isFile() && adrFilePattern.test(entry.name));
+  const adrFiles = entries
+    .filter((entry) => entry.isFile() && adrFilePattern.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
 
-  for (const adrFile of adrFiles) {
-    const filePath = path.posix.join(adrDir, adrFile.name);
+  let accepted = 0;
+  let other = 0;
+  const pending: { id: string; slug: string; title: string; path: string }[] = [];
+
+  for (const name of adrFiles) {
+    const filePath = path.posix.join(adrDir, name);
     const content = await readFile(path.join(rootDir, filePath), "utf8");
 
     for (const requiredSection of requiredAdrSections) {
@@ -186,15 +203,78 @@ async function checkAdrFiles(rootDir: string, adrDir: string): Promise<DoctorFin
         });
       }
     }
+
+    const standing = adrStandingOf(content);
+    if (standing === "accepted") {
+      accepted += 1;
+    } else if (standing === "proposed") {
+      const number = /^ADR-(\d{4,})-/u.exec(name)?.[1] ?? "";
+      pending.push({
+        id: `ADR-${number}`,
+        slug: name.replace(/^ADR-\d{4,}-/u, "").replace(/\.md$/u, ""),
+        title: adrTitleOf(content, name),
+        path: filePath,
+      });
+    } else {
+      other += 1;
+    }
+  }
+
+  // Drafts are proposals by location: a file under `proposed/` counts as
+  // Proposed without reading its status. They get the pending line only —
+  // never the required-section errors, so creating one can never fail a run.
+  const proposedDir = path.posix.join(adrDir, "proposed");
+  const proposedEntries = await readDirIfExists(rootDir, proposedDir);
+  const proposedNames = proposedEntries
+    .filter((entry) => entry.isFile() && PROPOSED_ADR_FILE_PATTERN.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+  for (const name of proposedNames) {
+    const filePath = path.posix.join(proposedDir, name);
+    const content = await readFile(path.join(rootDir, filePath), "utf8");
+    const slug = PROPOSED_ADR_FILE_PATTERN.exec(name)?.[1] ?? name;
+    pending.push({
+      id: `ADR-PROPOSED-${slug}`,
+      slug,
+      title: adrTitleOf(content, name),
+      path: filePath,
+    });
+  }
+  pending.sort((left, right) => (left.path < right.path ? -1 : 1));
+
+  // Pending proposals are visible but never wrong: info, never a warning or
+  // an error, so the pre-commit hook (which fails only on errors) passes.
+  for (const proposal of pending) {
+    findings.push({
+      severity: "info",
+      check: "adr-memory",
+      message:
+        `${proposal.id} (${proposal.title}) is proposed and awaiting your review. ` +
+        `Accept it with persist adr accept ${proposal.slug} once a human confirms ` +
+        `the decision, or reject it.`,
+      path: proposal.path,
+    });
   }
 
   findings.push({
     severity: "info",
     check: "adr-memory",
-    message: `${adrFiles.length} ADRs detected.`,
+    message: adrCountLine(adrFiles.length + proposedNames.length, accepted, pending.length, other),
   });
 
   return findings;
+}
+
+/**
+ * The ADR count with its standing breakdown. Byte-identical to the old line
+ * when every ADR is accepted, so repositories with no proposals see no change.
+ */
+function adrCountLine(total: number, accepted: number, proposed: number, other: number): string {
+  if (proposed === 0 && other === 0) {
+    return `${total} ADRs detected.`;
+  }
+  const otherPart = other === 0 ? "" : `, ${other} other`;
+  return `${total} ADRs detected (${accepted} accepted, ${proposed} proposed${otherPart}).`;
 }
 
 /**
