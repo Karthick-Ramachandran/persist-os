@@ -17,7 +17,34 @@ export type GoverningAdr = {
   appliesTo: string[];
 };
 
-const ADR_FILE_PATTERN = /^(ADR-\d{4,})-[a-z0-9-]+\.md$/iu;
+export const ADR_FILE_PATTERN = /^(ADR-\d{4,})-[a-z0-9-]+\.md$/iu;
+
+/** Proposals waiting under `<adrDir>/proposed/`: `ADR-PROPOSED-<slug>.md`. */
+export const PROPOSED_ADR_FILE_PATTERN = /^ADR-PROPOSED-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/iu;
+
+/**
+ * What the fence needs to know about an ADR's standing: an Accepted ADR that still binds, a
+ * Proposed one awaiting review, or anything else (rejected, deprecated, superseded, missing).
+ * One reader, shared by the governing-ADRs check and the fence, so the two can never disagree
+ * about whether a decision holds.
+ */
+export type AdrStanding = "accepted" | "proposed" | "other";
+
+export function adrStandingOf(content: string): AdrStanding {
+  const status = section(content, "Status");
+  if (/\baccepted\b/iu.test(status) && !/superseded\s+by/iu.test(status)) {
+    return "accepted";
+  }
+  if (status.toLowerCase().includes("proposed")) {
+    return "proposed";
+  }
+  return "other";
+}
+
+/** The ADR title from its top heading, without a leading `ADR-0001:` or `Proposed ADR:` label. */
+export function adrTitleOf(content: string, fallback: string): string {
+  return (/^#\s+(?:ADR-\d+:\s*|Proposed ADR:\s*)?(.+)$/mu.exec(content)?.[1] ?? fallback).trim();
+}
 
 /** Accepted ADRs that declare the paths they govern. */
 export async function readGoverningAdrs(rootDir: string, adrDir: string): Promise<GoverningAdr[]> {
@@ -48,8 +75,7 @@ export async function readAcceptedAdrs(rootDir: string, adrDir: string): Promise
 
     const file = path.posix.join(adrDir, name);
     const content = await readFile(path.join(rootDir, file), "utf8");
-    const status = section(content, "Status");
-    if (!/\baccepted\b/iu.test(status) || /superseded\s+by/iu.test(status)) {
+    if (adrStandingOf(content) !== "accepted") {
       continue;
     }
 
@@ -58,7 +84,7 @@ export async function readAcceptedAdrs(rootDir: string, adrDir: string): Promise
     adrs.push({
       id: (match[1] ?? "").toUpperCase(),
       file,
-      title: (/^#\s+(?:ADR-\d+:\s*)?(.+)$/mu.exec(content)?.[1] ?? name).trim(),
+      title: adrTitleOf(content, name),
       decision: firstStatement(section(content, "Decision")),
       appliesTo,
     });

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.1
+
+**The fence counts only a decision that holds.** An ADR reference now means an Accepted, not
+superseded ADR naming the changed path as a whole path. A change named only by a Proposed ADR
+is reported for review as info ("covered only by Proposed ADR-0019 (Title), pending review")
+instead of going quiet, and a substring or near-miss mention (`src/a.tsx` for a change to
+`src/a.ts`) warns exactly as an unrecorded crossing. Files under `docs/adrs/proposed/`
+(`ADR-PROPOSED-<slug>.md`) count as Proposed; the ADR index, the template, and any other note
+in the folder no longer count. ADR-0019 records the rule and refines ADR-0010.
+
+**Upgrading:** if doctor reports a new fence info finding on a Proposed ADR, accept the ADR
+when it records why the code is shaped that way, or record the reason with
+`persist fence add`. The fence stays read-only with no new configuration, the warning stays a
+warning, and the config schema is unchanged.
+
 ## 1.6.0
 
 **Lessons arrive by area, not as one long list.** `LESSONS.md` keeps every lesson but groups them:

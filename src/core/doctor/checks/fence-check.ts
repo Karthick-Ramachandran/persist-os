@@ -1,6 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  ADR_FILE_PATTERN,
+  PROPOSED_ADR_FILE_PATTERN,
+  adrStandingOf,
+  adrTitleOf,
+  type AdrStanding,
+} from "../../adr/governing-adrs.js";
 import { fenceFileKey } from "../../fence/generate-fence.js";
 import { isTestFile } from "../../naming/test-files.js";
 import { NO_UPSTREAM_REASON, readChangeSet } from "../change-set.js";
@@ -115,7 +122,7 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
 
   const fencesPath = path.posix.join(context.config.docsDir, FENCES_FILE);
   const fences = await readFences(context.rootDir, fencesPath);
-  const adrText = await readAdrText(context.rootDir, context.config.adrDir);
+  const adrs = await readFenceAdrs(context.rootDir, context.config.adrDir);
 
   const findings: DoctorFinding[] = [];
   for (const file of inScope) {
@@ -132,7 +139,30 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
       continue;
     }
 
-    if (adrText.includes(file)) {
+    // An Accepted ADR that still binds and names the file is the recorded reason, so the
+    // fence stays quiet. A file named only by Proposed ADRs is reported for review: a draft
+    // naming the file is not a human-confirmed reason. Anything else warns, as before.
+    if (adrs.some((adr) => adr.standing === "accepted" && mentionsPath(adr.body, file))) {
+      continue;
+    }
+
+    const proposed = adrs
+      .filter((adr) => adr.standing === "proposed" && mentionsPath(adr.body, file))
+      .sort(
+        (left, right) =>
+          (left.number ?? Number.MAX_SAFE_INTEGER) - (right.number ?? Number.MAX_SAFE_INTEGER) ||
+          (left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+      )[0];
+    if (proposed !== undefined) {
+      findings.push({
+        severity: "info",
+        check: "fence",
+        message:
+          `${crossing} to ${file} is covered only by Proposed ${proposed.id} ` +
+          `(${proposed.title}), pending review. Accept it if it records why this code is ` +
+          `shaped this way, or record the reason with persist fence add.`,
+        path: file,
+      });
       continue;
     }
 
@@ -238,19 +268,87 @@ async function readFences(rootDir: string, fencesPath: string): Promise<Map<stri
 }
 
 /**
- * Every `.md` file directly under the ADR dir counts as a decision record; a changed path
- * mentioned in any of them means the reasoning is being recorded somewhere, so the fence stays
- * quiet. Substring match covers backticked, suffixed (`path:12`), and bare mentions.
+ * What the fence reads: numbered ADRs (`ADR-0007-<slug>.md`) directly under the ADR dir, plus
+ * proposals waiting under `<adrDir>/proposed/` (`ADR-PROPOSED-<slug>.md`), which count as
+ * Proposed. Nothing else in the folder counts — not the index, not the template. Standing
+ * comes from the one shared status reader, so the fence and the governing-ADRs check agree.
  */
-async function readAdrText(rootDir: string, adrDir: string): Promise<string> {
-  const bodies = await readAdrBodies(rootDir, adrDir);
-  return bodies.join("\n");
+type FenceAdr = {
+  id: string;
+  title: string;
+  standing: AdrStanding;
+  /** ADR number for ordering, or null for unnumbered proposals under `proposed/`. */
+  number: number | null;
+  body: string;
+};
+
+async function readFenceAdrs(rootDir: string, adrDir: string): Promise<FenceAdr[]> {
+  const adrs: FenceAdr[] = [];
+
+  for (const name of await listFiles(rootDir, adrDir)) {
+    const match = ADR_FILE_PATTERN.exec(name);
+    if (match === null) {
+      continue;
+    }
+    const file = path.posix.join(adrDir, name);
+    const body = await readFileIfExists(rootDir, file);
+    if (body === undefined) {
+      continue;
+    }
+    const number = Number.parseInt(match[1] ?? "", 10);
+    adrs.push({
+      id: (match[1] ?? "").toUpperCase(),
+      title: adrTitleOf(body, name),
+      standing: adrStandingOf(body),
+      number: Number.isNaN(number) ? null : number,
+      body,
+    });
+  }
+
+  for (const name of await listFiles(rootDir, path.posix.join(adrDir, "proposed"))) {
+    if (PROPOSED_ADR_FILE_PATTERN.exec(name) === null) {
+      continue;
+    }
+    const file = path.posix.join(adrDir, "proposed", name);
+    const body = await readFileIfExists(rootDir, file);
+    if (body === undefined) {
+      continue;
+    }
+    adrs.push({
+      id: `ADR-PROPOSED-${name.replace(/^ADR-PROPOSED-|\.md$/gu, "")}`,
+      title: adrTitleOf(body, name),
+      // Proposals count as Proposed by location: a draft is a draft wherever its status line
+      // stands, until a human accepts it out of this folder.
+      standing: "proposed",
+      number: null,
+      body,
+    });
+  }
+
+  return adrs;
 }
 
-async function readAdrBodies(rootDir: string, adrDir: string): Promise<string[]> {
+/**
+ * A mention counts only as a whole path: not glued to a longer path on either side. A
+ * `:line` suffix still counts (`src/a.ts:12`), and backticked, bulleted, and bare mentions
+ * all still count — they were never glued to anything.
+ */
+function mentionsPath(body: string, repoRelativePath: string): boolean {
+  const pattern = new RegExp(
+    `(?<![A-Za-z0-9/._-])${escapeRegExp(repoRelativePath)}(?::\\d+)?(?![A-Za-z0-9/._-])`,
+    "u",
+  );
+  return pattern.test(body);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+async function listFiles(rootDir: string, relativeDir: string): Promise<string[]> {
   let entries;
   try {
-    entries = await readdir(path.join(rootDir, adrDir), { withFileTypes: true });
+    entries = await readdir(path.join(rootDir, relativeDir), { withFileTypes: true });
   } catch (error) {
     const nodeError = error as NodeJS.ErrnoException;
     if (nodeError.code === "ENOENT") {
@@ -258,19 +356,10 @@ async function readAdrBodies(rootDir: string, adrDir: string): Promise<string[]>
     }
     throw error;
   }
-
-  const bodies: string[] = [];
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.endsWith(".md")) {
-      continue;
-    }
-    const content = await readFileIfExists(rootDir, path.posix.join(adrDir, entry.name));
-    if (content !== undefined) {
-      bodies.push(content);
-    }
-  }
-
-  return bodies;
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .sort();
 }
 
 function notEvaluated(reason: string): FenceCheckResult {

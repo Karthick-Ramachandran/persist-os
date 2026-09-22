@@ -173,7 +173,7 @@ describe("checkFence", () => {
     await write(
       rootDir,
       "docs/adrs/ADR-0001-example.md",
-      `# ADR-0001: Example\n\nCovers \`${staged}\` and its split.\n`,
+      `# ADR-0001: Example\n\n## Status\n\nAccepted\n\nCovers \`${staged}\` and its split.\n`,
     );
 
     const { findings, outcome } = await checkFence(contextFor(rootDir));
@@ -245,6 +245,259 @@ describe("checkFence", () => {
 
     expect(findings).toEqual([]);
     expect(outcome.status).toBe("not-evaluated");
+  });
+});
+
+describe("fence ADR status", () => {
+  const roots: string[] = [];
+
+  async function createRoot(prefix: string): Promise<string> {
+    const rootDir = await createTempRoot(prefix);
+    roots.push(rootDir);
+    return rootDir;
+  }
+
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
+  });
+
+  function contextFor(rootDir: string): DoctorCheckContext {
+    return {
+      rootDir,
+      config: {
+        docsDir: "docs",
+        featuresDir: "docs/40-features",
+        modulesDir: "docs/30-modules",
+        adrDir: "docs/adrs",
+        fenceEnabled: true,
+      },
+    };
+  }
+
+  async function write(rootDir: string, relativePath: string, content: string): Promise<void> {
+    const full = path.join(rootDir, relativePath);
+    await mkdir(path.dirname(full), { recursive: true });
+    await writeFile(full, content, "utf8");
+  }
+
+  function git(rootDir: string, args: string[]): void {
+    execFileSync("git", args, { cwd: rootDir, stdio: "ignore" });
+  }
+
+  function commitAll(rootDir: string, message: string): void {
+    git(rootDir, ["config", "user.email", "test@example.com"]);
+    git(rootDir, ["config", "user.name", "Test"]);
+    git(rootDir, ["add", "-A"]);
+    git(rootDir, ["commit", "-q", "-m", message, "--no-verify"]);
+  }
+
+  async function stageSource(rootDir: string, relativePath = "src/billing.ts"): Promise<string> {
+    git(rootDir, ["init"]);
+    await write(rootDir, relativePath, "export const x = 1;\n");
+    commitAll(rootDir, "base");
+    await write(rootDir, relativePath, "export const x = 2;\n");
+    git(rootDir, ["add", relativePath]);
+    return relativePath;
+  }
+
+  function adrDocument(id: string, title: string, status: string, body: string): string {
+    return [`# ${id}: ${title}`, "", "## Status", "", status, "", "## Decision", "", body, ""].join(
+      "\n",
+    );
+  }
+
+  it("stays quiet when an Accepted ADR names the file as a whole path", async () => {
+    const rootDir = await createRoot("fence-accepted-names");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-rounding.md",
+      adrDocument("ADR-0007", "Rounding", "Accepted", `Covers \`${staged}\` and its split.`),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toEqual([]);
+  });
+
+  it("reports info naming the ADR when only a Proposed ADR names the file", async () => {
+    const rootDir = await createRoot("fence-proposed-info");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0019-tip-rounding.md",
+      adrDocument("ADR-0019", "Tip rounding", "Proposed", `Covers \`${staged}\`.`),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "info", check: "fence", path: staged });
+    expect(findings[0]?.message).toContain("Proposed ADR-0019");
+    expect(findings[0]?.message).toContain("Tip rounding");
+    expect(findings[0]?.message).toContain("pending review");
+    expect(findings[0]?.message).toContain("persist fence add");
+  });
+
+  it("reports info when only a proposal under proposed/ names the file", async () => {
+    const rootDir = await createRoot("fence-proposed-dir-info");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/proposed/ADR-PROPOSED-tip-rounding.md",
+      adrDocument(
+        "Proposed ADR",
+        "Tip rounding",
+        "Proposed",
+        `Covers \`${staged}\` once accepted.`,
+      ),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "info", check: "fence", path: staged });
+    expect(findings[0]?.message).toContain("Proposed");
+    expect(findings[0]?.message).toContain("pending review");
+  });
+
+  it("warns when the only naming ADR was superseded", async () => {
+    const rootDir = await createRoot("fence-superseded-warns");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-rounding.md",
+      adrDocument(
+        "ADR-0007",
+        "Rounding",
+        "Accepted — superseded by ADR-0020",
+        `Covers \`${staged}\`.`,
+      ),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: staged });
+  });
+
+  it("warns when only a Rejected ADR names the file", async () => {
+    const rootDir = await createRoot("fence-rejected-warns");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-rounding.md",
+      adrDocument("ADR-0007", "Rounding", "Rejected", `Covers \`${staged}\`.`),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: staged });
+  });
+
+  it("warns when only docs/adrs/README.md names the file", async () => {
+    const rootDir = await createRoot("fence-readme-warns");
+    const staged = await stageSource(rootDir);
+    await write(rootDir, "docs/adrs/README.md", `# ADRs\n\nSee \`${staged}\` for context.\n`);
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: staged });
+  });
+
+  it("warns when an ADR names src/a.tsx and the change is src/a.ts", async () => {
+    const rootDir = await createRoot("fence-near-miss-ext");
+    await stageSource(rootDir, "src/a.ts");
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-example.md",
+      adrDocument("ADR-0007", "Example", "Accepted", "Covers `src/a.tsx` and its styles."),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: "src/a.ts" });
+  });
+
+  it("warns when an ADR names packages/x/src/a.ts and the change is src/a.ts", async () => {
+    const rootDir = await createRoot("fence-near-miss-prefix");
+    await stageSource(rootDir, "src/a.ts");
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-example.md",
+      adrDocument(
+        "ADR-0007",
+        "Example",
+        "Accepted",
+        "Covers `packages/x/src/a.ts` in the monorepo.",
+      ),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: "src/a.ts" });
+  });
+
+  it.each([
+    ["line-suffixed mention", "Covers `src/a.ts:12` and its split."],
+    ["backticked mention", "Covers `src/a.ts` and its split."],
+    ["bare mention in prose", "Covers src/a.ts and its split."],
+  ])("stays quiet for a %s in an Accepted ADR", async (_label, mention) => {
+    const rootDir = await createRoot("fence-mention-styles");
+    await stageSource(rootDir, "src/a.ts");
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-example.md",
+      adrDocument("ADR-0007", "Example", "Accepted", mention),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toEqual([]);
+  });
+
+  it("stays quiet when Accepted and Proposed ADRs both name the file", async () => {
+    const rootDir = await createRoot("fence-accepted-wins");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-rounding.md",
+      adrDocument("ADR-0007", "Rounding", "Accepted", `Covers \`${staged}\`.`),
+    );
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0019-tip-rounding.md",
+      adrDocument("ADR-0019", "Tip rounding", "Proposed", `Also covers \`${staged}\`.`),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toEqual([]);
+  });
+
+  it("names the lowest-numbered Proposed ADR when several name the file", async () => {
+    const rootDir = await createRoot("fence-lowest-proposed");
+    const staged = await stageSource(rootDir);
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0021-later.md",
+      adrDocument("ADR-0021", "Later", "Proposed", `Covers \`${staged}\`.`),
+    );
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0019-earlier.md",
+      adrDocument("ADR-0019", "Earlier", "Proposed", `Covers \`${staged}\`.`),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: "info", check: "fence", path: staged });
+    expect(findings[0]?.message).toContain("Proposed ADR-0019");
   });
 });
 

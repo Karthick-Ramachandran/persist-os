@@ -136,6 +136,8 @@ If two sources conflict, stop and report the conflict before changing files.
   temporary state once that state is fixed.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
+- A Proposed ADR does not clear the fence; it is reported for review until a human accepts it.
+  Never write an ADR just to quiet a fence warning.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
   Never diverge quietly. Run the adr-compliance skill in full when the diff is large, touches several
   decisions, or touches money, auth, or the data model; otherwise step 4's quick check is enough.
@@ -258,6 +260,8 @@ maintains area memory through cards.
   temporary state once that state is fixed.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.
+- A Proposed ADR does not clear the fence; it is reported for review until a human accepts it.
+  Never write an ADR just to quiet a fence warning.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
   Never diverge quietly. For a large diff, several decisions, or money, auth, or data-model code,
   run the full adr-compliance review.
