@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 const execFileAsync = promisify(execFile);
 const cliPath = path.join(process.cwd(), "dist", "cli.js");
@@ -53,10 +53,6 @@ async function runPiped(
 
 describe("built persist binary", () => {
   const roots: string[] = [];
-
-  beforeAll(async () => {
-    await execFileAsync("pnpm", ["build"], { cwd: process.cwd() });
-  }, 30_000);
 
   afterAll(async () => {
     await Promise.all(roots.map((rootDir) => rm(rootDir, { recursive: true, force: true })));

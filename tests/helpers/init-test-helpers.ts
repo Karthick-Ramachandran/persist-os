@@ -16,7 +16,9 @@ export async function createTempRoot(prefix: string): Promise<string> {
 }
 
 export async function removeTempRoot(rootDir: string): Promise<void> {
-  await rm(rootDir, { recursive: true, force: true });
+  // Retried: a git process started by the test can still be writing under .git/objects when
+  // cleanup runs, and one "directory not empty" used to fail CI at random.
+  await rm(rootDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
 export async function runInitCommand(
