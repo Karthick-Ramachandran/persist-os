@@ -11,6 +11,12 @@ top-level code folder in the repository; dependencies, build output, hidden fold
 folder are skipped, and `src/` and `tests/` always count, so existing repositories behave exactly as
 before.
 
+**A CLAUDE.md linked to AGENTS.md no longer blocks every commit.** Many repositories keep one rules
+file and link the rest to it. Doctor checked files without following links, reported `CLAUDE.md` as
+missing, and that error made the pre-commit hook refuse every commit. Doctor now follows a link
+whose target is a file inside the repository; a link that points outside it, or nowhere, still
+counts as missing. The context budget counts linked text once.
+
 ## 1.4.0
 
 What 1.0 cut, restored in the leaner format. The skill catalog grows from six to twelve:
