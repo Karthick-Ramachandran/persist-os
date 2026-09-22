@@ -83,7 +83,7 @@ exit 1
  * rather than copying it, so the triggers stay identical everywhere.
  */
 const STOP_AND_ASK_STEP =
-  "Apply the shared Stop and ask list before continuing past any trigger (see AGENTS.md).";
+  "Apply the shared Stop and ask list before continuing past any trigger (see AGENTS.md); when working unattended, follow its Working unattended section instead of waiting.";
 
 const STOP_AND_ASK_RESOURCE = "For the shared Stop and ask list → AGENTS.md";
 
@@ -262,6 +262,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     output: [
       "The report: files, commands with results, skips, and risks.",
       "The docs updated, if any.",
+      'A "Needs your review" list when any exist: Proposed ADRs, assumptions, blocked tasks, and security-sensitive changes, each with the file to open.',
     ],
   },
   {
@@ -319,7 +320,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Record architecture impact and whether a new ADR is needed (propose it with `persist adr create`; accept it yourself only when the human stated or confirmed the decision in this conversation, quoted in the hand-back).",
       "Break the work into ordered tasks, each with explicit completion evidence.",
       "Derive the test plan from acceptance criteria, risks, and likely regressions.",
-      "Stop before implementation and hand back the PLAN, TASKS, and TEST_PLAN paths.",
+      "Hand back the PLAN, TASKS, and TEST_PLAN paths before implementing; when working unattended through a goal or task list, continue straight into the first task with the implement-task skill.",
       STOP_AND_ASK_STEP,
     ],
     decisions: [

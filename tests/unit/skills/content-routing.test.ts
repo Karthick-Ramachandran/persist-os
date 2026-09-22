@@ -98,6 +98,33 @@ describe("retired skill content routing", () => {
     }
   });
 
+  it("never leaves an unattended run waiting on a human", async () => {
+    // People hand agents a PRD and a task list and walk away. Every "stop and ask" must have an
+    // unattended path that records and continues, and none of those paths may break an accepted
+    // ADR or weaken a check to get unstuck.
+    const rootDir = await initializedRepo();
+    for (const file of ["AGENTS.md", ".cursor/rules/persist-memory.mdc"]) {
+      const rules = readFileSync(path.join(rootDir, file), "utf8");
+      expect(rules, file).toContain("## Working unattended");
+      expect(rules, file).toContain("never stop and wait");
+      expect(rules, file).toMatch(/Proposed ADR/u);
+      expect(rules, file).toMatch(/--no-verify/u);
+      expect(rules, file).toContain("Needs your review");
+    }
+
+    const plan = getCatalogSkill("plan-feature");
+    expect(plan?.workflow.join("\n")).toContain("continue straight into the first task");
+    expect(plan?.workflow.join("\n")).not.toContain("Stop before implementation");
+
+    for (const skill of SKILL_CATALOG) {
+      const text = skill.workflow.join("\n");
+      if (text.includes("Stop and ask list")) {
+        expect(text, skill.name).toContain("Working unattended section");
+      }
+    }
+    expect(getCatalogSkill("completion-report")?.output.join("\n")).toContain("Needs your review");
+  });
+
   it("still-retired ids fall through to the skeleton instead of the catalog", () => {
     for (const name of STILL_RETIRED.keys()) {
       expect(getCatalogSkill(name), name).toBeUndefined();
