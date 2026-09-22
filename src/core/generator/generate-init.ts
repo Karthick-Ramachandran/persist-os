@@ -18,6 +18,8 @@ export type GenerateOptInFilesOptions = {
 type InitTemplate = {
   path: string;
   content: string;
+  /** Per-file write policy, e.g. user-owned memory init must never rewrite. */
+  policy?: "skip-existing" | "overwrite";
 };
 
 const neutralTemplates: InitTemplate[] = [
@@ -127,7 +129,11 @@ If two sources conflict, stop and report the conflict before changing files.
   a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
   type, or pattern it lists; when you make a new reusable one, add it there.
-- When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
+- When something breaks non-obviously, add a one-line lesson. Put it under the area it belongs to
+  (create the area with an Applies To list if none fits). Put it under Always only if every task in
+  this repository needs it. When a regression test or a CONVENTIONS rule now enforces a lesson, move
+  it there or delete it, and name the test or rule in the commit. Delete a lesson that describes a
+  temporary state once that state is fixed.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
@@ -145,7 +151,9 @@ If two sources conflict, stop and report the conflict before changing files.
 - \`docs/50-quality/QUALITY_GATES.md\`
 - \`docs/60-engineering/ENGINEERING_STANDARDS.md\`
 - \`docs/60-engineering/CONVENTIONS.md\`
-- \`docs/60-engineering/LESSONS.md\`
+- The Always lessons load every session; the lessons for your area arrive with the pointers. If
+  they don't cover what you're doing, open the section of \`docs/60-engineering/LESSONS.md\` that
+  does (the pointers list them).
 
 ## Persist commands
 
@@ -227,7 +235,9 @@ maintains area memory through cards.
   done, check your changed lines against each governing decision (\`persist doctor\` names them) and
   run the tests and doctor; then add the task to the area card's Answers list, as it was asked.
 - Read \`AGENTS.md\` and the docs it routes to only when no card covers the area or the work is new
-  ground.
+  ground. The Always lessons load every session; the lessons for your area arrive with the pointers.
+  If they don't cover what you're doing, open the section of \`docs/60-engineering/LESSONS.md\` that
+  does (the pointers list them).
 - Match ceremony to scope, both ways: a genuinely new feature, module, integration, data model, or
   security/architecture decision gets proper planning; a small addition or fix within an
   already-decided area just gets implemented with focused tests. Judge by novelty and blast radius,
@@ -241,7 +251,11 @@ maintains area memory through cards.
   next session — if it is not in a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
   reusable primitive there when you make one.
-- When something breaks non-obviously, add a one-line entry to \`docs/60-engineering/LESSONS.md\`.
+- When something breaks non-obviously, add a one-line lesson. Put it under the area it belongs to
+  (create the area with an Applies To list if none fits). Put it under Always only if every task in
+  this repository needs it. When a regression test or a CONVENTIONS rule now enforces a lesson, move
+  it there or delete it, and name the test or rule in the commit. Delete a lesson that describes a
+  temporary state once that state is fixed.
 - Never contradict an accepted ADR in \`docs/adrs/\`. To change one, confirm with a human and run
   \`persist adr supersede <old> <new-title>\`.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
@@ -370,17 +384,31 @@ Describe patterns that look reasonable but are wrong here, and what to do instea
 `,
   },
   {
+    // User-owned from the first write: init creates it when missing and never
+    // rewrites it, so a re-run cannot clobber lessons the team has recorded.
     path: "docs/60-engineering/LESSONS.md",
+    policy: "skip-existing",
     content: `# Lessons
 
 Durable, hard-won lessons for this repository, so agents and humans do not repeat the same mistakes.
 Add a lesson when something broke in a non-obvious way, or when a tempting approach turned out to be
 wrong. Keep each entry short: what happened, why, and what to do instead. Repository rules override
 model preferences.
+<!-- Always loads into every session: keep only the few lessons every task needs. -->
+<!-- Area sections ride with the pointers when they match the task; the rest are only indexed. -->
 
-## Lessons
+## Always
 
-- (none yet) Record the first lesson when one is learned.
+- (example) Replace this line with the first lesson every task in this repository needs.
+
+## Example area
+
+Applies To:
+- \`src/example/**\`
+
+Also Known As: example, sample
+
+- (example) What broke here, why, and what to do instead.
 `,
   },
   {
@@ -432,6 +460,7 @@ export function generateInitFiles(options: GenerateInitFilesOptions): WriteFileI
   return neutralTemplates.map((template) => ({
     path: template.path,
     content: renderTemplate(template.content, context),
+    ...(template.policy === undefined ? {} : { policy: template.policy }),
   }));
 }
 

@@ -5,8 +5,11 @@ import { FENCES_FILE } from "../../fence/generate-fence.js";
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
   FENCE_INDEX_LABEL,
+  FENCE_INDEX_TRUNCATION_MARKER,
+  LESSONS_ALWAYS_LABEL,
   SESSION_START_BASE_CONTEXT,
 } from "../../hooks/generate-hook.js";
+import { flattenAlwaysSection, LESSONS_FILE } from "../../lessons/lessons.js";
 import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
 
 // Files an AI tool loads into context every session (auto-loaded, not on-demand). Whichever exist for
@@ -61,54 +64,91 @@ export async function checkContextBudget(context: DoctorCheckContext): Promise<D
     });
   }
 
-  findings.push(...(await checkFenceIndexShare(context, total)));
+  findings.push(...(await checkFenceAndAlwaysShare(context, total)));
 
   return findings;
 }
 
 /**
- * The fence index's share of the budget, computed exactly the way the hook computes it: the
- * flattened index lines, against the budget minus the agent files minus the base context minus
- * the index label. A missing FENCES.md injects nothing, so there is nothing to measure.
+ * The fence index's and Always lessons' shares of the budget, computed exactly the way the
+ * hook computes them: the flattened index lines plus the flattened Always section, against
+ * the budget minus the agent files minus the base context minus both labels. The fence room
+ * leaves space for the Always section (as the hook does), and the Always section takes
+ * whatever remains. A missing file injects nothing, so there is nothing to measure.
  */
-async function checkFenceIndexShare(
+async function checkFenceAndAlwaysShare(
   context: DoctorCheckContext,
   agentBytes: number,
 ): Promise<DoctorFinding[]> {
   const fencesPath = path.posix.join(context.config?.docsDir ?? "", FENCES_FILE);
   const fences = await readFileIfExists(context.rootDir, fencesPath);
-  if (fences === undefined) {
-    return [];
+  const lessonsPath = path.posix.join(context.config?.docsDir ?? "", LESSONS_FILE);
+  const lessons = await readFileIfExists(context.rootDir, lessonsPath);
+
+  const index = fences === undefined ? "" : flattenFenceIndex(fences);
+  const always = lessons === undefined ? "" : flattenAlwaysSection(lessons);
+  const baseBytes = Buffer.byteLength(SESSION_START_BASE_CONTEXT, "utf8");
+  const findings: DoctorFinding[] = [];
+
+  const alwaysBytes = Buffer.byteLength(always, "utf8");
+  const alwaysLabelBytes = always === "" ? 0 : Buffer.byteLength(LESSONS_ALWAYS_LABEL, "utf8");
+  let fencesUsed = 0;
+
+  if (index !== "") {
+    const indexBytes = Buffer.byteLength(index, "utf8");
+    const room =
+      BUDGET_BYTES -
+      agentBytes -
+      baseBytes -
+      Buffer.byteLength(FENCE_INDEX_LABEL, "utf8") -
+      alwaysLabelBytes -
+      alwaysBytes;
+
+    if (indexBytes > room) {
+      findings.push({
+        severity: "warning",
+        check: "context-budget",
+        message:
+          `The fence index (${formatKb(indexBytes)} of recorded reasons) no longer fits its ` +
+          `${formatKb(Math.max(room, 0))} share of the always-loaded budget — the SessionStart hook ` +
+          `truncates it, so some reasons never load into sessions. Shorten Why: lines or remove ` +
+          `stale fences so the whole index fits.`,
+        path: fencesPath,
+      });
+    }
+    // What the hook actually emits: the whole index when it fits, otherwise the
+    // truncated room (or just the marker when even that is gone).
+    const markerBytes = Buffer.byteLength(
+      FENCE_INDEX_TRUNCATION_MARKER.replace("${fences_file}", fencesPath),
+      "utf8",
+    );
+    fencesUsed = indexBytes <= room ? indexBytes : room <= 0 ? markerBytes : room;
   }
 
-  const index = flattenFenceIndex(fences);
-  if (index === "") {
-    return [];
+  if (always !== "") {
+    const room =
+      BUDGET_BYTES -
+      agentBytes -
+      baseBytes -
+      (index === "" ? 0 : Buffer.byteLength(FENCE_INDEX_LABEL, "utf8")) -
+      fencesUsed -
+      alwaysLabelBytes;
+
+    if (alwaysBytes > room) {
+      findings.push({
+        severity: "warning",
+        check: "context-budget",
+        message:
+          `The Always lessons (${formatKb(alwaysBytes)}) no longer fit their ` +
+          `${formatKb(Math.max(room, 0))} share of the always-loaded budget — the SessionStart hook ` +
+          `truncates them, so some lessons never load into sessions. Move lessons into areas so ` +
+          `only the few every task needs stay in Always.`,
+        path: lessonsPath,
+      });
+    }
   }
 
-  const indexBytes = Buffer.byteLength(index, "utf8");
-  const room =
-    BUDGET_BYTES -
-    agentBytes -
-    Buffer.byteLength(SESSION_START_BASE_CONTEXT, "utf8") -
-    Buffer.byteLength(FENCE_INDEX_LABEL, "utf8");
-
-  if (indexBytes <= room) {
-    return [];
-  }
-
-  return [
-    {
-      severity: "warning",
-      check: "context-budget",
-      message:
-        `The fence index (${formatKb(indexBytes)} of recorded reasons) no longer fits its ` +
-        `${formatKb(Math.max(room, 0))} share of the always-loaded budget — the SessionStart hook ` +
-        `truncates it, so some reasons never load into sessions. Shorten Why: lines or remove ` +
-        `stale fences so the whole index fits.`,
-      path: fencesPath,
-    },
-  ];
+  return findings;
 }
 
 /**

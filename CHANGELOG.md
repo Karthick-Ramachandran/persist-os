@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.0
+
+**Lessons arrive by area, not as one long list.** `LESSONS.md` keeps every lesson but groups them:
+a short `Always` section for what every task needs, area sections with `Applies To` lists for the
+rest. The `Always` bullets load into every session after the fence index, inside the same 24 KB
+always-loaded budget. `persist context` and the prompt hook hand over only the matching areas (at
+most two, three lessons each) after the decisions and Start Here files, with a one-line
+`More lessons` index naming the rest. A flat `LESSONS.md` with no sections behaves exactly as
+before, and `init` never rewrites an existing one. ADR-0018 records the format and stays Proposed.
+
+**Upgrading:** group existing lessons under areas with `Applies To` lists when doctor suggests it —
+nothing is restructured automatically. `init` writes the sectioned template for new repositories;
+re-running it never touches your `LESSONS.md`. The config schema is unchanged.
+
+**Doctor keeps the shape honest.** The content check warns when `Always` outgrows the few lessons
+every task needs (12 bullets or about 1.5 KB), when the whole file passes about 12 KB, and when an
+area's `Applies To` matches no file in the repository — and notes when a 20-lesson file has no
+areas at all. The code-reference check now scans `LESSONS.md` too, so a lesson citing a deleted
+file is flagged like any other stale pointer.
+
 ## 1.5.0
 
 **Works out of the box on any stack.** `init` detects the test command and pre-push gates for

@@ -66,13 +66,21 @@ export async function hookContext(options: HookContextOptions): Promise<HookCont
   let pointers = "";
   try {
     const found = await findContext({ rootDir: options.rootDir, task: prompt, limit: HOOK_LIMIT });
-    if (found.cards.length > 0) {
-      pointers = capBytes(
-        formatFindContextResult(
-          { task: found.task, cards: found.cards, secondary: [], matched: true },
-          { echoTask: false },
-        ),
-        HOOK_MAX_BYTES,
+    // Cards first; when no card matches, the best-matching lesson areas ride
+    // on their own. Loose secondary hits alone stay silent, as before — the
+    // hook is a nudge toward area memory, not the full lookup.
+    if (found.cards.length > 0 || found.lessons.length > 0) {
+      pointers = formatFindContextResult(
+        {
+          task: found.task,
+          cards: found.cards,
+          secondary: [],
+          lessons: found.lessons,
+          moreLessons: found.moreLessons,
+          lessonsFile: found.lessonsFile,
+          matched: true,
+        },
+        { echoTask: false, maxBytes: HOOK_MAX_BYTES },
       );
     }
   } catch {
@@ -123,19 +131,6 @@ function extractPrompt(rawInput: string): string {
   } catch {
     return "";
   }
-}
-
-/** Cut to a byte budget on a line boundary, so a truncated pointer list stays readable. */
-function capBytes(text: string, maxBytes: number): string {
-  if (Buffer.byteLength(text, "utf8") <= maxBytes) {
-    return text;
-  }
-  let cut = text;
-  while (cut.length > 0 && Buffer.byteLength(cut, "utf8") > maxBytes) {
-    cut = cut.slice(0, -1);
-  }
-  const newline = cut.lastIndexOf("\n");
-  return `${(newline > 0 ? cut.slice(0, newline) : cut).replace(/\s+$/u, "")}\n`;
 }
 
 /** Read the whole hook payload from stdin. The prompt text stays in memory: never logged. */

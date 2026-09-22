@@ -8,7 +8,14 @@ import {
   type GoverningAdr,
 } from "../../core/adr/governing-adrs.js";
 import type { ContextCard } from "../../core/context/context-card.js";
-import { searchContext, type ScoredCard, type ScoredSecondary } from "../../core/context/search.js";
+import {
+  MIN_AREA_SCORE,
+  searchContext,
+  type ScoredCard,
+  type ScoredLessonArea,
+  type ScoredSecondary,
+} from "../../core/context/search.js";
+import { tokenize } from "../../core/context/tokenize.js";
 
 export type FindContextOptions = {
   rootDir: string;
@@ -41,10 +48,28 @@ export type FindContextSecondary = {
   detail: string;
 };
 
+export type FindContextLesson = {
+  /** Area title as written in LESSONS.md. */
+  area: string;
+  /** Repo-relative LESSONS.md path. */
+  file: string;
+  matched: string[];
+  /** File names whose bridge boosted this area; empty when it did not fire. */
+  bridge: string[];
+  /** At most 3 bullets: the area's own lessons, never the whole file. */
+  bullets: string[];
+};
+
 export type FindContextResult = {
   task: string;
   cards: FindContextCard[];
   secondary: FindContextSecondary[];
+  /** At most 2 lesson areas relevant to the task. */
+  lessons: FindContextLesson[];
+  /** Titles of the lesson areas not shown, so the agent knows where to look. */
+  moreLessons: string[];
+  /** Repo-relative LESSONS.md path, for the index line. Undefined when absent. */
+  lessonsFile: string | undefined;
   /** False when nothing cleared the threshold. Exit stays 0 either way. */
   matched: boolean;
 };
@@ -123,7 +148,88 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
           }),
         );
 
-  return { task, cards, secondary, matched: cards.length > 0 || secondary.length > 0 };
+  const { lessons, moreLessons } = selectLessons(found.lessonAreas, cards);
+
+  return {
+    task,
+    cards,
+    secondary,
+    lessons,
+    moreLessons,
+    lessonsFile: found.lessonsFile,
+    matched: cards.length > 0 || secondary.length > 0 || lessons.length > 0,
+  };
+}
+
+/** Lesson delivery: at most 3 bullets per area, at most 2 areas. */
+const MAX_LESSON_AREAS = 2;
+const MAX_LESSON_BULLETS = 3;
+
+/**
+ * Which lesson areas ride with the pointers: the areas whose Applies To
+ * covers any matched card's file, whose heading, Also Known As, or bullets
+ * clear the area bar on their own, or that the task names outright with a
+ * single term unique to their heading or Also Known As (a rare name like
+ * `E11000` scores below the bar alone but means exactly one area). When no
+ * card matches, the same rules pick the best-matching areas on their own.
+ */
+function selectLessons(
+  scored: ScoredLessonArea[],
+  cards: FindContextCard[],
+): { lessons: FindContextLesson[]; moreLessons: string[] } {
+  const cardFiles = cards.flatMap((card) => [
+    ...card.startHere.map((entry) => entry.path),
+    card.file,
+  ]);
+  const relevant = scored.filter(
+    (hit) =>
+      hit.score >= MIN_AREA_SCORE ||
+      hit.area.appliesTo.some((pattern) =>
+        cardFiles.some((file) => matchesPattern(pattern, file)),
+      ) ||
+      isNamedArea(hit, scored),
+  );
+  const shown = relevant.slice(0, MAX_LESSON_AREAS);
+  return {
+    lessons: shown.map((hit) => ({
+      area: hit.area.title,
+      file: hit.file,
+      matched: hit.matched,
+      bridge: hit.bridge,
+      bullets: hit.area.bullets.slice(0, MAX_LESSON_BULLETS),
+    })),
+    moreLessons: scored.filter((hit) => !shown.includes(hit)).map((hit) => hit.area.title),
+  };
+}
+
+/**
+ * The task names the area outright: exactly one matched term, sitting in the
+ * area's heading or Also Known As, and in no other area's whole text. Shared
+ * words fail either check — "token" sits in two headings, and "code" (unique
+ * to one Also Known As) still appears in another area's bullets — while rare
+ * names like `E11000` pass both.
+ */
+function isNamedArea(hit: ScoredLessonArea, all: ScoredLessonArea[]): boolean {
+  if (hit.matched.length !== 1) {
+    return false;
+  }
+  const raw = hit.matched[0] ?? "";
+  const correction = raw.split("≈")[1];
+  const term = (correction ?? raw).trim();
+  if (term === "" || !headingTokens(hit).has(term)) {
+    return false;
+  }
+  return all.filter((other) => areaTokens(other).has(term)).length === 1;
+}
+
+function headingTokens(hit: ScoredLessonArea): Set<string> {
+  return new Set(tokenize(`${hit.area.title} ${hit.area.alsoKnownAs.join(" ")}`));
+}
+
+function areaTokens(hit: ScoredLessonArea): Set<string> {
+  return new Set(
+    tokenize(`${hit.area.title} ${hit.area.alsoKnownAs.join(" ")} ${hit.area.bullets.join("\n")}`),
+  );
 }
 
 export type FormatFindContextOptions = {
@@ -132,6 +238,12 @@ export type FormatFindContextOptions = {
    * prompt, and echoing it back spends the hook's byte budget on nothing new.
    */
   echoTask?: boolean;
+  /**
+   * Byte budget for the whole output. Decisions keep priority: truncation cuts
+   * lesson bullets first, and the `More lessons` index line is the last thing
+   * kept. The prompt hook sets this to its byte cap.
+   */
+  maxBytes?: number;
 };
 
 export function formatFindContextResult(
@@ -139,10 +251,10 @@ export function formatFindContextResult(
   options: FormatFindContextOptions = {},
 ): string {
   if (result.cards.length > 0) {
-    return formatCards(result, options.echoTask ?? true);
+    return formatCards(result, options);
   }
-  if (result.secondary.length > 0) {
-    return formatSecondary(result);
+  if (result.secondary.length > 0 || result.lessons.length > 0) {
+    return formatSecondary(result, options);
   }
   return "No recorded memory matches this task.\n";
 }
@@ -154,14 +266,18 @@ export function formatFindContextJson(result: FindContextResult): string {
       matched: result.matched,
       cards: result.cards,
       secondary: result.secondary,
+      lessons: result.lessons,
+      moreLessons: result.moreLessons,
+      lessonsFile: result.lessonsFile,
     },
     null,
     2,
   )}\n`;
 }
 
-function formatCards(result: FindContextResult, echoTask: boolean): string {
+function formatCards(result: FindContextResult, options: FormatFindContextOptions): string {
   const style = getStyle();
+  const echoTask = options.echoTask ?? true;
   const lines = [echoTask ? `Start here for "${result.task}":` : "Start here:", ""];
   // Cards in one area often share a decision; quote it once and point back after that.
   const quoted = new Set<string>();
@@ -192,22 +308,81 @@ function formatCards(result: FindContextResult, echoTask: boolean): string {
   }
   // Drop the trailing blank line, keep the closing newline.
   lines.pop();
-  return `${lines.join("\n")}\n`;
+  const head = `${lines.join("\n")}\n`;
+  return applyBudget(head, lessonsTail(result), options.maxBytes);
 }
 
-function formatSecondary(result: FindContextResult): string {
+function formatSecondary(
+  result: FindContextResult,
+  options: FormatFindContextOptions = {},
+): string {
   const style = getStyle();
-  const lines = [
-    "No context card covers this task. The closest recorded decisions and fences:",
-    "",
-  ];
+  const lines =
+    result.secondary.length > 0
+      ? ["No context card covers this task. The closest recorded decisions and fences:", ""]
+      : ["No context card covers this task. The lessons for your task:", ""];
   for (const hit of result.secondary) {
     lines.push(
       `${style.accent(`${hit.kind} ${hit.label}`)} (${hit.file}) — matched: ${hit.matched.join(", ")}${via(hit.bridge)}`,
     );
     lines.push(`  ${clip(hit.detail)}`);
   }
+  const head = `${lines.join("\n")}\n`;
+  return applyBudget(head, lessonsTail(result), options.maxBytes);
+}
+
+/**
+ * The lessons block: each shown area with its clipped bullets, then the index
+ * line naming the rest. Empty when no area is relevant — the pointers stay
+ * silent rather than listing a file nobody needs.
+ */
+function lessonsTail(result: FindContextResult): string {
+  if (result.lessons.length === 0) {
+    return "";
+  }
+  const lines = [""];
+  for (const lesson of result.lessons) {
+    const viaBridge = lesson.bridge.length === 0 ? "" : ` (via ${lesson.bridge.join(", ")})`;
+    lines.push(
+      `  Lesson — ${lesson.area} (matched: ${lesson.matched.join(", ")}${viaBridge}): ${lesson.bullets.map((bullet) => clip(bullet)).join(" · ")}`,
+    );
+  }
+  if (result.moreLessons.length > 0 && result.lessonsFile !== undefined) {
+    lines.push(`More lessons: ${result.moreLessons.join(", ")} (${result.lessonsFile})`);
+  }
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * Fit the output in a byte budget with decisions first: the head (cards,
+ * decisions, Start Here files) truncates from its end on a line boundary,
+ * while the lessons index line is the last thing kept.
+ */
+function applyBudget(head: string, tail: string, maxBytes: number | undefined): string {
+  if (maxBytes === undefined || Buffer.byteLength(`${head}${tail}`, "utf8") <= maxBytes) {
+    return `${head}${tail}`;
+  }
+  if (tail === "") {
+    return capBytes(head, maxBytes);
+  }
+  const room = maxBytes - Buffer.byteLength(tail, "utf8");
+  if (room <= 0) {
+    return capBytes(tail, maxBytes);
+  }
+  return `${capBytes(head, room)}${tail}`;
+}
+
+/** Cut to a byte budget on a line boundary, so a truncated pointer list stays readable. */
+export function capBytes(text: string, maxBytes: number): string {
+  if (Buffer.byteLength(text, "utf8") <= maxBytes) {
+    return text;
+  }
+  let cut = text;
+  while (cut.length > 0 && Buffer.byteLength(cut, "utf8") > maxBytes) {
+    cut = cut.slice(0, -1);
+  }
+  const newline = cut.lastIndexOf("\n");
+  return `${(newline > 0 ? cut.slice(0, newline) : cut).replace(/\s+$/u, "")}\n`;
 }
 
 /** Names the bridged files behind a boost; empty when the bridge did not fire. */

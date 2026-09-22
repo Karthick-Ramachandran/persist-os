@@ -1,4 +1,5 @@
 import { FENCES_FILE } from "../fence/generate-fence.js";
+import { LESSONS_FILE } from "../lessons/lessons.js";
 
 export const HOOKS_DIR = ".persist/hooks";
 export const PRE_COMMIT_HOOK_PATH = ".persist/hooks/pre-commit";
@@ -52,6 +53,13 @@ export const FENCE_INDEX_LABEL =
 export const FENCE_INDEX_TRUNCATION_MARKER =
   "... (fence index truncated to the context budget; read ${fences_file})";
 
+/** The label the hook places between the fence index and the Always lessons. */
+export const LESSONS_ALWAYS_LABEL = " Always lessons: ";
+
+/** Marker the hook appends when the Always lessons are truncated to the budget. */
+export const LESSONS_ALWAYS_TRUNCATION_MARKER =
+  "... (always lessons truncated to the context budget; read ${lessons_file})";
+
 /**
  * Render a deterministic POSIX `sh` Claude Code SessionStart hook.
  *
@@ -67,6 +75,10 @@ export const FENCE_INDEX_TRUNCATION_MARKER =
  * whole injection stay within budget no matter how large FENCES.md grows. A truncated index
  * carries a marker naming the file. (When files plus base already fill the budget, the marker
  * alone may exceed it by its own ~85 bytes — a state the budget check already warns on.)
+ *
+ * The `## Always` section of LESSONS.md rides after the fence index under the same budget
+ * and truncation rules: the fence room leaves space for it, and whatever remains fits the
+ * Always bullets, truncated with their own marker when they do not fit.
  */
 export function renderSessionStartHook(): string {
   return `#!/bin/sh
@@ -97,10 +109,21 @@ modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\\n' 
 base="${SESSION_START_BASE_CONTEXT}"
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+lessons_file="$docs_dir/${LESSONS_FILE}"
+always=$(awk 'BEGIN{w=0} /^##[ \\t]/{w=(tolower($0) ~ /^##[ \\t]+always[ \\t]*$/);next} w{print}' "$lessons_file" 2>/dev/null | sed -e 's/<!--.*-->//g' -e 's/^[[:space:]]*[-*][[:space:]]*//' -e 's/^[[:space:]]*//' | tr '\\n' ' ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')
+if [ -n "$always" ]; then
+  always="$always "
+fi
 if [ -n "$full" ]; then
   label="${FENCE_INDEX_LABEL}"
   loaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
-  room=$((${ALWAYS_LOADED_BUDGET_BYTES} - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ')))
+  alen=0
+  abytes=0
+  if [ -n "$always" ]; then
+    alen=$(printf '%s' "${LESSONS_ALWAYS_LABEL}" | wc -c | tr -d ' ')
+    abytes=$(printf '%s' "$always" | wc -c | tr -d ' ')
+  fi
+  room=$((${ALWAYS_LOADED_BUDGET_BYTES} - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ') - $alen - $abytes))
   marker="${FENCE_INDEX_TRUNCATION_MARKER}"
   m=$(printf '%s' "$marker" | wc -c | tr -d ' ')
   if [ "$room" -le 0 ]; then
@@ -115,6 +138,26 @@ if [ -n "$full" ]; then
     fences="$(printf '%s' "$full" | head -c "$keep" | sed 's/\\\\*$//')$marker"
   fi
   context="$base$label$fences"
+fi
+if [ -n "$always" ]; then
+  alabel="${LESSONS_ALWAYS_LABEL}"
+  amarker="${LESSONS_ALWAYS_TRUNCATION_MARKER}"
+  aloaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
+  aused=$(printf '%s' "$context" | wc -c | tr -d ' ')
+  aroom=$((${ALWAYS_LOADED_BUDGET_BYTES} - aloaded - aused - $(printf '%s' "$alabel" | wc -c | tr -d ' ')))
+  am=$(printf '%s' "$amarker" | wc -c | tr -d ' ')
+  if [ "$aroom" -le 0 ]; then
+    lessons="$amarker"
+  elif [ "$(printf '%s' "$always" | wc -c | tr -d ' ')" -le "$aroom" ]; then
+    lessons="$always"
+  else
+    akeep=$((aroom - am))
+    if [ "$akeep" -lt 0 ]; then
+      akeep=0
+    fi
+    lessons="$(printf '%s' "$always" | head -c "$akeep" | sed 's/\\\\*$//')$amarker"
+  fi
+  context="$context$alabel$lessons"
 fi
 
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\\n' "$context"

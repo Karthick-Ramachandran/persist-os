@@ -26,10 +26,21 @@ modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\n' '
 base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked."
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')
+lessons_file="$docs_dir/60-engineering/LESSONS.md"
+always=$(awk 'BEGIN{w=0} /^##[ \t]/{w=(tolower($0) ~ /^##[ \t]+always[ \t]*$/);next} w{print}' "$lessons_file" 2>/dev/null | sed -e 's/<!--.*-->//g' -e 's/^[[:space:]]*[-*][[:space:]]*//' -e 's/^[[:space:]]*//' | tr '\n' ' ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')
+if [ -n "$always" ]; then
+  always="$always "
+fi
 if [ -n "$full" ]; then
   label=" Chesterton fence index (recorded rationale; full history in ${fences_file}): "
   loaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
-  room=$((24576 - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ')))
+  alen=0
+  abytes=0
+  if [ -n "$always" ]; then
+    alen=$(printf '%s' " Always lessons: " | wc -c | tr -d ' ')
+    abytes=$(printf '%s' "$always" | wc -c | tr -d ' ')
+  fi
+  room=$((24576 - loaded - $(printf '%s' "$base" | wc -c | tr -d ' ') - $(printf '%s' "$label" | wc -c | tr -d ' ') - $alen - $abytes))
   marker="... (fence index truncated to the context budget; read ${fences_file})"
   m=$(printf '%s' "$marker" | wc -c | tr -d ' ')
   if [ "$room" -le 0 ]; then
@@ -44,6 +55,26 @@ if [ -n "$full" ]; then
     fences="$(printf '%s' "$full" | head -c "$keep" | sed 's/\\*$//')$marker"
   fi
   context="$base$label$fences"
+fi
+if [ -n "$always" ]; then
+  alabel=" Always lessons: "
+  amarker="... (always lessons truncated to the context budget; read ${lessons_file})"
+  aloaded=$(cat CLAUDE.md AGENTS.md .cursor/rules/persist-memory.mdc 2>/dev/null | wc -c | tr -d ' ')
+  aused=$(printf '%s' "$context" | wc -c | tr -d ' ')
+  aroom=$((24576 - aloaded - aused - $(printf '%s' "$alabel" | wc -c | tr -d ' ')))
+  am=$(printf '%s' "$amarker" | wc -c | tr -d ' ')
+  if [ "$aroom" -le 0 ]; then
+    lessons="$amarker"
+  elif [ "$(printf '%s' "$always" | wc -c | tr -d ' ')" -le "$aroom" ]; then
+    lessons="$always"
+  else
+    akeep=$((aroom - am))
+    if [ "$akeep" -lt 0 ]; then
+      akeep=0
+    fi
+    lessons="$(printf '%s' "$always" | head -c "$akeep" | sed 's/\\*$//')$amarker"
+  fi
+  context="$context$alabel$lessons"
 fi
 
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"

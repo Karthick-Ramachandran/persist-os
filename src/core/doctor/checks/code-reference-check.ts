@@ -12,6 +12,7 @@ const adrFilePattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 
 const CONVENTIONS_DOC = "60-engineering/CONVENTIONS.md";
 const FENCES_DOC = "60-engineering/FENCES.md";
+const LESSONS_DOC = "60-engineering/LESSONS.md";
 const COMPLETION_REPORT = "COMPLETION_REPORT.md";
 
 // Only current-state docs are checked. A feature folder containing a completion report is
@@ -51,16 +52,19 @@ export async function checkCodeReferences(
   const conventions = await readFileIfExists(context.rootDir, conventionsPath);
   const fencesPath = path.posix.join(context.config.docsDir, FENCES_DOC);
   const fences = await readFileIfExists(context.rootDir, fencesPath);
+  const lessonsPath = path.posix.join(context.config.docsDir, LESSONS_DOC);
+  const lessons = await readFileIfExists(context.rootDir, lessonsPath);
 
   if (
     !hasFeatures &&
     !hasModules &&
     adrFiles.length === 0 &&
     conventions === undefined &&
-    fences === undefined
+    fences === undefined &&
+    lessons === undefined
   ) {
     return notEvaluated(
-      "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to scan for code references",
+      "no ADRs, conventions, lessons, feature folders, or module folders exist, so there is no memory to scan for code references",
     );
   }
 
@@ -76,6 +80,11 @@ export async function checkCodeReferences(
 
   if (conventions !== undefined) {
     findings.push(...(await checkDoc(context.rootDir, conventionsPath, scan)));
+  }
+
+  // A lesson citing a deleted file teaches a fix for code that is gone.
+  if (lessons !== undefined) {
+    findings.push(...(await checkDoc(context.rootDir, lessonsPath, scan)));
   }
 
   if (fences !== undefined) {

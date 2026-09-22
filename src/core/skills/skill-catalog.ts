@@ -106,10 +106,12 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     goal: "Land the smallest safe change for the task, with proof it holds.",
     workflow: [
       'Start from the pointers: run `persist context "<task>"` (or the Start here block) and open those files plus what the task needs; do not survey the repository.',
+      "The Always lessons load every session; the lessons for your area arrive with the pointers. If they don't cover what you're doing, open the section of `LESSONS.md` that does (the pointers list them).",
       "Read the Decision section of each governing ADR (`persist doctor` names them); every accepted ADR still binds, and when a card disagrees with an ADR, the ADR wins.",
       "Make the smallest safe change that satisfies the task; match ceremony to scope and write no planning docs for a fix inside decided ground.",
       "Add focused tests for the behavior touched (the write-tests skill holds the procedure).",
       "Before calling it done, check each changed line against every governing decision, then run the tests and doctor; add the task to the area card's Answers list, phrased as asked.",
+      "When something breaks non-obviously, add a one-line lesson. Put it under the area it belongs to (create the area with an Applies To list if none fits). Put it under Always only if every task in this repository needs it. When a regression test or a CONVENTIONS rule now enforces a lesson, move it there or delete it, and name the test or rule in the commit. Delete a lesson that describes a temporary state once that state is fixed.",
       STOP_AND_ASK_STEP,
     ],
     decisions: [
@@ -127,6 +129,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "For accepted decisions and the paths each one governs (its Applies To section) → docs/adrs/",
       "For area memory, when present → docs/context/",
       "For engineering rules → docs/60-engineering/ENGINEERING_STANDARDS.md",
+      "For past mistakes → docs/60-engineering/LESSONS.md",
     ],
     output: [
       "The change, with the test and doctor results as evidence.",
@@ -506,10 +509,11 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     goal: "Start from recorded area memory instead of rediscovery, and leave the next task a better card.",
     workflow: [
       'Run `persist context "<task>"` before starting, phrasing the task the way it was asked.',
-      "Read only what the matches point at: the Start Here paths first, then the Rules and Pitfalls lines they name.",
+      "Read only what the matches point at: the Start Here paths first, then the Rules and Pitfalls lines they name. The Always lessons load every session; the lessons for your area arrive with the pointers. If they don't cover what you're doing, open the section of `LESSONS.md` that does (the pointers list them).",
       "When no card covers the task, read the closest decisions and fences the output names instead.",
       "Do the work, then check the diff against the pointed-at rules before calling it done.",
       'When done, create or refresh the area card: `persist context add <name> --purpose "<one line>"` for a new area, otherwise edit the existing card directly.',
+      "Put a new lesson under the area it belongs to (create the area with an Applies To list if none fits). Put it under Always only if every task in this repository needs it. When a regression test or a CONVENTIONS rule now enforces a lesson, move it there or delete it, and name the test or rule in the commit. Delete a lesson that describes a temporary state once that state is fixed.",
       "Add the finished task to the card Answers list, phrased the way it was asked.",
       'Run `persist context "<task>"` again to confirm the card is found before calling the work done.',
     ],
@@ -524,7 +528,10 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "The card Answers list holds the finished task in its asked phrasing.",
       "A repeat lookup finds the card for that phrasing.",
     ],
-    resources: ["For area memory, when present → docs/context/"],
+    resources: [
+      "For area memory, when present → docs/context/",
+      "For past mistakes → docs/60-engineering/LESSONS.md",
+    ],
     output: [
       "The card found and the pointed-at files read, or an explicit statement that none covers the task.",
       "The card created or updated, with the new Answers line quoted.",

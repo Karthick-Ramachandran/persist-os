@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { type GoverningAdr, matchesPattern, readGoverningAdrs } from "../adr/governing-adrs.js";
 import { fenceFileKey, FENCE_HEADING_PATTERN } from "../fence/generate-fence.js";
 import { CONTEXT_DIR_NAME, parseContextCard, type ContextCard } from "./context-card.js";
+import { LESSONS_FILE, parseLessons, type LessonSection } from "../lessons/lessons.js";
 import { suggestCorrection } from "./spelling.js";
 import { STOPWORDS, tokenize } from "./tokenize.js";
 
@@ -48,9 +49,33 @@ const PATH_BOOST = 1.5;
 /** Below this total a hit is noise. Tuned against the retrieval benchmark. */
 export const MIN_SCORE = 0.9;
 
+/**
+ * Lesson-area field weights, mirroring the card table: the heading names the
+ * area and Also Known As carries its synonyms, so both outrank a shared word
+ * in a bullet. A section still scores as one document — one area, one score.
+ */
+export const LESSON_AREA_WEIGHTS = {
+  title: 2,
+  alsoKnownAs: 2.5,
+  bullets: 1,
+} as const;
+
+/**
+ * Below this total an area stays out of the pointers. Well above the card
+ * threshold on purpose: one shared word ("key", "token", "migration") scores
+ * 1–5 through a single bullet or a shared Also Known As, so areas need a bar
+ * that genuine multi-term and rare-name matches clear but lone shared-word
+ * overlap does not. Tuned against the lessons fixture (`tests/fixtures/`):
+ * wanted areas score 10–28 there, shared-word noise 1–5, so 6 separates them
+ * with margin on both sides. A lone unique heading or Also Known As term
+ * (e.g. `E11000`, ~5.8) rides below the bar through the named-area rule in
+ * `selectLessons` instead, and an area whose Applies To covers a matched
+ * card's files rides regardless — the card already grounds it.
+ */
+export const MIN_AREA_SCORE = 6;
+
 const FENCES_FILE = "60-engineering/FENCES.md";
 const CONVENTIONS_FILE = "60-engineering/CONVENTIONS.md";
-const LESSONS_FILE = "60-engineering/LESSONS.md";
 
 const WHY_PATTERN = /^Why:\s*(.+)$/u;
 const BULLET_PATTERN = /^\s*[-*]\s+(.+?)\s*$/u;
@@ -91,11 +116,29 @@ export type ScoredSecondary = {
   bridge: string[];
 };
 
+export type ScoredLessonArea = {
+  area: LessonSection;
+  /** Repo-relative LESSONS.md path, for display and the index line. */
+  file: string;
+  score: number;
+  matched: string[];
+  /** Bridged file names covered by this area, present only when boosted. */
+  bridge: string[];
+};
+
 export type ContextSearchResult = {
   task: string;
   query: string[];
   cards: ScoredCard[];
   secondary: ScoredSecondary[];
+  /**
+   * Lesson areas of a sectioned LESSONS.md, each scored as one document
+   * (heading plus Also Known As plus bullets). Empty for a flat legacy file,
+   * which still reads bullet by bullet through `secondary` as today.
+   */
+  lessonAreas: ScoredLessonArea[];
+  /** Repo-relative LESSONS.md path, or undefined when there is no file. */
+  lessonsFile: string | undefined;
 };
 
 export type ContextSearchDirs = {
@@ -141,9 +184,10 @@ function bm25Term(termFreq: number, docLength: number, avgLength: number, termId
  * corpus is a single field across documents, so identical phrasing in a rare
  * field outranks the same words repeated in a common one.
  */
-function scoreFields(
+function scoreFields<Field extends string>(
   query: string[],
-  fieldDocs: Map<FieldName, string[][]>,
+  fieldDocs: Map<Field, string[][]>,
+  weights: Readonly<Record<Field, number>>,
   docIndex: number,
   docCount: number,
 ): { score: number; matched: string[] } {
@@ -151,7 +195,7 @@ function scoreFields(
   const matched: string[] = [];
 
   for (const [field, docs] of fieldDocs) {
-    const weight = FIELD_WEIGHTS[field];
+    const weight = weights[field] ?? 0;
     const tokenized = docs.map((tokens) => tokens);
     const avgLength = tokenized.reduce((sum, tokens) => sum + tokens.length, 0) / docCount;
     const docTokens = tokenized[docIndex] ?? [];
@@ -326,24 +370,49 @@ async function readConventionDocs(
   }));
 }
 
+export type LessonDocs = {
+  /** Loose bullets of a flat legacy file, searched exactly as today. */
+  legacy: SecondaryDocument[];
+  /** Areas of a sectioned file, each scored as one document. */
+  areas: { area: LessonSection; file: string; paths: string[] }[];
+  /** Repo-relative LESSONS.md path, or undefined when there is no file. */
+  file: string | undefined;
+};
+
 async function readLessonDocs(
   rootDir: string,
   docsDir: string,
   roots: CodeRoots,
-): Promise<SecondaryDocument[]> {
+): Promise<LessonDocs> {
   const file = path.posix.join(docsDir, LESSONS_FILE);
   const content = await readFileIfExists(rootDir, file);
   if (content === undefined) {
-    return [];
+    return { legacy: [], areas: [], file: undefined };
   }
-  return bulletsOf(content).map((bullet) => ({
-    kind: "lesson" as const,
-    label: "LESSONS",
+  const lessons = parseLessons(content);
+  if (!lessons.isSectioned) {
+    return {
+      legacy: lessons.flat.map((bullet) => ({
+        kind: "lesson" as const,
+        label: "LESSONS",
+        file,
+        text: bullet,
+        paths: mentionedPaths(bullet, roots),
+        detail: bullet,
+      })),
+      areas: [],
+      file,
+    };
+  }
+  return {
+    legacy: [],
+    areas: lessons.areas.map((area) => ({
+      area,
+      file,
+      paths: [...area.appliesTo, ...mentionedPaths(area.bullets.join("\n"), roots)],
+    })),
     file,
-    text: bullet,
-    paths: mentionedPaths(bullet, roots),
-    detail: bullet,
-  }));
+  };
 }
 
 function adrDocs(adrs: GoverningAdr[]): SecondaryDocument[] {
@@ -413,12 +482,14 @@ export async function searchContext(
   const roots = await readCodeRoots(rootDir, dirs.docsDir);
   const cards = await readCards(rootDir, dirs.docsDir);
   const adrs = await readGoverningAdrs(rootDir, dirs.adrDir);
+  const lessons = await readLessonDocs(rootDir, dirs.docsDir, roots);
   const secondary: SecondaryDocument[] = [
     ...adrDocs(adrs),
     ...(await readFenceDocs(rootDir, dirs.docsDir)),
     ...(await readConventionDocs(rootDir, dirs.docsDir, roots)),
-    ...(await readLessonDocs(rootDir, dirs.docsDir, roots)),
+    ...lessons.legacy,
   ];
+  const lessonAreas = lessons.areas;
 
   const fieldDocs = new Map<FieldName, string[][]>();
   const fields = cards.map(cardFields);
@@ -426,6 +497,21 @@ export async function searchContext(
     fieldDocs.set(
       field,
       fields.map((entries) => tokenize(entries.find((entry) => entry.field === field)?.text ?? "")),
+    );
+  }
+
+  const areaFieldDocs = new Map<keyof typeof LESSON_AREA_WEIGHTS, string[][]>();
+  const areaFields = lessonAreas.map((entry) => [
+    { field: "title", text: entry.area.title },
+    { field: "alsoKnownAs", text: entry.area.alsoKnownAs.join(" ") },
+    { field: "bullets", text: entry.area.bullets.join("\n") },
+  ]);
+  for (const field of Object.keys(LESSON_AREA_WEIGHTS) as (keyof typeof LESSON_AREA_WEIGHTS)[]) {
+    areaFieldDocs.set(
+      field,
+      areaFields.map((entries) =>
+        tokenize(entries.find((entry) => entry.field === field)?.text ?? ""),
+      ),
     );
   }
 
@@ -455,11 +541,12 @@ export async function searchContext(
     queryTerms: string[],
     named: Set<string>,
     display: (terms: string[]) => string[],
-  ): Pick<ContextSearchResult, "cards" | "secondary"> => {
+  ): Pick<ContextSearchResult, "cards" | "secondary" | "lessonAreas" | "lessonsFile"> => {
     const scored: ScoredCard[] = cards.map((card, index) => {
       const { score, matched } = scoreFields(
         queryTerms,
         fieldDocs,
+        FIELD_WEIGHTS,
         index,
         Math.max(cards.length, 1),
       );
@@ -477,9 +564,30 @@ export async function searchContext(
     });
     scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
 
+    const scoredAreas: ScoredLessonArea[] = lessonAreas.map((entry, index) => {
+      const { score, matched } = scoreFields(
+        queryTerms,
+        areaFieldDocs,
+        LESSON_AREA_WEIGHTS,
+        index,
+        Math.max(lessonAreas.length, 1),
+      );
+      const { boost, bridge } = boosted(named, entry.paths, score);
+      return {
+        area: entry.area,
+        file: entry.file,
+        score: score + boost,
+        matched: display(unique(matched)),
+        bridge,
+      };
+    });
+    scoredAreas.sort((a, b) => b.score - a.score || (a.area.title < b.area.title ? -1 : 1));
+
     return {
       cards: scored.filter((hit) => hit.score >= MIN_SCORE),
       secondary: scoredSecondary.filter((hit) => hit.score >= MIN_SCORE),
+      lessonAreas: scoredAreas,
+      lessonsFile: lessons.file,
     };
   };
 

@@ -87,6 +87,46 @@ describe("doctor context-budget check", () => {
     );
   });
 
+  it("counts the Always lessons toward the budget like the fence index", async () => {
+    // The SessionStart hook injects the Always bullets into every session after
+    // the fence index, so they are always-loaded weight under the same budget.
+    const rootDir = await createRoot("budget-always-over");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "# Agents\n", "utf8");
+    const lines = ["# Lessons", "", "## Always", ""];
+    for (let i = 0; i < 800; i += 1) {
+      lines.push(`- Always lesson number ${i} that every task must follow.`);
+    }
+    const lessonsDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(lessonsDir, { recursive: true });
+    await writeFile(path.join(lessonsDir, "LESSONS.md"), lines.join("\n"), "utf8");
+
+    const findings = await checkContextBudget({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "context-budget",
+        message: expect.stringContaining("Always lessons"),
+      }),
+    );
+  });
+
+  it("stays silent for an Always section that fits the budget", async () => {
+    const rootDir = await createRoot("budget-always-fit");
+    await writeFile(path.join(rootDir, "AGENTS.md"), "# Agents\n\nShort floor.\n", "utf8");
+    const lessonsDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(lessonsDir, { recursive: true });
+    await writeFile(
+      path.join(lessonsDir, "LESSONS.md"),
+      ["# Lessons", "", "## Always", "", "- Never log a raw driver error.", ""].join("\n"),
+      "utf8",
+    );
+
+    const findings = await checkContextBudget({ rootDir, config: createDefaultConfig() });
+
+    expect(findings).toEqual([]);
+  });
+
   it("counts a Cursor rule toward the budget", async () => {
     const rootDir = await createRoot("budget-cursor");
     const cursorDir = path.join(rootDir, ".cursor/rules");
