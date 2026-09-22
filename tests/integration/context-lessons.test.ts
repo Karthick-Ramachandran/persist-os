@@ -189,6 +189,8 @@ describe("persist context with lessons by area", () => {
     // The index line names the rest so the agent knows where to look.
     expect(result.stdout).toContain("More lessons:");
     expect(result.stdout).toContain("docs/60-engineering/LESSONS.md");
+    // One blank line between blocks, never two (the lessons-only header once doubled it).
+    expect(result.stdout).not.toContain("\n\n\n");
   });
 
   it("shows at most 3 bullets per area and at most 2 areas", async () => {
@@ -250,6 +252,7 @@ describe("persist context with lessons by area", () => {
 
     expect(result.stdout).toContain("Lesson — Mongo indexes");
     expect(result.stdout).not.toContain("Lesson — Auth sessions");
+    expect(result.stdout).not.toContain("\n\n\n");
   });
 
   it("stays silent about lessons for an unrelated task", async () => {

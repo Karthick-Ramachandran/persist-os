@@ -320,7 +320,8 @@ function formatSecondary(
   const lines =
     result.secondary.length > 0
       ? ["No context card covers this task. The closest recorded decisions and fences:", ""]
-      : ["No context card covers this task. The lessons for your task:", ""];
+      : // The lessons block opens with its own blank line.
+        ["No context card covers this task. The lessons for your task:"];
   for (const hit of result.secondary) {
     lines.push(
       `${style.accent(`${hit.kind} ${hit.label}`)} (${hit.file}) — matched: ${hit.matched.join(", ")}${via(hit.bridge)}`,

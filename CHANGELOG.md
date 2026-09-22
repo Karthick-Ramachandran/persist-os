@@ -8,7 +8,7 @@ rest. The `Always` bullets load into every session after the fence index, inside
 always-loaded budget. `persist context` and the prompt hook hand over only the matching areas (at
 most two, three lessons each) after the decisions and Start Here files, with a one-line
 `More lessons` index naming the rest. A flat `LESSONS.md` with no sections behaves exactly as
-before, and `init` never rewrites an existing one. ADR-0018 records the format and stays Proposed.
+before, and `init` never rewrites an existing one. ADR-0018 records the format and delivery.
 
 **Upgrading:** group existing lessons under areas with `Applies To` lists when doctor suggests it —
 nothing is restructured automatically. `init` writes the sectioned template for new repositories;
