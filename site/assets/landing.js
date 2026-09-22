@@ -1,10 +1,10 @@
 /* Progressive enhancements for the Persist OS landing page. No dependencies. */
 /* global window, document, localStorage, navigator, HTMLElement */
 (() => {
-  'use strict';
+  "use strict";
 
   const root = document.documentElement;
-  const toast = document.getElementById('toast');
+  const toast = document.getElementById("toast");
   let toastTimer;
 
   /** Announce a UI result without moving focus or changing page layout. */
@@ -12,10 +12,10 @@
     if (!toast) return;
     window.clearTimeout(toastTimer);
     toast.textContent = message;
-    const feedback = document.getElementById('dialog-feedback');
-    if (feedback && document.querySelector('.command-dialog[open]')) feedback.textContent = message;
-    toast.classList.add('is-visible');
-    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 3500);
+    const feedback = document.getElementById("dialog-feedback");
+    if (feedback && document.querySelector(".command-dialog[open]")) feedback.textContent = message;
+    toast.classList.add("is-visible");
+    toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 3500);
   }
 
   /** Return true only when the clipboard operation actually succeeds. */
@@ -25,90 +25,120 @@
         await navigator.clipboard.writeText(text);
         return true;
       }
-    } catch { /* File previews and browser permissions may need the fallback. */ }
+    } catch {
+      /* File previews and browser permissions may need the fallback. */
+    }
 
     const previousFocus = document.activeElement;
-    const helper = document.createElement('textarea');
+    const helper = document.createElement("textarea");
     helper.value = text;
     helper.readOnly = true;
-    helper.setAttribute('aria-label', 'Command to copy');
-    helper.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0';
+    helper.setAttribute("aria-label", "Command to copy");
+    helper.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0";
     // A native modal makes elements outside it inert. Keep the helper in the modal.
-    const modal = document.querySelector('dialog[open]');
+    const modal = document.querySelector("dialog[open]");
     (modal || document.body).append(helper);
     helper.focus();
     helper.select();
     let success = false;
-    try { success = document.execCommand('copy'); } catch { /* execCommand throws on failure; success stays false. */ }
+    try {
+      success = document.execCommand("copy");
+    } catch {
+      /* execCommand throws on failure; success stays false. */
+    }
     helper.remove();
     if (previousFocus instanceof HTMLElement) previousFocus.focus({ preventScroll: true });
     return success;
   }
 
-  document.addEventListener('click', async (event) => {
-    const button = event.target.closest('[data-copy]');
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-copy]");
     if (!button) return;
     const command = button.dataset.copy;
     if (!command) return;
     const success = await copyText(command);
     if (!success) {
-      announce('Could not copy automatically. Select the command and copy it manually.');
+      announce("Could not copy automatically. Select the command and copy it manually.");
       return;
     }
-    button.dataset.copied = 'true';
+    button.dataset.copied = "true";
     announce(`Copied: ${command}`);
     window.setTimeout(() => delete button.dataset.copied, 2000);
   });
 
   // Theme: respect the initial system choice, then save an explicit user choice.
-  const themeButton = document.querySelector('.theme-toggle');
-  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  const themeButton = document.querySelector(".theme-toggle");
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
   let explicitTheme = false;
-  try { explicitTheme = ['light', 'dark'].includes(localStorage.getItem('persist-theme') || localStorage.getItem('theme')); } catch { /* Private-mode storage throws; fall back to the system theme. */ }
+  try {
+    explicitTheme = ["light", "dark"].includes(
+      localStorage.getItem("theme") || localStorage.getItem("persist-theme"),
+    );
+  } catch {
+    /* Private-mode storage throws; fall back to the system theme. */
+  }
 
   function applyTheme(theme) {
     root.dataset.theme = theme;
-    if (themeButton) themeButton.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+    if (themeButton)
+      themeButton.setAttribute(
+        "aria-label",
+        `Switch to ${theme === "dark" ? "light" : "dark"} theme`,
+      );
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#141418' : '#fafafa');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#11151c" : "#ffffff");
   }
-  applyTheme(root.dataset.theme || (systemTheme.matches ? 'dark' : 'light'));
-  themeButton?.addEventListener('click', () => {
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(root.dataset.theme || (systemTheme.matches ? "dark" : "light"));
+  themeButton?.addEventListener("click", () => {
+    const next = root.dataset.theme === "dark" ? "light" : "dark";
     explicitTheme = true;
     applyTheme(next);
-    try { localStorage.setItem('persist-theme', next); } catch { /* Private-mode storage throws; the choice simply does not persist. */ }
+    try {
+      localStorage.setItem("persist-theme", next);
+      localStorage.setItem("theme", next);
+    } catch {
+      /* Private-mode storage throws; the choice simply does not persist. */
+    }
   });
-  systemTheme.addEventListener('change', (event) => {
-    if (!explicitTheme) applyTheme(event.matches ? 'dark' : 'light');
+  systemTheme.addEventListener("change", (event) => {
+    if (!explicitTheme) applyTheme(event.matches ? "dark" : "light");
   });
 
   // Accessible tabs: roving tabindex, arrow keys, Home/End, and separate panels.
-  document.querySelectorAll('[data-tabs]').forEach((group) => {
+  document.querySelectorAll("[data-tabs]").forEach((group) => {
     const list = group.querySelector('[role="tablist"]');
     if (!list) return;
     const tabs = Array.from(list.querySelectorAll('[role="tab"]'));
-    const vertical = list.getAttribute('aria-orientation') === 'vertical';
+    if (list.classList.contains("memory-files")) {
+      const compactPicker = window.matchMedia("(max-width: 680px)");
+      const syncOrientation = () =>
+        list.setAttribute("aria-orientation", compactPicker.matches ? "horizontal" : "vertical");
+      syncOrientation();
+      compactPicker.addEventListener("change", syncOrientation);
+    }
 
     function selectTab(tab, focus = false) {
       tabs.forEach((item) => {
         const selected = item === tab;
-        item.setAttribute('aria-selected', String(selected));
+        item.setAttribute("aria-selected", String(selected));
         item.tabIndex = selected ? 0 : -1;
-        const panel = document.getElementById(item.getAttribute('aria-controls'));
+        const panel = document.getElementById(item.getAttribute("aria-controls"));
         if (panel) panel.hidden = !selected;
       });
       if (focus) tab.focus({ preventScroll: true });
     }
 
     tabs.forEach((tab, index) => {
-      tab.addEventListener('click', () => selectTab(tab));
-      tab.addEventListener('keydown', (event) => {
+      tab.addEventListener("click", () => selectTab(tab));
+      tab.addEventListener("keydown", (event) => {
+        const vertical = list.getAttribute("aria-orientation") === "vertical";
         let next;
-        if (event.key === 'Home') next = 0;
-        else if (event.key === 'End') next = tabs.length - 1;
-        else if (event.key === (vertical ? 'ArrowDown' : 'ArrowRight')) next = (index + 1) % tabs.length;
-        else if (event.key === (vertical ? 'ArrowUp' : 'ArrowLeft')) next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = tabs.length - 1;
+        else if (event.key === (vertical ? "ArrowDown" : "ArrowRight"))
+          next = (index + 1) % tabs.length;
+        else if (event.key === (vertical ? "ArrowUp" : "ArrowLeft"))
+          next = (index - 1 + tabs.length) % tabs.length;
         else return;
         event.preventDefault();
         selectTab(tabs[next], true);
@@ -116,46 +146,153 @@
     });
   });
 
+  // The two-column hero and phone layout use a compact repository disclosure.
+  const compactWorkspace = window.matchMedia("(min-width: 1121px), (max-width: 680px)");
+  const explorers = document.querySelectorAll(".repository-explorer");
+  const syncExplorers = () => {
+    explorers.forEach((explorer) => {
+      explorer.open = !compactWorkspace.matches;
+    });
+  };
+  syncExplorers();
+  compactWorkspace.addEventListener("change", syncExplorers);
+
   // Mobile navigation is a disclosure, not a modal. Escape restores toggle focus.
-  const menuButton = document.querySelector('.menu-toggle');
-  const mobileNav = document.getElementById('mobile-nav');
+  const menuButton = document.querySelector(".menu-toggle");
+  const mobileNav = document.getElementById("mobile-nav");
   function closeMenu(restoreFocus = false) {
     if (!menuButton || !mobileNav) return;
-    menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.setAttribute('aria-label', 'Open navigation');
+    menuButton.setAttribute("aria-expanded", "false");
+    menuButton.setAttribute("aria-label", "Open navigation");
     mobileNav.hidden = true;
     if (restoreFocus) menuButton.focus();
   }
-  menuButton?.addEventListener('click', () => {
+  menuButton?.addEventListener("click", () => {
     if (!mobileNav) return;
-    const open = menuButton.getAttribute('aria-expanded') !== 'true';
-    menuButton.setAttribute('aria-expanded', String(open));
-    menuButton.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+    const open = menuButton.getAttribute("aria-expanded") !== "true";
+    menuButton.setAttribute("aria-expanded", String(open));
+    menuButton.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
     mobileNav.hidden = !open;
   });
-  mobileNav?.addEventListener('click', (event) => {
-    if (event.target.closest('a')) closeMenu();
+  mobileNav?.addEventListener("click", (event) => {
+    if (event.target.closest("a")) closeMenu();
   });
-  window.matchMedia('(min-width: 621px)').addEventListener('change', (event) => {
+  window.matchMedia("(min-width: 681px)").addEventListener("change", (event) => {
     if (event.matches) closeMenu();
   });
 
+  // Every playground example is illustrative, local data. No command is executed.
+  const exampleArtifacts = {
+    "persist init":
+      "your-repo/\n  AGENTS.md             shared rules\n  docs/                 six core documents\n  .persist/hooks/       commit and push checks\n  .github/workflows/    CI checks\n\nExisting file? Skipped by default.\nPreview first: persist init --dry-run",
+    "persist adopt":
+      "Detected in manifests\n  TypeScript + pnpm\n\nWritten for your review\n  adoption report\n  proposed technology decisions\n\nProposed → human review → accept",
+    "persist context <task>":
+      "Billing & rounding\n  matched: billing, rounding\n\nStart here\n  src/billing/totals.ts\n\nRule\n  ADR-0004: Store money as integer cents",
+    "persist context add <name>":
+      "docs/context/billing.md\n\nPurpose   Calculate charges and settle invoices\nTasks     Add the tasks this area covers\nStart     Add the first files to open\nRules     Link the decisions to preserve",
+    "persist fence add <path>":
+      "FENCES.md\n\nPath   src/payments/split.ts\nWhy    Stable order decides who receives\n       the remainder.\n\nNext session: this reason is available.",
+    "persist adr create <title>":
+      "ADR-0004: Store money as integer cents\n\nStatus         Proposed\nContext        Fill in the problem\nAlternatives   Record what you considered\nConsequences   Explain the tradeoffs\n\nNext: human review.",
+    "persist adr accept <name>":
+      "ADR-0004\n  Proposed → Accepted\n\nGoverns: src/billing/**\n\nWhen billing changes, the agent reviews\nits diff against this decision.",
+    "persist adr supersede <old> <new-title>":
+      "ADR-0004  Superseded\n  ↓ replaced by\nADR-0008  Accepted\n\nStore amounts in currency minor units\n\nFill in the new reason and alternatives.\nOld references are flagged by Doctor.",
+    "persist feature create <name>":
+      "docs/40-features/F-001-invoice-export/\n  PLAN.md\n  TASKS.md\n  TEST_PLAN.md  (test command configured)\n\nFill the plan, then break down the tasks.",
+    "persist module create <name>":
+      "docs/30-modules/billing/\n  MODULE.md\n  TASKS.md\n  TEST_PLAN.md\n  DECISIONS.md\n\nRecord ownership and module boundaries.",
+    "persist skill list":
+      "implement-task       write-tests\ncreate-adr           drift-review\ncompletion-report    module-memory\nplan-feature         security-review\nconventions-adherence\nchestertons-fence     adr-compliance\ncontext\n\n12 built-in catalog entries",
+    "persist skill create <name>":
+      "Configured tool layouts\n\n.claude/skills/plan-feature/SKILL.md\n.agents/skills/plan-feature/SKILL.md\n\nWorkflow instructions for the agent.\nExisting files are skipped by default.",
+    "persist mcp add <server>":
+      "docs/ai/mcp/figma.md\n  Status: proposed context\n\ndocs/adrs/proposed/\n  ADR-PROPOSED-mcp-figma.md\n\nCapture guidance is also scaffolded.\nNo server connection or data fetch.",
+    "persist doctor":
+      "Required memory files      PASS\nContext card paths         PASS\nCompletion evidence        PASS\n\nIllustrative healthy state: exit 0\n\nWarnings: exit 1 · Errors: exit 2\nUnavailable checks: not evaluated",
+    "persist test-gate":
+      "Configured command: pnpm test:run\n\nTests pass   → push can continue\nTests fail   → push is blocked\nNo command   → explicitly skipped\n\nConfigure the gate for your repository.",
+    "persist hooks sync":
+      ".persist/config.json\n  ↓ regenerate managed hooks\n\nRefreshed: commit, push, and tool hooks\nPreserved: docs and config\nPreserved: user-owned tool settings\n\nPreview: persist hooks sync --dry-run",
+  };
+  const commandSelect = document.getElementById("demo-command-select");
+  const scenario = document.getElementById("demo-scenario");
+  const exampleCode = document.getElementById("demo-command-code");
+  const exampleResult = document.getElementById("demo-result");
+  const exampleArtifact = document.getElementById("demo-artifact");
+  const exampleCopy = document.getElementById("demo-copy");
+  const catalogItems = Array.from(document.querySelectorAll(".command-item"));
+
+  function previewCommand(command, focus = false) {
+    const item = catalogItems.find((entry) => entry.dataset.command === command);
+    if (
+      !item ||
+      !commandSelect ||
+      !scenario ||
+      !exampleCode ||
+      !exampleResult ||
+      !exampleArtifact ||
+      !exampleCopy
+    )
+      return;
+    commandSelect.value = command;
+    scenario.textContent = item.dataset.scenario;
+    exampleCode.textContent = item.dataset.example;
+    exampleResult.textContent = item.dataset.result;
+    exampleArtifact.textContent = exampleArtifacts[command] || "";
+    exampleCopy.dataset.copy = item.dataset.example;
+    delete exampleCopy.dataset.copied;
+    if (focus) {
+      document.querySelector(".command-playground")?.scrollIntoView({ block: "center" });
+      commandSelect.focus({ preventScroll: true });
+    }
+  }
+  commandSelect?.addEventListener("change", () => previewCommand(commandSelect.value));
+  if (commandSelect) previewCommand(commandSelect.value);
+  document.querySelectorAll("[data-preview-command]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      previewCommand(link.dataset.previewCommand, true);
+    });
+  });
+  catalogItems.forEach((item) => {
+    const preview = document.createElement("button");
+    preview.type = "button";
+    preview.className = "command-preview-button";
+    preview.textContent = "Explore example";
+    preview.setAttribute("aria-label", `Explore example for ${item.dataset.command}`);
+    preview.addEventListener("click", () => previewCommand(item.dataset.command, true));
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "copy-button";
+    copy.dataset.copy = item.dataset.example;
+    copy.setAttribute("aria-label", `Copy example for ${item.dataset.command}`);
+    [".copy-icon", ".copied-icon"].forEach((selector) => {
+      const icon = document.querySelector(selector);
+      if (icon) copy.append(icon.cloneNode(true));
+    });
+    item.append(preview, copy);
+  });
+
   // The command finder reads the same reference markup, avoiding two catalogs.
-  const dialog = document.querySelector('.command-dialog');
-  const search = document.getElementById('command-search');
-  const results = document.getElementById('command-results');
-  const resultCount = document.getElementById('command-result-count');
-  const commands = Array.from(document.querySelectorAll('.command-item')).map((item) => ({
+  const dialog = document.querySelector(".command-dialog");
+  const search = document.getElementById("command-search");
+  const results = document.getElementById("command-results");
+  const resultCount = document.getElementById("command-result-count");
+  const commands = Array.from(document.querySelectorAll(".command-item")).map((item) => ({
     command: item.dataset.command,
     example: item.dataset.example,
     group: item.dataset.group,
-    description: item.querySelector('p')?.textContent || '',
+    description: item.querySelector("p")?.textContent || "",
   }));
   const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
-  document.querySelectorAll('[data-shortcut]').forEach((node) => { node.textContent = apple ? '⌘ K' : 'Ctrl K'; });
+  document.querySelectorAll("[data-shortcut]").forEach((node) => {
+    node.textContent = apple ? "⌘ K" : "Ctrl K";
+  });
   let commandOpener;
 
-  function renderCommands(query = '') {
+  function renderCommands(query = "") {
     if (!results) return;
     const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const matches = commands.filter((item) => {
@@ -163,34 +300,35 @@
       return words.every((word) => text.includes(word));
     });
     results.replaceChildren();
-    if (resultCount) resultCount.textContent = `${matches.length} command${matches.length === 1 ? '' : 's'}`;
+    if (resultCount)
+      resultCount.textContent = `${matches.length} command${matches.length === 1 ? "" : "s"}`;
 
     if (!matches.length) {
-      const empty = document.createElement('p');
-      empty.className = 'command-empty';
-      empty.textContent = 'No commands match. Try “doctor”, “memory”, or “decision”.';
+      const empty = document.createElement("p");
+      empty.className = "command-empty";
+      empty.textContent = "No commands match. Try “doctor”, “memory”, or “decision”.";
       results.append(empty);
       return;
     }
     matches.forEach((item) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'command-result';
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "command-result";
       button.dataset.copy = item.example;
-      button.setAttribute('aria-label', `Copy example for ${item.command}`);
-      const content = document.createElement('span');
-      const category = document.createElement('small');
+      button.setAttribute("aria-label", `Copy example for ${item.command}`);
+      const content = document.createElement("span");
+      const category = document.createElement("small");
       category.textContent = item.group;
-      const heading = document.createElement('div');
-      const code = document.createElement('code');
+      const heading = document.createElement("div");
+      const code = document.createElement("code");
       code.textContent = item.command;
       heading.append(code);
-      const description = document.createElement('p');
+      const description = document.createElement("p");
       description.textContent = item.description;
       content.append(category, heading, description);
       button.append(content);
-      const sourceIcon = document.querySelector('.copy-icon');
-      const successIcon = document.querySelector('.copied-icon');
+      const sourceIcon = document.querySelector(".copy-icon");
+      const successIcon = document.querySelector(".copied-icon");
       if (sourceIcon) button.append(sourceIcon.cloneNode(true));
       if (successIcon) button.append(successIcon.cloneNode(true));
       results.append(button);
@@ -198,60 +336,82 @@
   }
 
   function openCommands(opener) {
-    if (!dialog || typeof dialog.showModal !== 'function') {
-      const reference = document.querySelector('.command-disclosure');
-      if (reference) { reference.open = true; reference.scrollIntoView({ block: 'start' }); }
+    if (!dialog || typeof dialog.showModal !== "function") {
+      const reference = document.querySelector(".command-disclosure");
+      if (reference) {
+        reference.open = true;
+        reference.scrollIntoView({ block: "start" });
+      }
       return;
     }
     if (dialog.open) return;
     closeMenu();
     commandOpener = opener || document.activeElement;
-    search.value = '';
-    const feedback = document.getElementById('dialog-feedback');
-    if (feedback) feedback.textContent = '';
+    search.value = "";
+    const feedback = document.getElementById("dialog-feedback");
+    if (feedback) feedback.textContent = "";
     renderCommands();
     dialog.showModal();
     search.focus();
   }
 
-  document.querySelectorAll('[data-open-commands]').forEach((link) => {
-    link.addEventListener('click', (event) => {
+  document.querySelectorAll("[data-open-commands]").forEach((link) => {
+    link.addEventListener("click", (event) => {
       event.preventDefault();
       openCommands(link);
     });
   });
-  search?.addEventListener('input', () => renderCommands(search.value));
-  search?.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown') { event.preventDefault(); results.querySelector('button')?.focus(); }
+  search?.addEventListener("input", () => renderCommands(search.value));
+  search?.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      results.querySelector("button")?.focus();
+    }
   });
-  results?.addEventListener('keydown', (event) => {
-    const buttons = Array.from(results.querySelectorAll('button'));
+  results?.addEventListener("keydown", (event) => {
+    const buttons = Array.from(results.querySelectorAll("button"));
     const index = buttons.indexOf(document.activeElement);
     if (index < 0) return;
-    if (event.key === 'ArrowDown') { event.preventDefault(); buttons[(index + 1) % buttons.length]?.focus(); }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); if (index === 0) search.focus(); else buttons[index - 1].focus(); }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      buttons[(index + 1) % buttons.length]?.focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (index === 0) search.focus();
+      else buttons[index - 1].focus();
+    }
   });
-  document.querySelector('[data-close-commands]')?.addEventListener('click', () => dialog?.close());
-  dialog?.addEventListener('click', (event) => {
+  document.querySelector("[data-close-commands]")?.addEventListener("click", () => dialog?.close());
+  dialog?.addEventListener("click", (event) => {
     if (event.target !== dialog) return;
     const box = dialog.getBoundingClientRect();
-    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
+    if (
+      event.clientX < box.left ||
+      event.clientX > box.right ||
+      event.clientY < box.top ||
+      event.clientY > box.bottom
+    )
+      dialog.close();
   });
-  dialog?.addEventListener('close', () => {
-    const openerVisible = commandOpener instanceof HTMLElement && commandOpener.getClientRects().length;
+  dialog?.addEventListener("close", () => {
+    const openerVisible =
+      commandOpener instanceof HTMLElement && commandOpener.getClientRects().length;
     if (openerVisible) commandOpener.focus({ preventScroll: true });
-    else if (menuButton && menuButton.getClientRects().length) menuButton.focus({ preventScroll: true });
+    else if (menuButton && menuButton.getClientRects().length)
+      menuButton.focus({ preventScroll: true });
   });
-  document.addEventListener('keydown', (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+  document.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
-      if (dialog?.open) dialog.close(); else openCommands(document.activeElement);
+      if (dialog?.open) dialog.close();
+      else openCommands(document.activeElement);
     }
-    if (event.key === 'Escape' && dialog?.open) {
+    if (event.key === "Escape" && dialog?.open) {
       event.preventDefault();
       dialog.close();
       return;
     }
-    if (event.key === 'Escape' && menuButton?.getAttribute('aria-expanded') === 'true') closeMenu(true);
+    if (event.key === "Escape" && menuButton?.getAttribute("aria-expanded") === "true")
+      closeMenu(true);
   });
 })();
