@@ -1,13 +1,11 @@
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 import { createTempRoot, removeTempRoot, runInitCommand } from "../helpers/init-test-helpers.js";
 
-const execFileAsync = promisify(execFile);
 const cliPath = path.join(process.cwd(), "dist", "cli.js");
 
 /**
@@ -64,10 +62,6 @@ function hookInput(prompt: string): string {
 
 describe("persist context --hook over a pipe", () => {
   const roots: string[] = [];
-
-  beforeAll(async () => {
-    await execFileAsync("pnpm", ["build"], { cwd: process.cwd() });
-  }, 120_000);
 
   afterAll(async () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
