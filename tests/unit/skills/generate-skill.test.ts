@@ -80,7 +80,9 @@ describe("generateSkillFiles", () => {
       const skillMd = files.find((file) => file.path.endsWith("SKILL.md"))?.content ?? "";
       const resources = skillMd.split("## Resources")[1]?.split("## Output")[0] ?? "";
       for (const line of resources.split("\n").filter((entry) => entry.startsWith("- "))) {
-        expect(line, `${name} resource`).toMatch(/^-\s+For .+ → docs\/\S+$/u);
+        // One hop from SKILL.md: a docs/ memory file, or the AGENTS.md entry point that
+        // defines the shared Stop and ask list the skills link to instead of copying.
+        expect(line, `${name} resource`).toMatch(/^-\s+For .+ → (docs\/\S+|AGENTS\.md)$/u);
       }
     }
   });

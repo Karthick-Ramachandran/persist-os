@@ -60,18 +60,30 @@ describe("skill command", () => {
     }
   });
 
-  it("lists exactly the four catalog skills", async () => {
+  it("lists exactly the twelve catalog skills", async () => {
     const rootDir = await createRoot("skill-list");
 
     const result = await runCommand(rootDir, ["skill", "list"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("plan-feature");
-    expect(result.stdout).toContain("security-review");
-    expect(result.stdout).toContain("conventions-adherence");
-    expect(result.stdout).toContain("chestertons-fence");
-    expect(result.stdout).not.toContain("write-tests");
-    expect(result.stdout).not.toContain("create-adr");
+    for (const name of [
+      "implement-task",
+      "write-tests",
+      "create-adr",
+      "drift-review",
+      "completion-report",
+      "module-memory",
+      "plan-feature",
+      "security-review",
+      "conventions-adherence",
+      "chestertons-fence",
+      "adr-compliance",
+      "context",
+    ]) {
+      expect(result.stdout, name).toContain(name);
+    }
+    expect(result.stdout).not.toContain("create-prd");
+    expect(result.stdout).not.toContain("architecture-drift-review");
   });
 
   it("writes nothing on dry run", async () => {

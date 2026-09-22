@@ -108,8 +108,10 @@
           <p>
             Writes the six memory documents and the decision directory under <code>docs/</code>,
             the agent entry points (<code>AGENTS.md</code>, <code>CLAUDE.md</code>, the Cursor
-            rule), three agent skills in both <code>.claude/skills/</code> and
-            <code>.agents/skills/</code>, the pre-commit and pre-push hooks, a GitHub Actions
+            rule), twelve agent skills in both <code>.claude/skills/</code> and
+            <code>.agents/skills/</code> (eleven without <code>--modules</code>:
+            <code>module-memory</code> is generated only when module memory is enabled),
+            the pre-commit and pre-push hooks, a GitHub Actions
             workflow, the Claude SessionStart hook, and <code>.persist/config.json</code>. It works
             in an empty folder. The full file list is in
             <a href="memory.html#structure">Repository memory</a>.
@@ -476,6 +478,12 @@ Planned creates:
           <pre><code><span class="p">$</span> <span class="c">persist skill list</span>
 Persist OS skill catalog
 
+- implement-task: Implement Task
+- write-tests: Write Tests
+- create-adr: Create ADR
+- drift-review: Drift Review
+- completion-report: Completion Report
+- module-memory: Module Memory
 - plan-feature: Plan Feature
 - security-review: Security Review
 - conventions-adherence: Conventions Adherence
@@ -484,8 +492,9 @@ Persist OS skill catalog
 - context: Context Lookup</code></pre>
           <p>
             Skills from earlier releases that are no longer in the catalog are not deleted on
-            upgrade; <code>persist doctor</code> names each of the nine skills retired in 1.0 and
-            prints the command to remove it. Skills you create yourself stay silent.
+            upgrade; <code>persist doctor</code> names each of the four skills still retired
+            (with the skill that replaced it) and prints the command to remove it. Skills you
+            create yourself stay silent.
           </p>
         </div>
 

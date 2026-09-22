@@ -1,4 +1,4 @@
-import { adrGoverns, readGoverningAdrs } from "../../adr/governing-adrs.js";
+import { adrGoverns, readAcceptedAdrs } from "../../adr/governing-adrs.js";
 import { NO_UPSTREAM_REASON, readChangeSet } from "../change-set.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
@@ -15,6 +15,9 @@ export type GoverningAdrsCheckResult = {
  * reviewer at commit time, for exactly the files the ADR says it governs (`## Applies To`).
  * It reports, it does not judge: whether the diff follows the decision is the adr-compliance
  * skill's job, so the finding is info, never a warning.
+ *
+ * An accepted ADR with no Applies To list can never be matched to a change, so each one gets
+ * an info nudge to declare its paths — otherwise the decision is invisible to this check.
  */
 export async function checkGoverningAdrs(
   context: DoctorCheckContext,
@@ -23,8 +26,26 @@ export async function checkGoverningAdrs(
     return notEvaluated("no validated Persist OS config, so the ADR directory is unknown");
   }
 
-  const adrs = await readGoverningAdrs(context.rootDir, context.config.adrDir);
+  const accepted = await readAcceptedAdrs(context.rootDir, context.config.adrDir);
+  const findings: DoctorFinding[] = [];
+  for (const adr of accepted) {
+    if (adr.appliesTo.length === 0) {
+      findings.push({
+        severity: "info",
+        check: "governing-adrs",
+        message:
+          `${adr.id} (${adr.title}) is accepted but declares no Applies To list — ` +
+          `changes can't be matched to this decision; add an Applies To list.`,
+        path: adr.file,
+      });
+    }
+  }
+
+  const adrs = accepted.filter((adr) => adr.appliesTo.length > 0);
   if (adrs.length === 0) {
+    if (findings.length > 0) {
+      return { findings, outcome: { id: "governing-adrs", status: "evaluated" } };
+    }
     return notEvaluated(
       "no accepted ADR lists the paths it governs (an Applies To section), so no change can be matched to a decision",
     );
@@ -32,13 +53,28 @@ export async function checkGoverningAdrs(
 
   const change = await readChangeSet(context.rootDir);
   if (change.kind === "not-git") {
-    return notEvaluated("not inside a git work tree, so the change is unknown");
+    return {
+      findings,
+      outcome: {
+        id: "governing-adrs",
+        status: "not-evaluated",
+        reason: "not inside a git work tree, so the change is unknown",
+      },
+    };
   }
   if (change.kind === "no-upstream") {
-    return notEvaluated(NO_UPSTREAM_REASON);
+    return {
+      findings,
+      outcome: { id: "governing-adrs", status: "not-evaluated", reason: NO_UPSTREAM_REASON },
+    };
   }
 
-  const findings: DoctorFinding[] = [];
+  const changes =
+    change.kind === "unpushed"
+      ? "Unpushed changes"
+      : change.kind === "working-tree"
+        ? "Uncommitted changes"
+        : "Changes";
   for (const adr of adrs) {
     const touched = change.paths.filter((file) => adrGoverns(adr, file));
     if (touched.length === 0) {
@@ -52,7 +88,7 @@ export async function checkGoverningAdrs(
       severity: "info",
       check: "governing-adrs",
       message:
-        `${change.kind === "unpushed" ? "Unpushed changes" : "Changes"} to ${shown} fall under ${adr.id} (${adr.title}): ` +
+        `${changes} to ${shown} fall under ${adr.id} (${adr.title}): ` +
         `${adr.decision} Check the diff against its Decision before calling the work done (the adr-compliance skill walks through it).`,
       path: adr.file,
     });

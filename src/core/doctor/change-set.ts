@@ -9,13 +9,16 @@ const execFileAsync = promisify(execFile);
  *
  * - `staged`: something is staged, so doctor is running inside a commit; judge exactly that.
  * - `unpushed`: nothing is staged, so doctor is running outside a commit — often right after
- *   one, with the hooks off. Judging the empty staged set would pass a change that never met
- *   the checks, so the commits the branch has not pushed are the change instead.
- * - `no-upstream`: nothing staged and nothing to compare against; say so, never an empty pass.
+ *   one, with the hooks off. The task loop runs doctor before calling work done, which is before
+ *   commit, so the change is the unpushed commits plus the uncommitted working-tree changes
+ *   (tracked modifications and untracked files, respecting `.gitignore`).
+ * - `working-tree`: nothing staged and no upstream to compare against; the working-tree
+ *   changes alone are the change.
+ * - `no-upstream`: nothing staged, no upstream, and a clean tree; say so, never an empty pass.
  * - `not-git`: git cannot answer.
  */
 export type ChangeSet =
-  | { kind: "staged" | "unpushed"; paths: string[] }
+  | { kind: "staged" | "unpushed" | "working-tree"; paths: string[] }
   | { kind: "no-upstream" }
   | { kind: "not-git" };
 
@@ -31,8 +34,19 @@ export async function readChangeSet(rootDir: string): Promise<ChangeSet> {
     return { kind: "staged", paths: staged.paths };
   }
 
-  const pending = await unpushedFiles(rootDir);
-  return pending === null ? { kind: "no-upstream" } : { kind: "unpushed", paths: pending };
+  const [pending, worktree] = await Promise.all([
+    unpushedFiles(rootDir),
+    workingTreeFiles(rootDir),
+  ]);
+  if (worktree === null) {
+    return { kind: "not-git" };
+  }
+  if (pending === null) {
+    return worktree.length > 0
+      ? { kind: "working-tree", paths: worktree }
+      : { kind: "no-upstream" };
+  }
+  return { kind: "unpushed", paths: union(pending, worktree) };
 }
 
 /**
@@ -79,4 +93,40 @@ async function unpushedFiles(rootDir: string): Promise<string[] | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Uncommitted working-tree changes when nothing is staged: unstaged tracked modifications
+ * plus untracked files. `ls-files --others --exclude-standard` respects `.gitignore`, so
+ * ignored files never enter the change. null when git cannot answer.
+ */
+async function workingTreeFiles(rootDir: string): Promise<string[] | null> {
+  try {
+    const [unstaged, untracked] = await Promise.all([
+      execFileAsync("git", ["diff", "--name-only", "-z", "--diff-filter=ACMR"], {
+        cwd: rootDir,
+      }),
+      execFileAsync("git", ["ls-files", "--others", "--exclude-standard", "-z"], {
+        cwd: rootDir,
+      }),
+    ]);
+    return union(
+      unstaged.stdout.split("\0").filter((entry) => entry.length > 0),
+      untracked.stdout.split("\0").filter((entry) => entry.length > 0),
+    );
+  } catch {
+    return null;
+  }
+}
+
+function union(first: string[], second: string[]): string[] {
+  const seen = new Set(first);
+  const paths = [...first];
+  for (const entry of second) {
+    if (!seen.has(entry)) {
+      seen.add(entry);
+      paths.push(entry);
+    }
+  }
+  return paths;
 }

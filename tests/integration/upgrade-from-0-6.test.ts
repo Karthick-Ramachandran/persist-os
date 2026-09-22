@@ -62,6 +62,14 @@ const RETIRED_SKILLS = [
   "architecture-drift-review",
 ];
 
+/** The 1.0 names that stayed retired in 1.4.0; the rest came back as catalog skills. */
+const STILL_RETIRED: ReadonlyMap<string, string> = new Map([
+  ["create-prd", "plan-feature"],
+  ["plan-module", "module-memory"],
+  ["update-module-memory", "module-memory"],
+  ["architecture-drift-review", "drift-review"],
+]);
+
 describe("upgrading a 0.6.x repository to 1.0", () => {
   const roots: string[] = [];
 
@@ -152,9 +160,16 @@ describe("upgrading a 0.6.x repository to 1.0", () => {
     const files = await listRelativeFiles(rootDir);
 
     for (const name of RETIRED_SKILLS) {
-      expect(result.stdout).toContain(name);
       // Persist OS never deletes a user's files to satisfy a check.
       expect(files).toContain(`.claude/skills/${name}/SKILL.md`);
+      const replacement = STILL_RETIRED.get(name);
+      if (replacement === undefined) {
+        // 1.4.0 brought this name back as a catalog skill, so it stays silent.
+        expect(result.stdout).not.toContain(`"${name}" was retired`);
+      } else {
+        expect(result.stdout).toContain(name);
+        expect(result.stdout).toContain(`"${replacement}"`);
+      }
     }
   });
 

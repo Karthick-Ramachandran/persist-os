@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createDefaultConfig } from "../../../src/core/config/default-config.js";
 import {
   RETIRED_SKILL_NAMES,
+  RETIRED_SKILL_REPLACEMENTS,
   checkRetiredSkills,
 } from "../../../src/core/doctor/checks/retired-skills-check.js";
 import { createTempRoot, removeTempRoot } from "../../helpers/init-test-helpers.js";
@@ -33,10 +34,10 @@ describe("retired-skills check", () => {
     return { rootDir, config: createDefaultConfig() };
   }
 
-  it("warns with the removal command for a retired skill and stays silent for custom ones", async () => {
+  it("warns with the removal command and the replacement for a retired skill and stays silent for custom ones", async () => {
     const rootDir = await createRoot("retired-present");
     await writeSkill(rootDir, ".agents/skills", "plan-feature");
-    await writeSkill(rootDir, ".agents/skills", "write-tests");
+    await writeSkill(rootDir, ".agents/skills", "create-prd");
     await writeSkill(rootDir, ".agents/skills", "my-team-review");
 
     const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
@@ -46,17 +47,18 @@ describe("retired-skills check", () => {
     expect(findings[0]).toMatchObject({
       severity: "warning",
       check: "retired-skills",
-      path: ".agents/skills/write-tests/SKILL.md",
+      path: ".agents/skills/create-prd/SKILL.md",
     });
-    expect(findings[0]?.message).toContain('"write-tests"');
-    expect(findings[0]?.message).toContain("rm -rf .agents/skills/write-tests");
+    expect(findings[0]?.message).toContain('"create-prd"');
+    expect(findings[0]?.message).toContain('"plan-feature"');
+    expect(findings[0]?.message).toContain("rm -rf .agents/skills/create-prd");
     expect(findings[0]?.message).not.toContain("hand-made");
   });
 
-  it("warns on each of the nine retired skill names", async () => {
-    const rootDir = await createRoot("retired-nine");
+  it("warns on each of the four still-retired skill names and names the replacement", async () => {
+    const rootDir = await createRoot("retired-four");
     const retired = [...RETIRED_SKILL_NAMES];
-    expect(retired).toHaveLength(9);
+    expect(retired).toHaveLength(4);
     for (const name of retired) {
       await writeSkill(rootDir, ".agents/skills", name);
     }
@@ -66,17 +68,32 @@ describe("retired-skills check", () => {
     expect(outcome).toEqual({ id: "retired-skills", status: "evaluated" });
     expect(findings).toHaveLength(retired.length);
     for (const name of retired) {
-      expect(findings).toContainEqual(
+      const message = findings.find(
+        (finding) => finding.path === `.agents/skills/${name}/SKILL.md`,
+      )?.message;
+      expect(findings, name).toContainEqual(
         expect.objectContaining({
           severity: "warning",
           check: "retired-skills",
           path: `.agents/skills/${name}/SKILL.md`,
         }),
       );
-      expect(
-        findings.find((finding) => finding.path === `.agents/skills/${name}/SKILL.md`)?.message,
-      ).toContain(`rm -rf .agents/skills/${name}`);
+      expect(message, name).toContain(`rm -rf .agents/skills/${name}`);
+      expect(message, name).toContain(`"${RETIRED_SKILL_REPLACEMENTS.get(name)}"`);
     }
+  });
+
+  it("stays silent for the names 1.4.0 brought back", async () => {
+    const rootDir = await createRoot("retired-restored");
+    for (const name of ["implement-task", "write-tests", "create-adr", "completion-report"]) {
+      await writeSkill(rootDir, ".agents/skills", name);
+    }
+    await writeSkill(rootDir, ".agents/skills", "capture-mcp-context");
+
+    const { findings, outcome } = await checkRetiredSkills(contextFor(rootDir));
+
+    expect(outcome).toEqual({ id: "retired-skills", status: "evaluated" });
+    expect(findings).toEqual([]);
   });
 
   it("stays quiet when every skill is in the catalog", async () => {
