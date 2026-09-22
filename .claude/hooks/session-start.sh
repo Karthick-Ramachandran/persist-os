@@ -17,13 +17,64 @@ adr_dir=$(config_dir adrDir docs/adrs)
 modules_dir=$(config_dir modulesDir docs/30-modules)
 fences_file="$docs_dir/60-engineering/FENCES.md"
 
-adrs=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | sed 's|.*/||;s|\.md$||' | tr '\n' ' ')
+# ADR standing in a single awk pass over the ADR files: each file's ## Status section
+# (first non-blank line after the heading, case-insensitive, CR stripped) decides its
+# list, matching readAcceptedAdrs — accepted and still binding prints A:<name>, proposed
+# prints P:<name>, anything else prints nothing. Drafts under proposed/ count as proposed
+# by location, the way doctor reads them.
+adr_classes=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | awk '
+  {
+    file = $0
+    status = ""
+    in_status = 0
+    have = 0
+    while ((getline line < file) > 0) {
+      stripped = line
+      sub("\r$", "", stripped)
+      if (!have) {
+        t = stripped
+        sub(/^[[:blank:]]+/, "", t)
+        sub(/[[:blank:]]+$/, "", t)
+        if (in_status) {
+          if (stripped ~ /^##[[:space:]]/) {
+            in_status = 0
+          } else if (t != "") {
+            status = t
+            have = 1
+          }
+        } else if (tolower(t) == "## status") {
+          in_status = 1
+        }
+      }
+    }
+    close(file)
+    name = file
+    sub(/.*\//, "", name)
+    sub(/\.md$/, "", name)
+    s = tolower(status)
+    if (s ~ /accepted/ && s !~ /superseded[[:blank:]][[:blank:]]*by/) {
+      printf "A:%s\n", name
+    } else if (s ~ /proposed/) {
+      printf "P:%s\n", name
+    }
+  }')
+adrs=$(printf '%s\n' "$adr_classes" | sed -n 's/^A://p' | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')
+proposed=$(printf '%s\n' "$adr_classes" | sed -n 's/^P://p' | tr '\n' ' ')
+proposed_drafts=$(ls "$adr_dir"/proposed/ADR-PROPOSED-*.md 2>/dev/null | sed 's|.*/||;s|\.md$||' | tr '\n' ' ')
+proposed="$proposed$proposed_drafts"
+proposed=$(printf '%s' "$proposed" | sed 's/\\/\\\\/g; s/"/\\"/g')
+# The Proposed list rides the base context right after the Accepted list, only when
+# non-empty — so it counts toward the same always-loaded budget through the base bytes.
+proposed_adrs=""
+if [ -n "$proposed" ]; then
+  proposed_adrs=" Proposed ADRs, pending review, not binding: $proposed."
+fi
 modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\n' ' ')
 
 # Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.
 # A missing file means no fence crossed yet (FENCES.md is never required), and an empty index
 # injects nothing — silence is the correct signal in both cases.
-base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked."
+base="Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}.${proposed_adrs} Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked."
 context="$base"
 full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\n' ' ' | sed 's/\\/\\\\/g; s/"/\\"/g')
 lessons_file="$docs_dir/60-engineering/LESSONS.md"

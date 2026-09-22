@@ -40,14 +40,23 @@ export const ALWAYS_LOADED_BUDGET_BYTES = 24 * 1024;
 /**
  * The base context the SessionStart hook injects before the fence index. Exported (rather
  * than embedded in the shell template) so the budget check subtracts the exact same bytes
- * the hook emits — `${...}` here is shell, not interpolation.
+ * the hook emits — `${...}` here is shell, not interpolation. The `${proposed_adrs}` slot
+ * carries the Proposed list when one exists, so it counts toward the same 24 KB budget
+ * through the same base-bytes subtraction; empty, it expands to nothing.
  */
 export const SESSION_START_BASE_CONTEXT =
-  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}. Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked.";
+  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}.${proposed_adrs} Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked.";
 
 /** The label the hook places between the base context and the fence index. */
 export const FENCE_INDEX_LABEL =
   " Chesterton fence index (recorded rationale; full history in ${fences_file}): ";
+
+/**
+ * The label the hook places between the Accepted ADR list and the modules list. It is
+ * emitted only when at least one proposal exists, so repositories with only accepted
+ * decisions inject byte-identical text to before.
+ */
+export const PROPOSED_ADRS_LABEL = " Proposed ADRs, pending review, not binding: ";
 
 /** Marker the hook appends when the fence index is truncated to the budget. */
 export const FENCE_INDEX_TRUNCATION_MARKER =
@@ -65,7 +74,9 @@ export const LESSONS_ALWAYS_TRUNCATION_MARKER =
  *
  * Claude Code runs this before the first prompt of every session and injects its stdout
  * `additionalContext` into the model. It lists the repository's accepted ADRs and modules so a fresh
- * agent reliably knows the durable memory exists and where to read it. It is strictly read-only:
+ * agent reliably knows the durable memory exists and where to read it. Proposed ADRs ride a
+ * separate pending-review list right after the accepted one, and anything else stays unlisted.
+ * It is strictly read-only:
  * it only lists files and never modifies anything, makes no network calls, and runs no AI.
  *
  * The Chesterton-fence index (ADR-0010) rides the same injection: fenced paths plus their
@@ -100,7 +111,58 @@ adr_dir=$(config_dir adrDir docs/adrs)
 modules_dir=$(config_dir modulesDir docs/30-modules)
 fences_file="$docs_dir/${FENCES_FILE}"
 
-adrs=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | sed 's|.*/||;s|\\.md$||' | tr '\\n' ' ')
+# ADR standing in a single awk pass over the ADR files: each file's ## Status section
+# (first non-blank line after the heading, case-insensitive, CR stripped) decides its
+# list, matching readAcceptedAdrs — accepted and still binding prints A:<name>, proposed
+# prints P:<name>, anything else prints nothing. Drafts under proposed/ count as proposed
+# by location, the way doctor reads them.
+adr_classes=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | awk '
+  {
+    file = $0
+    status = ""
+    in_status = 0
+    have = 0
+    while ((getline line < file) > 0) {
+      stripped = line
+      sub("\\r$", "", stripped)
+      if (!have) {
+        t = stripped
+        sub(/^[[:blank:]]+/, "", t)
+        sub(/[[:blank:]]+$/, "", t)
+        if (in_status) {
+          if (stripped ~ /^##[[:space:]]/) {
+            in_status = 0
+          } else if (t != "") {
+            status = t
+            have = 1
+          }
+        } else if (tolower(t) == "## status") {
+          in_status = 1
+        }
+      }
+    }
+    close(file)
+    name = file
+    sub(/.*\\//, "", name)
+    sub(/\\.md$/, "", name)
+    s = tolower(status)
+    if (s ~ /accepted/ && s !~ /superseded[[:blank:]][[:blank:]]*by/) {
+      printf "A:%s\\n", name
+    } else if (s ~ /proposed/) {
+      printf "P:%s\\n", name
+    }
+  }')
+adrs=$(printf '%s\\n' "$adr_classes" | sed -n 's/^A://p' | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+proposed=$(printf '%s\\n' "$adr_classes" | sed -n 's/^P://p' | tr '\\n' ' ')
+proposed_drafts=$(ls "$adr_dir"/proposed/ADR-PROPOSED-*.md 2>/dev/null | sed 's|.*/||;s|\\.md$||' | tr '\\n' ' ')
+proposed="$proposed$proposed_drafts"
+proposed=$(printf '%s' "$proposed" | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+# The Proposed list rides the base context right after the Accepted list, only when
+# non-empty — so it counts toward the same always-loaded budget through the base bytes.
+proposed_adrs=""
+if [ -n "$proposed" ]; then
+  proposed_adrs="${PROPOSED_ADRS_LABEL}$proposed."
+fi
 modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\\n' ' ')
 
 # Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.

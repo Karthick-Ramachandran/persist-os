@@ -16,10 +16,18 @@ ADR-0019 records the rule and refines ADR-0010.
 until a human accepts or rejects it. Info only: a pending proposal never warns, never errors, and
 never blocks a commit.
 
+**SessionStart stops calling every ADR accepted.** The SessionStart hook listed each ADR file
+under "Accepted ADRs" whatever its status, so a Proposed draft read as an accepted decision in
+every later session. Each ADR now goes on exactly one list by its `## Status` section: Accepted
+ones keep the existing list, Proposed ones (plus every file under `docs/adrs/proposed/`) ride a
+new "Proposed ADRs, pending review, not binding:" list right after it, and anything else stays
+unlisted. Repositories with only accepted decisions inject byte-identical text to before.
+
 **Upgrading:** if doctor reports a new fence info finding on a Proposed ADR, accept the ADR when it
 records why the code is shaped that way, or record the reason with `persist fence add`. The fence
 stays read-only with no new configuration, the warning stays a warning, and the config schema is
-unchanged.
+unchanged. The SessionStart hook changed too: run `persist hooks sync` when doctor reports hook
+drift on `.claude/hooks/session-start.sh`.
 
 ## 1.6.0
 

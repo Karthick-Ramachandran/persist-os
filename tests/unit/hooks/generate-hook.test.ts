@@ -17,6 +17,7 @@ import {
   HOOKS_PATH_ACTIVATION_COMMAND,
   PRE_COMMIT_HOOK_PATH,
   PRE_PUSH_HOOK_PATH,
+  PROPOSED_ADRS_LABEL,
   SESSION_START_BASE_CONTEXT,
   SESSION_START_HOOK_COMMAND,
   expectedHookFiles,
@@ -580,7 +581,7 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
         null,
         2,
       )}\n`,
-      "memory/decisions/ADR-0001-ledger.md": "# ADR-0001\n",
+      "memory/decisions/ADR-0001-ledger.md": "# ADR-0001\n\n## Status\n\nAccepted\n",
       "memory/mods/billing/MODULE.md": "# billing\n",
       "memory/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: relocated reason.\n",
     });
@@ -593,7 +594,7 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
 
   it("falls back to the default layout when the config is missing", async () => {
     const context = await injectedContext({
-      "docs/adrs/ADR-0002-default.md": "# ADR-0002\n",
+      "docs/adrs/ADR-0002-default.md": "# ADR-0002\n\n## Status\n\nAccepted\n",
       "docs/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: default reason.\n",
     });
 
@@ -612,6 +613,7 @@ describe("renderSessionStartHook fence index (ADR-0010)", () => {
     expect(hook).toContain(`label="${FENCE_INDEX_LABEL}"`);
     expect(hook).toContain(`marker="${FENCE_INDEX_TRUNCATION_MARKER}"`);
     expect(hook).toContain(`room=$((${ALWAYS_LOADED_BUDGET_BYTES} - loaded`);
+    expect(hook).toContain(PROPOSED_ADRS_LABEL);
   });
 
   it("truncates a large FENCES.md to the budget with a marker", async () => {

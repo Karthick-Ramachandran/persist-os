@@ -103,7 +103,10 @@ describe("relocated memory", () => {
 
     const context = sessionContext(rootDir);
 
-    expect(context).toContain("Accepted ADRs (.memory/adrs/): ADR-");
+    // `adr create` writes a Proposed ADR: it rides the pending-review list, never
+    // the Accepted one (1.6.1 Part 3).
+    expect(context).toContain("Accepted ADRs (.memory/adrs/): none yet.");
+    expect(context).toMatch(/Proposed ADRs, pending review, not binding: ADR-\d+-use-a-ledger/);
     expect(context).toContain("Modules (.memory/30-modules/): billing");
     expect(context).toContain("Four writes on purpose.");
     expect(context).toContain(".memory/60-engineering/FENCES.md");
