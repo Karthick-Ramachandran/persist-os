@@ -4,7 +4,7 @@
 
 **The fence counts only a decision that holds.** An ADR reference now means an Accepted, not
 superseded ADR naming the changed path as a whole path. A change named only by a Proposed ADR is
-reported for review as info ("covered only by Proposed ADR-0019 (Title), pending review") instead of
+reported for review as info ("covered only by Proposed ADR-0002 (Title), pending review") instead of
 going quiet, and a substring or near-miss mention (`src/a.tsx` for a change to `src/a.ts`) warns
 exactly as an unrecorded crossing. Files under `docs/adrs/proposed/` (`ADR-PROPOSED-<slug>.md`)
 count as Proposed; the ADR index, the template, and any other note in the folder no longer count.
