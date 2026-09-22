@@ -21,8 +21,6 @@ for a new file under an ADR's Applies To paths. ADR-0017 records both changes an
 **Upgrading:** re-run `persist init --reinit --force` to re-detect gates for the new stacks, or set
 `testCommand` and `prePushGates` in `.persist/config.json` by hand; the config schema is unchanged.
 
-## 1.4.1
-
 **Doctor follows memory to code in any layout.** The code-reference and staleness checks, and the
 context search's file bonus, only recognised paths under `src/` and `tests/`. In a Next.js app
 (`app/`, `components/`), a monorepo (`apps/`, `packages/`), a Python package, or a Go project
