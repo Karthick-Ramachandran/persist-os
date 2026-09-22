@@ -1,7 +1,13 @@
+import { execFile } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 
+import { matchesPattern } from "../../adr/governing-adrs.js";
+import { countLessonBullets, parseLessons } from "../../lessons/lessons.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
+
+const execFileAsync = promisify(execFile);
 
 const featureFolderPattern = /^F-\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const acceptedAdrPattern = /^ADR-\d{4,}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
@@ -73,16 +79,28 @@ export async function checkContent(context: DoctorCheckContext): Promise<Content
   // not leave its threat model and security model as untouched stubs.
   const hasWork = featureFolders.length > 0 || moduleFolders.length > 0 || acceptedAdrs.length > 0;
 
-  if (!hasWork) {
+  // Lessons upkeep does not wait for real work: a LESSONS.md in a repo with
+  // no features, modules, or ADRs still gets its grouping nudge. A missing
+  // file reports nothing, so a bare `persist init` stays not-evaluated.
+  const lessonsFindings = await checkLessonsDoc(context.rootDir, context.config.docsDir);
+
+  if (!hasWork && lessonsFindings.length === 0) {
     return notEvaluated(
       "no feature folders, module folders, or ADRs exist, so there is no memory content to check",
     );
   }
 
+  // Security, product, and module templates are only forced once the
+  // repository has real work; the lessons nudge above rides regardless.
   if (hasWork) {
     findings.push(...(await checkSecurityDoc(context.rootDir)));
     findings.push(...(await checkProductDoc(context.rootDir, context.config.docsDir)));
   }
+
+  // A bare `persist init` stays green (its template is quiet under every
+  // lessons finding), and a repository with real work gets its Always size
+  // and dead scopes measured.
+  findings.push(...lessonsFindings);
 
   for (const folder of moduleFolders) {
     const modulePath = path.posix.join(context.config.modulesDir, folder.name, "MODULE.md");
@@ -181,6 +199,115 @@ async function checkProductDoc(rootDir: string, docsDir: string): Promise<Doctor
   }
 
   return findings;
+}
+
+const LESSONS_DOC = "60-engineering/LESSONS.md";
+
+/** Always is for the few lessons every task needs: at most 12 bullets or about 1.5 KB. */
+const ALWAYS_BULLET_LIMIT = 12;
+const ALWAYS_BYTE_LIMIT = 1536;
+/** Past this size, group lessons by area so agents are only handed the relevant ones. */
+const GROUP_BULLET_LIMIT = 20;
+/** Past this size, the whole file is a wall of text no lookup can aim. */
+const LESSONS_BYTE_LIMIT = 12 * 1024;
+
+/**
+ * Lessons-shape check. A missing LESSONS.md is fine (required-files owns
+ * presence); a present one is measured: Always stays small because it loads
+ * into every session, big flat files get grouped into areas, and an Applies
+ * To list that covers no file in the repository is a dead scope.
+ */
+async function checkLessonsDoc(rootDir: string, docsDir: string): Promise<DoctorFinding[]> {
+  const lessonsPath = path.posix.join(docsDir, LESSONS_DOC);
+  const content = await readFileIfExists(rootDir, lessonsPath);
+  if (content === undefined) {
+    return [];
+  }
+
+  const findings: DoctorFinding[] = [];
+  const lessons = parseLessons(content);
+
+  if (
+    lessons.always.length > ALWAYS_BULLET_LIMIT ||
+    Buffer.byteLength(lessons.always.join("\n"), "utf8") > ALWAYS_BYTE_LIMIT
+  ) {
+    findings.push({
+      severity: "warning",
+      check: "content-lessons",
+      message:
+        `The Always section holds ${lessons.always.length} lessons — Always is for the few ` +
+        `lessons every task needs; move the rest into areas.`,
+      path: lessonsPath,
+    });
+  }
+
+  if (!lessons.isSectioned && countLessonBullets(lessons) > GROUP_BULLET_LIMIT) {
+    findings.push({
+      severity: "info",
+      check: "content-lessons",
+      message:
+        `LESSONS.md holds ${countLessonBullets(lessons)} lessons with no area sections — ` +
+        `group lessons by area so agents are only handed the relevant ones.`,
+      path: lessonsPath,
+    });
+  }
+
+  if (Buffer.byteLength(content, "utf8") > LESSONS_BYTE_LIMIT) {
+    findings.push({
+      severity: "warning",
+      check: "content-lessons",
+      message:
+        `LESSONS.md exceeds about 12 KB — split it into areas with Applies To lists so ` +
+        `lookups hand over only the relevant sections.`,
+      path: lessonsPath,
+    });
+  }
+
+  const scoped = lessons.areas.filter(
+    (area) => area.appliesTo.length > 0 && hasRealLessons(area.bullets),
+  );
+  const tracked = scoped.length === 0 ? undefined : await listTrackedFiles(rootDir);
+  for (const area of scoped) {
+    if (tracked === undefined) {
+      break;
+    }
+    const covers = area.appliesTo.some((pattern) =>
+      tracked.some((file) => matchesPattern(pattern, file)),
+    );
+    if (!covers) {
+      findings.push({
+        severity: "warning",
+        check: "content-lessons",
+        message:
+          `Lesson area "${area.title}" applies to ${area.appliesTo.join(", ")}, which matches ` +
+          `no file in the repository — fix the patterns or remove the area.`,
+        path: lessonsPath,
+      });
+    }
+  }
+
+  return findings;
+}
+
+/**
+ * Template scaffolding is not a dead scope: an area whose every bullet is
+ * still an `(example)` placeholder has no claims about the repository yet.
+ */
+function hasRealLessons(bullets: string[]): boolean {
+  return bullets.some((bullet) => !/^\(example\)/iu.test(bullet.trim()));
+}
+
+/** Repo files from `git ls-files`. Outside git there is no scope to measure — never an error. */
+async function listTrackedFiles(rootDir: string): Promise<string[] | undefined> {
+  try {
+    const { stdout } = await execFileAsync("git", ["ls-files"], { cwd: rootDir });
+    return stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "");
+  } catch {
+    return undefined;
+  }
 }
 
 function sectionIsUnfilled(content: string, heading: string): boolean {

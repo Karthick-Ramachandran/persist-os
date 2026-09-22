@@ -8,6 +8,12 @@ export type WriteFileInput = {
   path: string;
   content: string;
   executable?: boolean;
+  /**
+   * Per-file conflict policy, winning over the plan-wide one. `init` marks
+   * user-owned memory (LESSONS.md) `skip-existing` so even `--reinit --force`
+   * never rewrites a file the user has made their own.
+   */
+  policy?: ConflictPolicy;
 };
 
 export type WritePlanCreateEntry = {
@@ -79,7 +85,7 @@ export function createWritePlan(options: CreateWritePlanOptions): WritePlan {
       seen.set(safePath.path, file.path);
 
       if (existsSync(safePath.absolutePath)) {
-        if (shouldOverwriteExisting(policy)) {
+        if (shouldOverwriteExisting(file.policy ?? policy)) {
           entries.push({
             action: "overwrite",
             path: safePath.path,

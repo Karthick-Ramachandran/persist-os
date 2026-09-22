@@ -78,7 +78,7 @@ each commit and your tests run before each push.
 | Decision records                | `adr create`, `accept`, and `supersede` keep every decision and the reason it changed.                                                              |
 | Chesterton fences               | `fence add` records why odd-looking code is shaped that way, in a person's words.                                                                   |
 | Context cards                   | `context add` gives each area of the code a card: what it's for, what tasks it covers, where to start.                                              |
-| Conventions and lessons         | Agents reuse the helpers you've listed and avoid mistakes already recorded. They keep both files current.                                           |
+| Conventions and lessons         | Agents reuse the helpers you've listed. Always lessons load every session; area lessons arrive with the task pointers, the rest only indexed.       |
 | Existing codebases              | `adopt` reads your manifests and proposes decisions. Nothing is accepted until you agree.                                                           |
 | MCP context                     | `mcp add` saves what an MCP server knows as reviewable files, offline.                                                                              |
 | **Getting it to the agent**     |                                                                                                                                                     |

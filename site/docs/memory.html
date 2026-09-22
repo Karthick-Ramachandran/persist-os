@@ -237,10 +237,16 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
           <p>
             <code>CONVENTIONS.md</code> names the components, helpers, clients, types, and patterns
             that already exist so the agent reuses them instead of writing a second one.
-            <code>LESSONS.md</code> holds one-line pitfalls that were painful to learn. Both load
-            into every session, and the generated rules tell the agent to keep them current itself;
-            the human's job is to review those edits in the pull request. The doctor warns when
-            <code>CONVENTIONS.md</code> is still a stub once the repository has real work.
+            <code>LESSONS.md</code> holds one-line pitfalls that were painful to learn, grouped
+            by area under an <code>Always</code> section and area sections with
+            <code>Applies To</code> lists. The Always lessons load into every session; the areas
+            matching the task arrive with the pointers (at most two areas, three lessons each),
+            and a one-line index names the rest. <code>CONVENTIONS.md</code> still loads whole,
+            and the generated rules tell the agent to keep both files current itself; the human's
+            job is to review those edits in the pull request. The doctor warns when
+            <code>CONVENTIONS.md</code> is still a stub once the repository has real work, when
+            <code>Always</code> outgrows the few lessons every task needs, and when an area
+            applies to no file in the repository.
           </p>
 
           <h2 id="features">Feature memory</h2>

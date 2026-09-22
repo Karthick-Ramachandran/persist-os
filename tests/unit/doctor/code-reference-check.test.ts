@@ -162,6 +162,31 @@ describe("doctor code-reference checks", () => {
     );
   });
 
+  it("flags a lesson citing a deleted file", async () => {
+    const rootDir = await createRoot("coderef-dead-lesson");
+    const lessonsDir = path.join(rootDir, "docs/60-engineering");
+    await mkdir(lessonsDir, { recursive: true });
+    await writeFile(
+      path.join(lessonsDir, "LESSONS.md"),
+      "# Lessons\n\n## Deploy\n\n- Always gate `src/lib/removed.ts` behind a flag.\n",
+      "utf8",
+    );
+
+    const { findings } = await checkCodeReferences({
+      rootDir,
+      config: createDefaultConfig(),
+    });
+
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "warning",
+        check: "drift-code-reference",
+        message: "Repository memory references src/lib/removed.ts, which does not exist.",
+        path: "docs/60-engineering/LESSONS.md",
+      }),
+    );
+  });
+
   it("stays quiet on healthy ADRs and conventions", async () => {
     const rootDir = await createRoot("coderef-healthy");
     await writeSource(rootDir, "src/lib/store.ts");
@@ -237,7 +262,7 @@ describe("doctor code-reference checks", () => {
       id: "code-references",
       status: "not-evaluated",
       reason:
-        "no ADRs, conventions, feature folders, or module folders exist, so there is no memory to scan for code references",
+        "no ADRs, conventions, lessons, feature folders, or module folders exist, so there is no memory to scan for code references",
     });
   });
 });
