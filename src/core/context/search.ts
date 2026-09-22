@@ -52,7 +52,8 @@ export const MIN_SCORE = 0.9;
 /**
  * Lesson-area field weights, mirroring the card table: the heading names the
  * area and Also Known As carries its synonyms, so both outrank a shared word
- * in a bullet. A section still scores as one document — one area, one score.
+ * in a bullet. An area's score is its best bullet plus the heading/synonym
+ * boost — never the whole section as one length-diluted document.
  */
 export const LESSON_AREA_WEIGHTS = {
   title: 2,
@@ -62,17 +63,17 @@ export const LESSON_AREA_WEIGHTS = {
 
 /**
  * Below this total an area stays out of the pointers. Well above the card
- * threshold on purpose: one shared word ("key", "token", "migration") scores
- * 1–5 through a single bullet or a shared Also Known As, so areas need a bar
- * that genuine multi-term and rare-name matches clear but lone shared-word
- * overlap does not. Tuned against the lessons fixture (`tests/fixtures/`):
- * wanted areas score 10–28 there, shared-word noise 1–5, so 6 separates them
- * with margin on both sides. A lone unique heading or Also Known As term
- * (e.g. `E11000`, ~5.8) rides below the bar through the named-area rule in
+ * threshold on purpose: per-bullet scoring lets one shared word ("code",
+ * "new", "migration") score 2–7 through a single bullet, so areas need a bar
+ * that genuine multi-term matches clear but one- or two-word overlap does
+ * not. Tuned against the lessons fixture (`tests/fixtures/`): wanted areas
+ * score 20–28 there, shared-word noise 2–7.5, so 8 separates them with
+ * margin on both sides. A lone unique heading or Also Known As term
+ * (e.g. `E11000`, ~7.4) rides below the bar through the named-area rule in
  * `selectLessons` instead, and an area whose Applies To covers a matched
  * card's files rides regardless — the card already grounds it.
  */
-export const MIN_AREA_SCORE = 6;
+export const MIN_AREA_SCORE = 8;
 
 const FENCES_FILE = "60-engineering/FENCES.md";
 const CONVENTIONS_FILE = "60-engineering/CONVENTIONS.md";
@@ -132,9 +133,9 @@ export type ContextSearchResult = {
   cards: ScoredCard[];
   secondary: ScoredSecondary[];
   /**
-   * Lesson areas of a sectioned LESSONS.md, each scored as one document
-   * (heading plus Also Known As plus bullets). Empty for a flat legacy file,
-   * which still reads bullet by bullet through `secondary` as today.
+   * Lesson areas of a sectioned LESSONS.md: each area's match is its best
+   * bullet plus the heading/Also Known As boost. Empty for a flat legacy
+   * file, which still reads bullet by bullet through `secondary` as today.
    */
   lessonAreas: ScoredLessonArea[];
   /** Repo-relative LESSONS.md path, or undefined when there is no file. */
@@ -390,22 +391,20 @@ async function readLessonDocs(
     return { legacy: [], areas: [], file: undefined };
   }
   const lessons = parseLessons(content);
+  // A `## Lessons` section's bullets ride the legacy list even beside areas.
+  const legacy = lessons.flat.map((bullet) => ({
+    kind: "lesson" as const,
+    label: "LESSONS",
+    file,
+    text: bullet,
+    paths: mentionedPaths(bullet, roots),
+    detail: bullet,
+  }));
   if (!lessons.isSectioned) {
-    return {
-      legacy: lessons.flat.map((bullet) => ({
-        kind: "lesson" as const,
-        label: "LESSONS",
-        file,
-        text: bullet,
-        paths: mentionedPaths(bullet, roots),
-        detail: bullet,
-      })),
-      areas: [],
-      file,
-    };
+    return { legacy, areas: [], file };
   }
   return {
-    legacy: [],
+    legacy,
     areas: lessons.areas.map((area) => ({
       area,
       file,
@@ -500,20 +499,25 @@ export async function searchContext(
     );
   }
 
-  const areaFieldDocs = new Map<keyof typeof LESSON_AREA_WEIGHTS, string[][]>();
-  const areaFields = lessonAreas.map((entry) => [
-    { field: "title", text: entry.area.title },
-    { field: "alsoKnownAs", text: entry.area.alsoKnownAs.join(" ") },
-    { field: "bullets", text: entry.area.bullets.join("\n") },
+  // Area matching is per bullet, not per joined section: an area's match is
+  // its best bullet plus the heading/Also Known As boost, so a large area
+  // never falls below the bar just because its length dilutes the score.
+  type LessonAreaField = keyof typeof LESSON_AREA_WEIGHTS;
+  const titleFieldDocs = new Map<LessonAreaField, string[][]>([
+    ["title", lessonAreas.map((entry) => tokenize(entry.area.title))],
   ]);
-  for (const field of Object.keys(LESSON_AREA_WEIGHTS) as (keyof typeof LESSON_AREA_WEIGHTS)[]) {
-    areaFieldDocs.set(
-      field,
-      areaFields.map((entries) =>
-        tokenize(entries.find((entry) => entry.field === field)?.text ?? ""),
-      ),
-    );
-  }
+  const akaFieldDocs = new Map<LessonAreaField, string[][]>([
+    ["alsoKnownAs", lessonAreas.map((entry) => tokenize(entry.area.alsoKnownAs.join(" ")))],
+  ]);
+  const bulletTokens: string[][] = [];
+  const bulletOwner: number[] = [];
+  lessonAreas.forEach((entry, areaIndex) => {
+    for (const bullet of entry.area.bullets) {
+      bulletOwner.push(areaIndex);
+      bulletTokens.push(tokenize(bullet));
+    }
+  });
+  const bulletFieldDocs = new Map<LessonAreaField, string[][]>([["bullets", bulletTokens]]);
 
   const tracked = await listTrackedFiles(rootDir);
   // The boost amplifies genuine field relevance; it never invents it. A card
@@ -564,13 +568,43 @@ export async function searchContext(
     });
     scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
 
-    const scoredAreas: ScoredLessonArea[] = lessonAreas.map((entry, index) => {
-      const { score, matched } = scoreFields(
+    const areaCount = Math.max(lessonAreas.length, 1);
+    const bulletHits = bulletTokens.map((_, bulletIndex) =>
+      scoreFields(
         queryTerms,
-        areaFieldDocs,
-        LESSON_AREA_WEIGHTS,
+        bulletFieldDocs,
+        { ...LESSON_AREA_WEIGHTS, title: 0, alsoKnownAs: 0 },
+        bulletIndex,
+        Math.max(bulletTokens.length, 1),
+      ),
+    );
+    const scoredAreas: ScoredLessonArea[] = lessonAreas.map((entry, index) => {
+      const title = scoreFields(
+        queryTerms,
+        titleFieldDocs,
+        { ...LESSON_AREA_WEIGHTS, alsoKnownAs: 0, bullets: 0 },
         index,
-        Math.max(lessonAreas.length, 1),
+        areaCount,
+      );
+      const aka = scoreFields(
+        queryTerms,
+        akaFieldDocs,
+        { ...LESSON_AREA_WEIGHTS, title: 0, bullets: 0 },
+        index,
+        areaCount,
+      );
+      let best = 0;
+      let bestMatched: string[] = [];
+      bulletHits.forEach((hit, bulletIndex) => {
+        if (bulletOwner[bulletIndex] === index && hit.score > best) {
+          best = hit.score;
+          bestMatched = hit.matched;
+        }
+      });
+      const score = title.score + aka.score + best;
+      const matched = queryTerms.filter(
+        (term) =>
+          title.matched.includes(term) || aka.matched.includes(term) || bestMatched.includes(term),
       );
       const { boost, bridge } = boosted(named, entry.paths, score);
       return {

@@ -297,6 +297,66 @@ describe("persist context with lessons by area", () => {
     expect(capped).toContain("More lessons:");
   });
 
+  it("reads a ## Lessons section as the legacy flat list", async () => {
+    // The pre-1.6 template files every existing repo has: one `## Lessons`
+    // heading with bullets under it. Those bullets search exactly as before,
+    // not as one diluted area document.
+    const rootDir = await createTempRoot("context-lessons-template");
+    roots.push(rootDir);
+    await runInitCommand(rootDir, ["--yes"]);
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/LESSONS.md"),
+      [
+        "# Lessons",
+        "",
+        "Durable, hard-won lessons for this repository.",
+        "",
+        "## Lessons",
+        "",
+        '- MongoDB rejects `$ne` in `partialFilterExpression`; use `$type: "string"` instead.',
+        "- Ship behind the flag before removing the old path.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const result = await runCommand(rootDir, [
+      "context",
+      "mongo partialFilterExpression $ne rejected",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("partialFilterExpression");
+    expect(result.stdout).not.toContain("Lesson — Lessons");
+  });
+
+  it("matches a large area by its best bullet, not its diluted whole", async () => {
+    // Sixty bullets, one of them the answer: joined-section scoring buries it
+    // under the length norm, per-bullet scoring does not.
+    const lines = ["# Lessons", "", "## Mongo indexes", "", "Also Known As: index, E11000", ""];
+    for (let i = 0; i < 59; i += 1) {
+      lines.push(`- Routine upkeep note number ${i} about scheduled rotation.`);
+    }
+    lines.push(
+      '- MongoDB rejects `$ne` in `partialFilterExpression`; use `$type: "string"` instead.',
+      "",
+    );
+    const rootDir = await createTempRoot("context-lessons-large");
+    roots.push(rootDir);
+    await runInitCommand(rootDir, ["--yes"]);
+    await writeFile(path.join(rootDir, "docs/60-engineering/LESSONS.md"), lines.join("\n"), "utf8");
+
+    const result = await runCommand(rootDir, [
+      "context",
+      "mongo partialFilterExpression $ne rejected",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Lesson — Mongo indexes");
+    // The match line cites the answer's terms even in a 60-bullet area.
+    expect(result.stdout).toContain("partial, filter, expression");
+  });
+
   it("answers a prompt hook with lessons when no card matches", async () => {
     const rootDir = await createTempRoot("context-lessons-hook");
     roots.push(rootDir);

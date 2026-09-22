@@ -15,7 +15,7 @@ describe("doctor content lessons check", () => {
     await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
   });
 
-  async function lessonsRepo(content: string, git = false): Promise<string> {
+  async function lessonsRepo(content: string, git = false, withAdr = true): Promise<string> {
     const rootDir = await createTempRoot("content-lessons");
     roots.push(rootDir);
     if (git) {
@@ -23,15 +23,17 @@ describe("doctor content lessons check", () => {
     }
     await mkdir(path.join(rootDir, "docs/60-engineering"), { recursive: true });
     await writeFile(path.join(rootDir, "docs/60-engineering/LESSONS.md"), content, "utf8");
-    // Content checks run once the repository has real work; without this every
-    // assertion below would pass vacuously through not-evaluated.
-    const adrDir = path.join(rootDir, "docs/adrs");
-    await mkdir(adrDir, { recursive: true });
-    await writeFile(
-      path.join(adrDir, "ADR-0001-example.md"),
-      "# ADR-0001\n\n## Status\n\nAccepted\n",
-      "utf8",
-    );
+    // Non-lessons content checks run once the repository has real work; the
+    // lessons checks do not need it, so withAdr=false still evaluates them.
+    if (withAdr) {
+      const adrDir = path.join(rootDir, "docs/adrs");
+      await mkdir(adrDir, { recursive: true });
+      await writeFile(
+        path.join(adrDir, "ADR-0001-example.md"),
+        "# ADR-0001\n\n## Status\n\nAccepted\n",
+        "utf8",
+      );
+    }
     return rootDir;
   }
 
@@ -85,6 +87,32 @@ describe("doctor content lessons check", () => {
         message: expect.stringContaining("group lessons by area"),
       }),
     );
+  });
+
+  it("nudges grouping in a repo with no ADRs, features, or modules", async () => {
+    // The lessons checks run whenever LESSONS.md exists — they are not gated
+    // on the content check's real-work rule.
+    const lines = ["# Lessons", ""];
+    for (let i = 0; i < 21; i += 1) {
+      lines.push(`- Flat lesson ${i} about patience.`);
+    }
+    const rootDir = await lessonsRepo(lines.join("\n"), false, false);
+
+    const { findings, outcome } = await checkContent({ rootDir, config: config() });
+
+    expect(outcome.status).toBe("evaluated");
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        severity: "info",
+        check: "content-lessons",
+        message: expect.stringContaining("group lessons by area"),
+      }),
+    );
+    // Only the lessons nudge rides: no ADR, feature, or security findings.
+    expect(
+      findings.filter((finding) => finding.check !== "content-lessons"),
+      "non-lessons findings",
+    ).toEqual([]);
   });
 
   it("warns when the whole file exceeds about 12 KB", async () => {

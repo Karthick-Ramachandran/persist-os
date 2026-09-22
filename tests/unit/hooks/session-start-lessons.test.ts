@@ -112,4 +112,38 @@ describe("renderSessionStartHook Always lessons", () => {
     expect(hook).toContain(`alabel="${LESSONS_ALWAYS_LABEL}"`);
     expect(hook).toContain(`amarker="${LESSONS_ALWAYS_TRUNCATION_MARKER}"`);
   });
+
+  it("escapes Always lessons so the hook output stays valid JSON", async () => {
+    // Quotes, backslashes, a tab, and CRLF endings: without the fence index's
+    // escaping the injected string breaks JSON.parse.
+    const hostile = [
+      "# Lessons",
+      "",
+      "## Always",
+      "",
+      '- Reject `$ne` in partial filters; use `$type: "string"` instead.',
+      "- Windows paths like C:\\temp\\out break naive joins.",
+      "- A lesson\twith a tab inside it.",
+      "",
+    ].join("\r\n");
+    const context = await injectedContext({
+      "CLAUDE.md": "# x\n",
+      ".persist/config.json": '{"docsDir":"docs","adrDir":"docs/adrs"}',
+      "docs/adrs/ADR-0001-example.md": "# ADR\n",
+      "docs/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: fence reason.\n",
+      "docs/60-engineering/LESSONS.md": hostile,
+    });
+
+    // The harness already parsed the hook's stdout as JSON to get here: without
+    // the escaping that parse throws on the raw quotes, so reaching these
+    // assertions proves the output was valid JSON.
+    expect(context).toContain('$type: "string"');
+    expect(context).toContain("C:\\temp\\out");
+    expect(context).toContain("A lesson with a tab inside it.");
+    expect(context).not.toContain("\t");
+    expect(context).not.toContain("\r");
+    // The ADR list and the fence index survive alongside the escaped lessons.
+    expect(context).toContain("ADR-0001-example");
+    expect(context).toContain("fence reason.");
+  });
 });

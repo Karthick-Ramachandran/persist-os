@@ -51,9 +51,9 @@ export type ParsedLessons = {
   always: string[];
   /** One entry per area heading. Empty for a flat legacy file. */
   areas: LessonSection[];
-  /** The flat-file fallback: every bullet, searched as today. */
+  /** Legacy bullets: the whole flat file, plus any `## Lessons` section's — searched as today. */
   flat: string[];
-  /** True when the file has at least one `##` section. */
+  /** True when the file has at least one area section. */
   isSectioned: boolean;
 };
 
@@ -67,7 +67,7 @@ export function countLessonBullets(lessons: ParsedLessons): number {
   return (
     lessons.always.length +
     lessons.areas.reduce((sum, area) => sum + area.bullets.length, 0) +
-    (lessons.isSectioned ? 0 : lessons.flat.length)
+    lessons.flat.length
   );
 }
 
@@ -80,14 +80,20 @@ export function parseLessons(content: string): ParsedLessons {
 
   let always: string[] = [];
   const areas: LessonSection[] = [];
+  const flat: string[] = [];
   for (const section of sections) {
-    if (section.title.trim().toLowerCase() === "always") {
+    const title = section.title.trim().toLowerCase();
+    if (title === "always") {
       always = sectionBullets(section.lines);
+    } else if (title === "lessons") {
+      // The pre-1.6 template heading: its bullets are the legacy flat list,
+      // searched bullet by bullet as today even beside real areas.
+      flat.push(...sectionBullets(section.lines));
     } else {
       areas.push(parseArea(section.title, section.lines));
     }
   }
-  return { always, areas, flat: [], isSectioned: true };
+  return { always, areas, flat, isSectioned: areas.length > 0 };
 }
 
 /**
@@ -96,8 +102,9 @@ export function parseLessons(content: string): ParsedLessons {
  * heading, bullet markers stripped, joined to one line with a trailing space.
  *
  * This mirrors the hook's awk/sed pipeline line for line — section scan,
- * comment strip, marker strip, blank skip, single-space join — so the
- * context-budget check measures the exact bytes the hook emits.
+ * comment strip, marker strip, blank skip, tab/newline-to-space, CR strip,
+ * single-space join, then the fence index's JSON escaping (backslash, double
+ * quote) — so the context-budget check measures the exact bytes the hook emits.
  */
 export function flattenAlwaysSection(content: string): string {
   const parts: string[] = [];
@@ -119,7 +126,8 @@ export function flattenAlwaysSection(content: string): string {
     }
   }
   const flat = parts.join(" ").replace(/\s+/gu, " ").trim();
-  return flat === "" ? "" : `${flat} `;
+  const escaped = flat.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"');
+  return escaped === "" ? "" : `${escaped} `;
 }
 
 /** Repo-relative path to LESSONS.md under a docs dir, for display lines. */
@@ -227,6 +235,11 @@ type JoinedLine = {
 function joinContinuations(lines: string[]): JoinedLine[] {
   const entries: JoinedLine[] = [];
   for (const line of lines) {
+    // A `###` subheading is structure, not a lesson and not a continuation of
+    // the bullet above — without this it glues onto the previous bullet.
+    if (/^#{3,}(\s|$)/u.test(line.trim())) {
+      continue;
+    }
     const match = BULLET_PATTERN.exec(line);
     if (match !== null) {
       const text = (match[1] ?? "").trim();
@@ -267,6 +280,11 @@ function sectionBullets(lines: string[]): string[] {
 function bulletsWithContinuations(lines: string[]): string[] {
   const items: string[] = [];
   for (const line of lines) {
+    // A `###` subheading is structure, not a lesson and not a continuation of
+    // the bullet above — without this it glues onto the previous bullet.
+    if (/^#{3,}(\s|$)/u.test(line.trim())) {
+      continue;
+    }
     const match = BULLET_PATTERN.exec(line);
     if (match !== null) {
       const text = stripOuterBackticks((match[1] ?? "").trim());

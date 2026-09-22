@@ -107,6 +107,47 @@ describe("lessons reader", () => {
     ]);
   });
 
+  it("ignores ### subheadings instead of gluing them onto a bullet", () => {
+    const lessons = parseLessons(
+      [
+        "# Lessons",
+        "",
+        "## Deploy",
+        "",
+        "- Ship behind the flag.",
+        "### Rollback notes",
+        "- Never patch forward under pressure.",
+        "",
+      ].join("\n"),
+    );
+
+    expect(lessons.areas[0]?.bullets).toEqual([
+      "Ship behind the flag.",
+      "Never patch forward under pressure.",
+    ]);
+  });
+
+  it("reads a ## Lessons section as the legacy flat list", () => {
+    const lessons = parseLessons(
+      [
+        "# Lessons",
+        "",
+        "## Lessons",
+        "",
+        "- Never log a raw driver error.",
+        "",
+        "## Deploy",
+        "",
+        "- Ship behind the flag.",
+        "",
+      ].join("\n"),
+    );
+
+    expect(lessons.isSectioned).toBe(true);
+    expect(lessons.flat).toEqual(["Never log a raw driver error."]);
+    expect(lessons.areas.map((area) => area.title)).toEqual(["Deploy"]);
+  });
+
   it("reads a flat legacy file bullet by bullet with no sections", () => {
     const lessons = parseLessons(
       [

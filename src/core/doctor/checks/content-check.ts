@@ -79,19 +79,28 @@ export async function checkContent(context: DoctorCheckContext): Promise<Content
   // not leave its threat model and security model as untouched stubs.
   const hasWork = featureFolders.length > 0 || moduleFolders.length > 0 || acceptedAdrs.length > 0;
 
-  if (!hasWork) {
+  // Lessons upkeep does not wait for real work: a LESSONS.md in a repo with
+  // no features, modules, or ADRs still gets its grouping nudge. A missing
+  // file reports nothing, so a bare `persist init` stays not-evaluated.
+  const lessonsFindings = await checkLessonsDoc(context.rootDir, context.config.docsDir);
+
+  if (!hasWork && lessonsFindings.length === 0) {
     return notEvaluated(
       "no feature folders, module folders, or ADRs exist, so there is no memory content to check",
     );
   }
 
-  findings.push(...(await checkSecurityDoc(context.rootDir)));
-  findings.push(...(await checkProductDoc(context.rootDir, context.config.docsDir)));
+  // Security, product, and module templates are only forced once the
+  // repository has real work; the lessons nudge above rides regardless.
+  if (hasWork) {
+    findings.push(...(await checkSecurityDoc(context.rootDir)));
+    findings.push(...(await checkProductDoc(context.rootDir, context.config.docsDir)));
+  }
 
-  // Lessons live alongside the other content checks: a bare `persist init`
-  // stays green (and its template is quiet under every lessons finding), and
-  // a repository with real work gets its Always size and dead scopes measured.
-  findings.push(...(await checkLessonsDoc(context.rootDir, context.config.docsDir)));
+  // A bare `persist init` stays green (its template is quiet under every
+  // lessons finding), and a repository with real work gets its Always size
+  // and dead scopes measured.
+  findings.push(...lessonsFindings);
 
   for (const folder of moduleFolders) {
     const modulePath = path.posix.join(context.config.modulesDir, folder.name, "MODULE.md");
