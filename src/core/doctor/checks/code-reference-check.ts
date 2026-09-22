@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
+import { codePathsIn, readCodeRoots, type CodeRoots } from "../../memory/code-paths.js";
+
 import { FENCE_HEADING_PATTERN, fenceFileKey } from "../../fence/generate-fence.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
@@ -19,16 +21,10 @@ const COMPLETION_REPORT = "COMPLETION_REPORT.md";
 const FEATURE_DOCS = ["PRD.md", "ARCHITECTURE_IMPACT.md"];
 const MODULE_DOCS = ["MODULE.md", "DECISIONS.md"];
 
-// An inline-code token that looks like a concrete source path: under src/ or tests/, with a file
-// extension. Placeholder-bearing paths (`<id>`, globs, `...`) are skipped so illustrative paths do
-// not false-positive.
-const codePathPattern = /`((?:src|tests)\/[A-Za-z0-9._/-]+\.[A-Za-z0-9]+)`/gu;
-const placeholderMarkers = /[<>*]|\.\.\./u;
-
 /**
  * Deterministic memory-to-code drift check.
  *
- * Flags current-state memory that cites a `src/` or `tests/` path which no longer exists, so stale
+ * Flags current-state memory that cites a code path which no longer exists, so stale
  * documentation that references renamed or deleted code is surfaced rather than silently trusted.
  */
 export type CodeReferenceCheckResult = {
@@ -69,14 +65,17 @@ export async function checkCodeReferences(
   }
 
   const findings: DoctorFinding[] = [];
+  const scan: ReferenceScan = {
+    roots: await readCodeRoots(context.rootDir, context.config.docsDir),
+  };
 
   for (const adrFile of adrFiles) {
     const relativePath = path.posix.join(context.config.adrDir, adrFile.name);
-    findings.push(...(await checkDoc(context.rootDir, relativePath)));
+    findings.push(...(await checkDoc(context.rootDir, relativePath, scan)));
   }
 
   if (conventions !== undefined) {
-    findings.push(...(await checkDoc(context.rootDir, conventionsPath)));
+    findings.push(...(await checkDoc(context.rootDir, conventionsPath, scan)));
   }
 
   if (fences !== undefined) {
@@ -93,7 +92,7 @@ export async function checkCodeReferences(
     }
     for (const doc of FEATURE_DOCS) {
       const relativePath = path.posix.join(featureDir, doc);
-      findings.push(...(await checkDoc(context.rootDir, relativePath)));
+      findings.push(...(await checkDoc(context.rootDir, relativePath, scan)));
     }
   }
 
@@ -103,12 +102,15 @@ export async function checkCodeReferences(
     }
     for (const doc of MODULE_DOCS) {
       const relativePath = path.posix.join(context.config.modulesDir, folder.name, doc);
-      findings.push(...(await checkDoc(context.rootDir, relativePath)));
+      findings.push(...(await checkDoc(context.rootDir, relativePath, scan)));
     }
   }
 
   return { findings, outcome: { id: "code-references", status: "evaluated" } };
 }
+
+/** The code folders to recognise while scanning memory. */
+type ReferenceScan = { roots: CodeRoots };
 
 /**
  * A feature with a completion report is treated as history, whether or not the report claims
@@ -170,22 +172,19 @@ function notEvaluated(reason: string): CodeReferenceCheckResult {
   };
 }
 
-async function checkDoc(rootDir: string, relativePath: string): Promise<DoctorFinding[]> {
+async function checkDoc(
+  rootDir: string,
+  relativePath: string,
+  scan: ReferenceScan,
+): Promise<DoctorFinding[]> {
   const content = await readFileIfExists(rootDir, relativePath);
   if (content === undefined) {
     return [];
   }
 
   const findings: DoctorFinding[] = [];
-  const seen = new Set<string>();
 
-  for (const match of content.matchAll(codePathPattern)) {
-    const reference = match[1];
-    if (placeholderMarkers.test(reference) || seen.has(reference)) {
-      continue;
-    }
-    seen.add(reference);
-
+  for (const reference of codePathsIn(content, scan.roots)) {
     if (!existsSync(path.join(rootDir, reference))) {
       findings.push({
         severity: "warning",

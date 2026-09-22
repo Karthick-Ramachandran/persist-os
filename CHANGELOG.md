@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.1
+
+**Doctor follows memory to code in any layout.** The code-reference and staleness checks, and the
+context search's file bonus, only recognised paths under `src/` and `tests/`. In a Next.js app
+(`app/`, `components/`), a monorepo (`apps/`, `packages/`), a Python package, or a Go project
+(`cmd/`, `internal/`), memory pointing at a deleted or long-changed file passed doctor, because
+nothing was checked. A code path is now any backticked relative file path whose first folder is a
+top-level code folder in the repository; dependencies, build output, hidden folders, and the memory
+folder are skipped, and `src/` and `tests/` always count, so existing repositories behave exactly as
+before.
+
 ## 1.4.0
 
 What 1.0 cut, restored in the leaner format. The skill catalog grows from six to twelve:

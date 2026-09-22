@@ -201,7 +201,7 @@ Result: <span class="warn">WARNINGS</span>
                 </tr>
                 <tr>
                   <td><code>code-references</code></td>
-                  <td class="desc">Current-state memory (ADRs, <code>CONVENTIONS.md</code>, and in-progress feature or module docs) cites a <code>src/</code> or <code>tests/</code> path that does not exist. A feature with a completion report counts as history and is skipped.</td>
+                  <td class="desc">Current-state memory (ADRs, <code>CONVENTIONS.md</code>, and in-progress feature or module docs) cites a code path that does not exist. A code path is any backticked file path under a top-level code folder (<code>src/</code>, <code>app/</code>, <code>packages/</code>, <code>cmd/</code>, and so on); dependencies, build output, and the memory folder are skipped. A feature with a completion report counts as history and is skipped.</td>
                   <td class="sev-warn">warning</td>
                 </tr>
                 <tr>
@@ -216,7 +216,7 @@ Result: <span class="warn">WARNINGS</span>
                 </tr>
                 <tr>
                   <td><code>staleness</code></td>
-                  <td class="desc">Current-state memory cites <code>src/</code> or <code>tests/</code> code whose last commit is more than 90 days after the memory's last commit. Needs git history; otherwise not evaluated.</td>
+                  <td class="desc">Current-state memory cites code, in any top-level code folder, whose last commit is more than 90 days after the memory's last commit. Needs git history; otherwise not evaluated.</td>
                   <td class="sev-warn">warning</td>
                 </tr>
                 <tr>
