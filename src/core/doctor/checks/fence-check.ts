@@ -331,11 +331,13 @@ async function readFenceAdrs(rootDir: string, adrDir: string): Promise<FenceAdr[
 /**
  * A mention counts only as a whole path: not glued to a longer path on either side. A
  * `:line` suffix still counts (`src/a.ts:12`), and backticked, bulleted, and bare mentions
- * all still count — they were never glued to anything.
+ * all still count — they were never glued to anything. Sentence punctuation is not a path
+ * character: one trailing `.`, `,`, `;`, or `)` followed by whitespace or the end of the
+ * text still counts (`see src/a.ts. Then…`), and so does a leading `./` (`./src/a.ts`).
  */
 function mentionsPath(body: string, repoRelativePath: string): boolean {
   const pattern = new RegExp(
-    `(?<![A-Za-z0-9/._-])${escapeRegExp(repoRelativePath)}(?::\\d+)?(?![A-Za-z0-9/._-])`,
+    `(?<![A-Za-z0-9/._-])(?:\\./)?${escapeRegExp(repoRelativePath)}(?::\\d+|[.,;)](?=\\s|$))?(?![A-Za-z0-9/._-])`,
     "u",
   );
   return pattern.test(body);

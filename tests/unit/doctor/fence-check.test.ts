@@ -442,6 +442,38 @@ describe("fence ADR status", () => {
     expect(findings[0]).toMatchObject({ severity: "warning", check: "fence", path: "src/a.ts" });
   });
 
+  it("stays quiet when the mention ends with sentence punctuation", async () => {
+    // Review note on PR #59: a trailing period at the end of a sentence is not a
+    // path character, so the mention still counts.
+    const rootDir = await createRoot("fence-sentence-punctuation");
+    await stageSource(rootDir, "src/a.ts");
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-example.md",
+      adrDocument("ADR-0007", "Example", "Accepted", "See src/a.ts. Then keep the split."),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toEqual([]);
+  });
+
+  it("stays quiet for a leading ./ mention", async () => {
+    // Review note on PR #59: a leading ./ is not a path character, so the mention
+    // still counts.
+    const rootDir = await createRoot("fence-leading-dot-slash");
+    await stageSource(rootDir, "src/a.ts");
+    await write(
+      rootDir,
+      "docs/adrs/ADR-0007-example.md",
+      adrDocument("ADR-0007", "Example", "Accepted", "See ./src/a.ts for the split."),
+    );
+
+    const { findings } = await checkFence(contextFor(rootDir));
+
+    expect(findings).toEqual([]);
+  });
+
   it.each([
     ["line-suffixed mention", "Covers `src/a.ts:12` and its split."],
     ["backticked mention", "Covers `src/a.ts` and its split."],
