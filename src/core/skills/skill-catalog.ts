@@ -446,6 +446,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "If the change is a bug fix → answer one question only: was this behaviour intentional?",
       "If the human does not know or will not confirm → record nothing; a confident guess is worse than an empty file.",
       "If the logic is accidental, not deliberate → say so plainly; no fence entry.",
+      "A Proposed ADR does not clear the fence; it is reported for review until a human accepts it. Never write an ADR just to quiet a fence warning.",
     ],
     verification: [
       "Every staged file the warning named has an outcome: fenced, accidental, or deferred.",

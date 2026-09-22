@@ -129,7 +129,7 @@ describe("renderSessionStartHook Always lessons", () => {
     const context = await injectedContext({
       "CLAUDE.md": "# x\n",
       ".persist/config.json": '{"docsDir":"docs","adrDir":"docs/adrs"}',
-      "docs/adrs/ADR-0001-example.md": "# ADR\n",
+      "docs/adrs/ADR-0001-example.md": "# ADR\n\n## Status\n\nAccepted\n",
       "docs/60-engineering/FENCES.md": "## `src/a.ts`\nWhy: fence reason.\n",
       "docs/60-engineering/LESSONS.md": hostile,
     });
