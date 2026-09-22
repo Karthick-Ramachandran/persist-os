@@ -13,7 +13,12 @@ import { executeWritePlan, type WriteResult } from "../core/filesystem/write-fil
 import { inspectRepo, summarizeSignals, type RepoSignals } from "../core/adopt/inspect-repo.js";
 import { generateInitFiles, generateOptInFiles } from "../core/generator/generate-init.js";
 import { enableHooks, readHooksPathState } from "../core/hooks/activate-hooks.js";
-import { detectPrePushGates, detectTestCommand } from "../core/hooks/detect-gates.js";
+import {
+  detectPrePushGates,
+  detectTestCommand,
+  detectTestCommands,
+  type DetectedTestCommand,
+} from "../core/hooks/detect-gates.js";
 import {
   CLAUDE_SETTINGS_PATH,
   CODEX_CONTEXT_HOOK_PATH,
@@ -66,6 +71,8 @@ export type InitResult = {
   aiTools: AiToolTarget[];
   // The detected one-shot test command saved as testCommand (null when none was safe to pick).
   testCommand: string | null;
+  // The other detected stacks, so init can print what it chose and what else it found.
+  alternateTestCommands: DetectedTestCommand[];
   // Whether the Chesterton fence was enabled, so the closing output can state the choice.
   fenceEnabled: boolean;
   // True when stdin was not a TTY and init proceeded with defaults without prompting.
@@ -126,6 +133,8 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
   // Doctor already runs in the pre-commit hook body, so no commit-time gates are seeded.
   // The expensive gates (tests, typecheck, lint) are detected for the pre-push hook instead.
   const detectedTestCommand = await detectTestCommand(options.rootDir);
+  const detectedCommands = await detectTestCommands(options.rootDir);
+  const alternateTestCommands = detectedCommands.slice(1);
   const prePushGates = await detectPrePushGates(options.rootDir);
 
   const {
@@ -177,6 +186,7 @@ export async function initProject(options: InitOptions): Promise<InitResult> {
     detected,
     aiTools: [...config.aiTools],
     testCommand: config.testCommand,
+    alternateTestCommands,
     fenceEnabled: config.fenceEnabled,
     assumedNonTTYDefaults,
     hooks,
@@ -328,7 +338,7 @@ export function formatInitResult(result: InitResult): string {
     ),
     result.testCommand === null
       ? "Test gate: not configured — no one-shot test script detected (set testCommand in .persist/config.json to enable `persist test-gate`)."
-      : `Test gate: ${result.testCommand} (saved as testCommand in .persist/config.json).`,
+      : `Test gate: ${result.testCommand}${formatAlternates(result.alternateTestCommands)} (saved as testCommand in .persist/config.json).`,
     result.fenceEnabled
       ? "Chesterton fence: enabled (record why code is shaped this way in docs/60-engineering/FENCES.md; toggle fenceEnabled in .persist/config.json)."
       : "Chesterton fence: disabled (nothing fence-related was generated; set fenceEnabled in .persist/config.json to enable it).",
@@ -385,6 +395,18 @@ export function formatInitResult(result: InitResult): string {
   }
 
   return `${lines.join("\n")}\n`;
+}
+
+/**
+ * What else detection found, so a multi-stack choice is visible and easy to change. Empty for
+ * single-stack repositories, where the line reads exactly as it always has.
+ */
+function formatAlternates(alternates: DetectedTestCommand[]): string {
+  if (alternates.length === 0) {
+    return "";
+  }
+  const found = alternates.map((alternate) => `${alternate.command} in ${alternate.source}`);
+  return ` (also found: ${found.join(", ")})`;
 }
 
 function presentPaths(result: InitResult): Set<string> {
