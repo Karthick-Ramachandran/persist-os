@@ -1,4 +1,5 @@
-import { lstat, readFile, readdir } from "node:fs/promises";
+import { isPresentFile } from "../../filesystem/present-file.js";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { REQUIRED_ADR_SECTIONS } from "../../adr/adr-sections.js";
@@ -378,13 +379,6 @@ async function readDirIfExists(rootDir: string, relativePath: string) {
 }
 
 async function isFile(rootDir: string, relativePath: string): Promise<boolean> {
-  try {
-    return (await lstat(path.join(rootDir, relativePath))).isFile();
-  } catch (error) {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") {
-      return false;
-    }
-    throw error;
-  }
+  // Follows a symlink that stays inside the repository (CLAUDE.md → AGENTS.md is common).
+  return isPresentFile(rootDir, relativePath);
 }

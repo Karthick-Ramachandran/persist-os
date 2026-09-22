@@ -1,5 +1,6 @@
+import { isPresentFile } from "../../filesystem/present-file.js";
 import { execFile } from "node:child_process";
-import { lstat, readdir } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -136,13 +137,6 @@ async function listContextCards(rootDir: string, docsDir: string): Promise<strin
 }
 
 async function isFile(rootDir: string, relativePath: string): Promise<boolean> {
-  try {
-    return (await lstat(path.join(rootDir, relativePath))).isFile();
-  } catch (error) {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") {
-      return false;
-    }
-    throw error;
-  }
+  // Follows a symlink that stays inside the repository (CLAUDE.md → AGENTS.md is common).
+  return isPresentFile(rootDir, relativePath);
 }

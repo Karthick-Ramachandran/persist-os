@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 import { FENCES_FILE } from "../../fence/generate-fence.js";
@@ -34,7 +34,15 @@ export async function checkContextBudget(context: DoctorCheckContext): Promise<D
   }
 
   let total = 0;
+  // A repository that links CLAUDE.md to AGENTS.md loads that text once, so count each real
+  // file once rather than once per name.
+  const counted = new Set<string>();
   for (const relativePath of ALWAYS_LOADED) {
+    const real = await realPathIfExists(path.join(context.rootDir, relativePath));
+    if (real === undefined || counted.has(real)) {
+      continue;
+    }
+    counted.add(real);
     const content = await readFileIfExists(context.rootDir, relativePath);
     if (content !== undefined) {
       total += Buffer.byteLength(content, "utf8");
@@ -130,5 +138,13 @@ async function readFileIfExists(
       return undefined;
     }
     throw error;
+  }
+}
+
+async function realPathIfExists(fullPath: string): Promise<string | undefined> {
+  try {
+    return await realpath(fullPath);
+  } catch {
+    return undefined;
   }
 }

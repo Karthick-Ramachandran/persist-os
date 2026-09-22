@@ -1,4 +1,4 @@
-import { lstat } from "node:fs/promises";
+import { isPresentDirectory, isPresentFile } from "../../filesystem/present-file.js";
 import path from "node:path";
 
 import type { DoctorCheckContext, DoctorFinding } from "../doctor-check.js";
@@ -108,27 +108,12 @@ export async function checkRequiredFiles(context: DoctorCheckContext): Promise<D
 }
 
 async function isFile(rootDir: string, relativePath: string): Promise<boolean> {
-  try {
-    return (await lstat(path.join(rootDir, relativePath))).isFile();
-  } catch (error) {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") {
-      return false;
-    }
-    throw error;
-  }
+  // Follows a symlink that stays inside the repository (CLAUDE.md → AGENTS.md is common).
+  return isPresentFile(rootDir, relativePath);
 }
 
 async function isDirectory(rootDir: string, relativePath: string): Promise<boolean> {
-  try {
-    return (await lstat(path.join(rootDir, relativePath))).isDirectory();
-  } catch (error) {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") {
-      return false;
-    }
-    throw error;
-  }
+  return isPresentDirectory(rootDir, relativePath);
 }
 
 function missingFile(pathValue: string, check: string): DoctorFinding {
