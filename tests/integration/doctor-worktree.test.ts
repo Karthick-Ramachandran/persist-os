@@ -51,6 +51,11 @@ describe("doctor judges uncommitted work", () => {
   it("names an uncommitted edit with nothing staged", async () => {
     const rootDir = await pushedRepo("worktree-fence");
     await write(rootDir, "src/tip.ts", "export const tip = 1;\n");
+    git(rootDir, "add", "src/tip.ts");
+    git(rootDir, "commit", "-q", "-m", "tip", "--no-verify");
+    git(rootDir, "branch", "-f", "pushed", "HEAD");
+    // Uncommitted means uncommitted: the edit below is never staged or committed.
+    await write(rootDir, "src/tip.ts", "export const tip = 2;\n");
 
     const report = await runDoctor(rootDir);
     const fence = report.findings.filter((finding) => finding.check === "fence");
@@ -59,7 +64,10 @@ describe("doctor judges uncommitted work", () => {
     expect(fence.map((finding) => finding.path)).toContain("src/tip.ts");
   });
 
-  it("names an untracked file and ignores an ignored one", async () => {
+  it("stays quiet for an untracked new file and ignores an ignored one", async () => {
+    // A brand-new file has no existing logic to misunderstand, so the fence never names it —
+    // in the working tree exactly as in the staged set. Untracked files still enter the
+    // change (the change-set test proves it); they just never cross.
     const rootDir = await pushedRepo("worktree-untracked");
     await write(rootDir, ".gitignore", "ignored.log\n");
     git(rootDir, "add", ".gitignore");
@@ -72,7 +80,7 @@ describe("doctor judges uncommitted work", () => {
       .filter((finding) => finding.check === "fence")
       .map((finding) => finding.path);
 
-    expect(fencePaths).toContain("src/new.ts");
+    expect(fencePaths).not.toContain("src/new.ts");
     expect(fencePaths).not.toContain("ignored.log");
   });
 
@@ -97,7 +105,12 @@ describe("doctor judges uncommitted work", () => {
     await runCommand(rootDir, ["adr", "accept", "money-is-integer-cents"]);
     git(rootDir, "add", "-A");
     git(rootDir, "commit", "-q", "-m", "init", "--no-verify");
+    // A tracked file with an uncommitted edit: a brand-new file would stay quiet for the
+    // fence (though governing ADRs would still name it), so the fence half needs an edit.
     await write(rootDir, "src/lib/tip.ts", "export const tip = 1;\n");
+    git(rootDir, "add", "src/lib/tip.ts");
+    git(rootDir, "commit", "-q", "-m", "tip", "--no-verify");
+    await write(rootDir, "src/lib/tip.ts", "export const tip = 2;\n");
 
     const report = await runDoctor(rootDir);
     const fence = report.checks.find((check) => check.id === "fence");

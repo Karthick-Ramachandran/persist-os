@@ -46,7 +46,13 @@ describe("doctor fence integration", () => {
     const rootDir = await createRoot("fence-fires");
     await runInitCommand(rootDir);
     git(rootDir, "init");
+    git(rootDir, "config", "user.email", "test@example.com");
+    git(rootDir, "config", "user.name", "Test");
     await write(rootDir, "src/ledger.ts", "export const ledger = 1;\n");
+    git(rootDir, "add", "-A");
+    git(rootDir, "commit", "-q", "-m", "init", "--no-verify");
+    // A staged edit of a tracked file crosses; a staged brand-new file never does.
+    await write(rootDir, "src/ledger.ts", "export const ledger = 2;\n");
     git(rootDir, "add", "src/ledger.ts");
 
     const report = await runDoctor(rootDir);
@@ -55,6 +61,19 @@ describe("doctor fence integration", () => {
     expect(report.findings).toContainEqual(
       expect.objectContaining({ severity: "warning", check: "fence", path: "src/ledger.ts" }),
     );
+  });
+
+  it("stays quiet for a staged brand-new file through runDoctor", async () => {
+    const rootDir = await createRoot("fence-new-quiet");
+    await runInitCommand(rootDir);
+    git(rootDir, "init");
+    await write(rootDir, "src/ledger.ts", "export const ledger = 1;\n");
+    git(rootDir, "add", "src/ledger.ts");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({ id: "fence", status: "evaluated" });
+    expect(report.findings.filter((finding) => finding.check === "fence")).toEqual([]);
   });
 
   /**
@@ -77,8 +96,13 @@ describe("doctor fence integration", () => {
   it("asks about a crossing that was committed without the hook", async () => {
     // Hooks off, the agent commits, then runs doctor as evidence. Judging the empty staged set
     // passed a change that never met the fence; the unpushed commits are what is pending.
+    // The file must predate the pushed marker: a file committed after it is added, not edited.
     const rootDir = await pushedRepo("fence-unpushed");
     await write(rootDir, "src/split.ts", "export const split = 1;\n");
+    git(rootDir, "add", "src/split.ts");
+    git(rootDir, "commit", "-m", "add split");
+    git(rootDir, "branch", "-f", "pushed", "HEAD");
+    await write(rootDir, "src/split.ts", "export const split = 2;\n");
     git(rootDir, "add", "src/split.ts");
     git(rootDir, "commit", "-m", "change split");
 
@@ -95,6 +119,19 @@ describe("doctor fence integration", () => {
     );
   });
 
+  it("stays quiet for an unpushed commit that only adds files", async () => {
+    // Added files never cross, in the unpushed commits exactly as in the staged set.
+    const rootDir = await pushedRepo("fence-unpushed-added");
+    await write(rootDir, "src/split.ts", "export const split = 1;\n");
+    git(rootDir, "add", "src/split.ts");
+    git(rootDir, "commit", "-m", "add split");
+
+    const report = await runDoctor(rootDir);
+
+    expect(report.checks).toContainEqual({ id: "fence", status: "evaluated" });
+    expect(report.findings.filter((finding) => finding.check === "fence")).toEqual([]);
+  });
+
   it("stops asking once the crossing is pushed", async () => {
     const rootDir = await pushedRepo("fence-pushed");
     await write(rootDir, "src/split.ts", "export const split = 1;\n");
@@ -109,13 +146,16 @@ describe("doctor fence integration", () => {
   });
 
   it("judges only the staged set when something is staged", async () => {
-    // The pre-commit hook's view is unchanged: an earlier unpushed crossing is not repeated on
-    // every later commit.
+    // The pre-commit hook's view is unchanged: the unpushed add stays quiet and unrepeated,
+    // and only the staged edit is judged.
     const rootDir = await pushedRepo("fence-staged-wins");
     await write(rootDir, "src/split.ts", "export const split = 1;\n");
     git(rootDir, "add", "src/split.ts");
     git(rootDir, "commit", "-m", "change split");
     await write(rootDir, "src/ledger.ts", "export const ledger = 1;\n");
+    git(rootDir, "add", "src/ledger.ts");
+    git(rootDir, "commit", "-q", "-m", "add ledger", "--no-verify");
+    await write(rootDir, "src/ledger.ts", "export const ledger = 2;\n");
     git(rootDir, "add", "src/ledger.ts");
 
     const report = await runDoctor(rootDir);

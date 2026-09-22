@@ -251,7 +251,7 @@ Result: <span class="warn">WARNINGS</span>
                 </tr>
                 <tr>
                   <td><code>fence</code></td>
-                  <td class="desc">A staged source change, or an unpushed one when nothing is staged, crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). A second crossing surfaces the recorded reason as info.</td>
+                  <td class="desc">A staged source change, or an unpushed one when nothing is staged, crosses the Chesterton fence with no record in <code>FENCES.md</code> and no ADR reference (warning). Brand-new files never count as crossings — only edits to existing logic do. A second crossing surfaces the recorded reason as info.</td>
                   <td class="sev-mixed">warning / info</td>
                 </tr>
                 <tr>
@@ -266,10 +266,13 @@ Result: <span class="warn">WARNINGS</span>
           <h2 id="fence">The fence loop</h2>
           <p>
             A staged change to source with no recorded reason and no ADR reference is a fence
-            crossing. Doctor asks why the logic is shaped the way it is, and warns rather than
-            blocks. When nothing is staged, for example because a commit was made with the hooks
-            off, doctor checks the commits the branch hasn't pushed yet, so the question still
-            comes up. Trimmed to the finding:
+            crossing. Brand-new files never count — a new file has no existing logic to
+            misunderstand — so creating a migration is quiet while editing an old one still
+            asks why. Generated and cache folders are out of scope too. Doctor asks why the
+            logic is shaped the way it is, and warns rather than blocks. When nothing is
+            staged, for example because a commit was made with the hooks off, doctor checks
+            the commits the branch hasn't pushed yet, so the question still comes up.
+            Trimmed to the finding:
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist doctor</span>
 Doctor Report

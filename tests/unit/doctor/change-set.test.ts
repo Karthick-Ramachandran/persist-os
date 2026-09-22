@@ -56,7 +56,11 @@ describe("readChangeSet", () => {
 
     const change = await readChangeSet(rootDir);
 
-    expect(change).toEqual({ kind: "unpushed", paths: ["src/tip.ts"] });
+    expect(change).toEqual({
+      kind: "unpushed",
+      paths: ["src/tip.ts"],
+      statuses: { "src/tip.ts": "A" },
+    });
   });
 
   it("unions unpushed commits with working-tree edits", async () => {
@@ -73,6 +77,10 @@ describe("readChangeSet", () => {
       "src/committed.ts",
       "src/uncommitted.ts",
     ]);
+    expect(change.kind === "unpushed" ? change.statuses : {}).toEqual({
+      "src/committed.ts": "A",
+      "src/uncommitted.ts": "A",
+    });
   });
 
   it("judges the staged set alone when something is staged", async () => {
@@ -86,7 +94,11 @@ describe("readChangeSet", () => {
 
     const change = await readChangeSet(rootDir);
 
-    expect(change).toEqual({ kind: "staged", paths: ["src/staged.ts"] });
+    expect(change).toEqual({
+      kind: "staged",
+      paths: ["src/staged.ts"],
+      statuses: { "src/staged.ts": "A" },
+    });
   });
 
   it("includes untracked files and excludes ignored ones", async () => {
@@ -112,7 +124,11 @@ describe("readChangeSet", () => {
 
     const change = await readChangeSet(rootDir);
 
-    expect(change).toEqual({ kind: "working-tree", paths: ["src/tip.ts"] });
+    expect(change).toEqual({
+      kind: "working-tree",
+      paths: ["src/tip.ts"],
+      statuses: { "src/tip.ts": "A" },
+    });
   });
 
   it("reports no-upstream only when the tree is clean too", async () => {
@@ -129,5 +145,34 @@ describe("readChangeSet", () => {
     roots.push(rootDir);
 
     expect(await readChangeSet(rootDir)).toEqual({ kind: "not-git" });
+  });
+
+  it("carries a modified status for a staged edit of a tracked file", async () => {
+    const rootDir = await pushedRepo("changeset-modified");
+    await write(rootDir, "src/tip.ts", "export const tip = 1;\n");
+    git(rootDir, "add", "src/tip.ts");
+    git(rootDir, "commit", "-q", "-m", "tip", "--no-verify");
+    await write(rootDir, "src/tip.ts", "export const tip = 2;\n");
+    git(rootDir, "add", "src/tip.ts");
+
+    expect(await readChangeSet(rootDir)).toEqual({
+      kind: "staged",
+      paths: ["src/tip.ts"],
+      statuses: { "src/tip.ts": "M" },
+    });
+  });
+
+  it("judges a staged rename as its new path with a renamed status", async () => {
+    const rootDir = await pushedRepo("changeset-rename");
+    await write(rootDir, "src/old.ts", "export const old = 1;\n");
+    git(rootDir, "add", "src/old.ts");
+    git(rootDir, "commit", "-q", "-m", "old", "--no-verify");
+    git(rootDir, "mv", "src/old.ts", "src/new.ts");
+
+    expect(await readChangeSet(rootDir)).toEqual({
+      kind: "staged",
+      paths: ["src/new.ts"],
+      statuses: { "src/new.ts": "R" },
+    });
   });
 });

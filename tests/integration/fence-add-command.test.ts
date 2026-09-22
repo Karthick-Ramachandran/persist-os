@@ -44,6 +44,11 @@ describe("persist fence add", () => {
 
     await mkdir(path.join(rootDir, "src"), { recursive: true });
     await writeFile(path.join(rootDir, "src/billing.ts"), "export const writes = 4;\n", "utf8");
+    // A staged edit, not a staged new file: added files never cross the fence, so the
+    // warning these tests answer needs a tracked file with an edit.
+    git(rootDir, "add", "-A");
+    git(rootDir, "commit", "-q", "-m", "init", "--no-verify");
+    await writeFile(path.join(rootDir, "src/billing.ts"), "export const writes = 1;\n", "utf8");
     git(rootDir, "add", "src/billing.ts");
     return rootDir;
   }

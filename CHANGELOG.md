@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.5.0
+
+**Works out of the box on any stack.** `init` detects the test command and pre-push gates for
+Composer (Laravel, Pest, PHPUnit, or an explicit `composer test` script), Python (pytest with
+`uv run`/`poetry run` prefixes, or `python manage.py test` for Django), Go (`go test` with
+`go vet`), Rust (`cargo test` with Clippy only when configured), Ruby (RSpec or `bin/rails test`
+with RuboCop when configured), and a `Makefile` fallback — first match wins in that order, and
+`init` prints what it chose alongside what else it detected. Detection still only proposes one-shot
+commands as editable config values and never runs a tool. A JavaScript-only repository resolves
+byte-identically to 1.4.1.
+
+**A quieter fence.** Newly added files never count as crossings — a new file has no existing logic
+to misunderstand — in the staged set, the unpushed commits, and the working tree alike (renames are
+judged as their new path). The built-in skip list grows with framework generated and cache folders
+(`bootstrap/cache/`, `storage/framework/`, `var/cache/`, `__pycache__/`, and friends), while
+configuration and migration folders stay in scope. The governing-ADRs check still names the decision
+for a new file under an ADR's Applies To paths. ADR-0017 records both changes and stays Proposed.
+
+**Upgrading:** re-run `persist init --reinit --force` to re-detect gates for the new stacks, or set
+`testCommand` and `prePushGates` in `.persist/config.json` by hand; the config schema is unchanged.
+
 ## 1.4.1
 
 **Doctor follows memory to code in any layout.** The code-reference and staleness checks, and the

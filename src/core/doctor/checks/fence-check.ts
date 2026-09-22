@@ -34,7 +34,35 @@ const LOCKFILE_NAMES = new Set([
   "go.sum",
 ]);
 
-const GENERATED_DIR_PREFIXES = ["dist/", "build/", "coverage/", ".next/", "vendor/", "target/"];
+const GENERATED_DIR_PREFIXES = [
+  // Compiled and bundled output.
+  "dist/",
+  "build/",
+  "coverage/",
+  ".next/",
+  // Vendored dependencies and compiler output.
+  "vendor/",
+  "target/",
+  // Laravel compiled config, routes, and views; never hand-written logic.
+  "bootstrap/cache/",
+  // Laravel compiled views, sessions, and framework caches.
+  "storage/framework/",
+  // Symfony (and friends) application cache.
+  "var/cache/",
+  // Python bytecode caches, at any depth.
+  "__pycache__/",
+  // Pytest result caches (also dot-directories; listed so the skip is visible).
+  ".pytest_cache/",
+  // JavaScript dependencies (also a dot-free top-level folder in every npm repo).
+  "node_modules/",
+  // Turborepo, SvelteKit, and Nuxt build output (dot-directories; listed for visibility).
+  ".turbo/",
+  ".svelte-kit/",
+  ".nuxt/",
+  ".output/",
+  // Rails (and Rack) file caches.
+  "tmp/cache/",
+];
 const GENERATED_FILE_SUFFIXES = [".min.js", ".js.map", ".css.map"];
 
 const CONFIG_FILE_PATTERN =
@@ -77,7 +105,10 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
         ? "Uncommitted change"
         : "Change";
 
-  const inScope = changed.filter((file) => isInScope(file));
+  // A brand-new file has no existing logic to misunderstand, so it never crosses — in the
+  // staged set, the unpushed commits, and the working tree alike. Renames, copies, and
+  // modifications are judged as their (new) path, exactly as before.
+  const inScope = changed.filter((file) => change.statuses[file] !== "A" && isInScope(file));
   if (inScope.length === 0) {
     return { findings: [], outcome: { id: "fence", status: "evaluated" } };
   }
@@ -120,8 +151,23 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
 }
 
 /**
+ * A generated folder at the top level or nested anywhere (`pkg/__pycache__/` as well as
+ * `__pycache__/`): caches and build output are never logic, wherever the framework puts them.
+ */
+function isGeneratedDir(normalized: string): boolean {
+  return GENERATED_DIR_PREFIXES.some(
+    (prefix) => normalized.startsWith(prefix) || normalized.includes(`/${prefix}`),
+  );
+}
+
+/**
  * Scope is any source file minus obvious non-logic. Deliberately unconfigured (ADR-0010): one
  * more thing to set wrong, and a scope set wrong disables the fence silently.
+ *
+ * Configuration and migration folders (`config/`, `database/migrations/`, Rails
+ * `config/initializers/`) stay in scope on purpose: they can hold real logic, and editing an
+ * old migration is exactly the change the fence exists for. New files are already quiet
+ * because they are added, not because of where they live.
  */
 export function isInScope(repoRelativePath: string): boolean {
   const normalized = repoRelativePath.replace(/\\/gu, "/");
@@ -149,7 +195,7 @@ export function isInScope(repoRelativePath: string): boolean {
     return false;
   }
 
-  if (GENERATED_DIR_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+  if (isGeneratedDir(normalized)) {
     return false;
   }
 

@@ -261,27 +261,85 @@ branch 'main' set up to track 'origin/main'.
 
           <h2 id="detection">How the gates are detected</h2>
           <p>
-            Init reads <code>package.json</code> and the lockfile (<code>pnpm-lock.yaml</code>,
-            <code>yarn.lock</code>, or npm by default) and records what it finds in
-            <code>.persist/config.json</code>:
+            Init reads the repository's manifests and the lockfile and records what it finds in
+            <code>.persist/config.json</code>. Detection only proposes one-shot commands as
+            editable config values: bare <code>vitest</code> or anything with
+            <code>--watch</code> is never chosen, because a hook that hangs is worse than no
+            hook. With nothing usable, <code>testCommand</code> is <code>null</code> and init
+            says so. Detection only reads files; it never runs the tools it names.
           </p>
-          <ul>
-            <li>
-              <code>testCommand</code>: <code>&lt;pm&gt; run test:run</code> if that script exists,
-              otherwise <code>&lt;pm&gt; run test</code> when the <code>test</code> script is not a
-              watch runner. Bare <code>vitest</code> or anything with <code>--watch</code> is never
-              chosen, because a hook that hangs is worse than no hook. With nothing usable,
-              <code>testCommand</code> is <code>null</code> and init says so.
-            </li>
-            <li>
-              <code>prePushGates</code>: <code>&lt;pm&gt; run typecheck</code> and
-              <code>&lt;pm&gt; run lint</code>, in that order, when those scripts exist.
-            </li>
-            <li>
-              <code>preCommitGates</code>: empty by default. Add whatever you want to run on every
-              commit after the doctor.
-            </li>
-          </ul>
+          <div class="table-wrap table-wide">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Stack signal</th>
+                  <th scope="col">Test command</th>
+                  <th scope="col">Push gates</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="desc"><code>composer.json</code> with a <code>scripts.test</code> entry</td>
+                  <td><code>composer test</code></td>
+                  <td class="desc">none</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>composer.json</code> requiring <code>laravel/framework</code>, and an <code>artisan</code> file</td>
+                  <td><code>php artisan test</code></td>
+                  <td class="desc"><code>vendor/bin/pint --test</code> when <code>laravel/pint</code> is required; <code>vendor/bin/phpstan analyse</code> when <code>phpstan.neon</code> exists</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>composer.json</code> requiring <code>pestphp/pest</code> or <code>phpunit/phpunit</code></td>
+                  <td><code>vendor/bin/pest</code> or <code>vendor/bin/phpunit</code></td>
+                  <td class="desc">same PHP gates as above</td>
+                </tr>
+                <tr>
+                  <td class="desc">pytest in <code>pyproject.toml</code>, <code>requirements*.txt</code>, <code>setup.cfg</code>, or a <code>[tool.pytest…]</code> section</td>
+                  <td><code>pytest</code> (<code>uv run</code> with <code>uv.lock</code>, <code>poetry run</code> with <code>poetry.lock</code>)</td>
+                  <td class="desc"><code>ruff check .</code> and <code>mypy .</code> when configured</td>
+                </tr>
+                <tr>
+                  <td class="desc">Django (<code>manage.py</code>) without pytest</td>
+                  <td><code>python manage.py test</code></td>
+                  <td class="desc">same Python gates</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>go.mod</code></td>
+                  <td><code>go test ./...</code></td>
+                  <td class="desc"><code>go vet ./...</code></td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>Cargo.toml</code></td>
+                  <td><code>cargo test</code></td>
+                  <td class="desc"><code>cargo clippy</code> only when Clippy is configured</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>Gemfile</code> listing <code>rspec</code>, else <code>rails</code></td>
+                  <td><code>bundle exec rspec</code> or <code>bin/rails test</code></td>
+                  <td class="desc"><code>bundle exec rubocop</code> when configured</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>package.json</code>: a <code>test:run</code> script, else a one-shot <code>test</code> script (<code>pnpm-lock.yaml</code>, <code>yarn.lock</code>, or npm by default)</td>
+                  <td><code>&lt;pm&gt; run test:run</code> or <code>&lt;pm&gt; run test</code></td>
+                  <td class="desc"><code>&lt;pm&gt; run typecheck</code> and <code>&lt;pm&gt; run lint</code>, in that order, when those scripts exist</td>
+                </tr>
+                <tr>
+                  <td class="desc"><code>Makefile</code> with a <code>test:</code> target, and nothing above matched</td>
+                  <td><code>make test</code></td>
+                  <td class="desc">none</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            When more than one stack matches, the first row in the table wins — except that a
+            <code>package.json</code> with a usable test script only outranks the
+            <code>Makefile</code> fallback, so a Laravel app with a Vite
+            <code>package.json</code> still runs <code>php artisan test</code>. Init prints
+            what it chose and what else it detected, so the choice is visible and easy to
+            change. <code>preCommitGates</code> stays empty by default: add whatever you want
+            to run on every commit after the doctor.
+          </p>
           <p>The config init wrote for the example repository above:</p>
           <pre><code>"preCommitGates": [],
 "prePushGates": [
@@ -291,8 +349,8 @@ branch 'main' set up to track 'origin/main'.
 "testCommand": "pnpm run test:run"</code></pre>
           <p>
             Gate entries are single lines without control characters, up to 200 characters, and
-            there can be at most 50 of each. Without a JavaScript toolchain nothing is detected and
-            the lists stay empty.
+            there can be at most 50 of each. A JavaScript-only repository resolves exactly as it
+            always has.
           </p>
 
           <h2 id="regenerate">Editing and regenerating</h2>
