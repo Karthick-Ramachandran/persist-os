@@ -95,8 +95,10 @@ If two sources conflict, stop and report the conflict before changing files.
   line count: a one-button change inside an existing feature is small; building that feature is not.
 - Record substantial work with the persist CLI so the memory actually exists — a new feature →
   \`persist feature create <name>\` (then fill its plan); a real decision (a dependency,
-  data model, auth/security choice, API shape) → \`persist adr create <title>\` then
-  \`persist adr accept <name>\`. Reasoning left only in the chat is gone next session — if it is not in
+  data model, auth/security choice, API shape) → \`persist adr create <title>\`. Run
+  \`persist adr accept <name>\` yourself only when the human stated or confirmed the decision
+  in this conversation (quote their words in the hand-back); otherwise leave it Proposed
+  and say so. Reasoning left only in the chat is gone next session — if it is not in
   a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
   type, or pattern it lists; when you make a new reusable one, add it there.
@@ -124,7 +126,7 @@ If two sources conflict, stop and report the conflict before changing files.
 
 - \`persist doctor\` — validate repository memory; work is done only when it reports PASSED.
 - \`persist feature create <name>\` — scaffold feature memory before non-trivial feature work.
-- \`persist adr create <title>\` then \`persist adr accept <name>\` — propose, then accept, a decision.
+- \`persist adr create <title>\` — propose a decision; \`persist adr accept <name>\` — accept it yourself only when the human stated or confirmed the decision in this conversation (quote them in the hand-back), otherwise leave it Proposed.
 - \`persist adr supersede <old> <new-title>\` — record a changed decision (never overwrite an accepted ADR).
 - \`persist module create <name>\` — scaffold module memory for a new responsibility boundary.
 - \`persist mcp add <server>\` — capture an MCP tool's context into memory, offline.
@@ -196,7 +198,9 @@ maintains area memory through cards.
   not.
 - Record substantial work with the persist CLI so the memory exists: a new feature →
   \`persist feature create <name>\` (fill its plan); a real decision →
-  \`persist adr create <title>\` then \`persist adr accept <name>\`. Reasoning left only in chat is gone
+  \`persist adr create <title>\`. Run \`persist adr accept <name>\` yourself only when the human
+  stated or confirmed the decision in this conversation (quote their words in the hand-back);
+  otherwise leave it Proposed and say so. Reasoning left only in chat is gone
   next session — if it is not in a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
   reusable primitive there when you make one.

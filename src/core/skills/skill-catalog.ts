@@ -170,7 +170,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     name: "create-adr",
     title: "Create ADR",
     description:
-      "Record a decision others can check: falsifiable rules, an allowed and a forbidden example, and a filled Applies To list. Use when a change needs a decision recorded, while it stays Proposed until a human accepts. Skip for ADR checks, feature planning, drift reviews, and test writing.",
+      "Record a decision others can check: falsifiable rules, an allowed and a forbidden example, and a filled Applies To list. Use when a change needs a decision recorded. Accept it yourself only when the human stated or confirmed the decision in this conversation; otherwise it stays Proposed. Skip for ADR checks, feature planning, drift reviews, and test writing.",
     goal: "Write a decision record others can check line by line.",
     inputs: [
       "The decision and why it is needed now.",
@@ -181,7 +181,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "Write the Decision as rules a line of code can pass or fail, with no adjectives that need interpretation.",
       "Give an explicit allowed and a forbidden example for anything easy to misread.",
       "Fill the Applies To list with the exact paths the decision governs.",
-      "Record the alternatives considered and the consequences, then leave the ADR Proposed: `persist adr create` writes it and a human accepts it.",
+      "Record the alternatives considered and the consequences, then `persist adr create` writes it Proposed; run `persist adr accept` yourself only when the human stated or confirmed the decision in this conversation (quote their words in the hand-back), otherwise leave it Proposed and say so.",
       STOP_AND_ASK_STEP,
     ],
     decisions: [
@@ -191,10 +191,13 @@ export const SKILL_CATALOG: SkillDefinition[] = [
     verification: [
       "Every Decision sentence passes or fails a line of code without interpretation.",
       "An allowed and a forbidden example exist for each easily misread rule.",
-      "The Applies To list names real paths, and the ADR is still Proposed.",
+      "The Applies To list names real paths, and the ADR is Proposed unless the hand-back quotes the human's stated or confirmed decision for an acceptance.",
     ],
     resources: [STOP_AND_ASK_RESOURCE, "For prior decisions → docs/adrs/"],
-    output: ["The path of the Proposed ADR.", "The human decision still needed: acceptance."],
+    output: [
+      "The path of the ADR.",
+      "Whether it is Proposed or accepted on a quoted human confirmation.",
+    ],
   },
   {
     name: "drift-review",
@@ -313,7 +316,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "When no requirements exist, write a one-page PRD first and get it approved; never plan from chat alone.",
       "Restate the objective and acceptance criteria in one paragraph.",
       "Identify the affected modules, docs, templates, and tests.",
-      "Record architecture impact and whether a new ADR is needed (propose it; never accept it yourself).",
+      "Record architecture impact and whether a new ADR is needed (propose it with `persist adr create`; accept it yourself only when the human stated or confirmed the decision in this conversation, quoted in the hand-back).",
       "Break the work into ordered tasks, each with explicit completion evidence.",
       "Derive the test plan from acceptance criteria, risks, and likely regressions.",
       "Stop before implementation and hand back the PLAN, TASKS, and TEST_PLAN paths.",
@@ -476,7 +479,7 @@ export const SKILL_CATALOG: SkillDefinition[] = [
       "If a line conflicts with an ADR → change the code to follow it; never edit an accepted ADR to fit the code.",
       "If the ADR looks wrong for this change → stop and ask a human; once they agree, record it with `persist adr supersede <old> <new-title>`.",
       "If a decision is too vague to check → report it as unclear and propose sharper wording and an Applies To list; do not guess.",
-      "If the change makes a decision no ADR records → propose one with `persist adr create`; never accept it yourself.",
+      "If the change makes a decision no ADR records → propose one with `persist adr create`; run `persist adr accept` yourself only when the human stated or confirmed the decision in this conversation (quote them in the hand-back), otherwise leave it Proposed.",
       "If no accepted ADR governs the change → say so; that is a valid all-clear and needs no review.",
     ],
     verification: [

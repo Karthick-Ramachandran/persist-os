@@ -150,6 +150,39 @@ describe("retired skill content routing", () => {
     }
   });
 
+  it("states one ADR acceptance rule and never instructs unconditional acceptance", async () => {
+    const rootDir = await initializedRepo();
+    const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
+    const cursor = readFileSync(path.join(rootDir, ".cursor/rules/persist-memory.mdc"), "utf8");
+
+    for (const content of [agents, cursor]) {
+      // The single rule: accept only on a human's stated or confirmed decision, quoted.
+      // Flattened: the Cursor rule wraps the sentence across lines.
+      const flat = content.replace(/\s+/gu, " ");
+      expect(flat).toContain("only when the human stated or confirmed the decision");
+      expect(flat).toContain("otherwise leave it Proposed");
+      // No unconditional accept: create-then-accept chains and propose-then-accept summaries.
+      expect(flat).not.toContain("then `persist adr accept");
+      expect(flat).not.toContain("propose, then accept");
+    }
+
+    // The three skills carry the same rule, not the old absolute prohibition.
+    const catalogText = SKILL_CATALOG.map((skill) =>
+      [skill.description, ...(skill.workflow ?? []), ...(skill.decisions ?? [])].join("\n"),
+    ).join("\n");
+    expect(catalogText).toContain("only when the human stated or confirmed the decision");
+    expect(catalogText).not.toContain("never accept it yourself");
+    for (const name of ["create-adr", "adr-compliance", "plan-feature"]) {
+      const skill = getCatalogSkill(name);
+      const text = [
+        skill?.description,
+        ...(skill?.workflow ?? []),
+        ...(skill?.decisions ?? []),
+      ].join("\n");
+      expect(text, name).toContain("stated or confirmed");
+    }
+  });
+
   it("loads the Stop and ask block and the source-of-truth order into AGENTS.md and the Cursor rule", async () => {
     const rootDir = await initializedRepo();
     const agents = readFileSync(path.join(rootDir, "AGENTS.md"), "utf8");
