@@ -138,11 +138,21 @@ If two sources conflict, stop and report the conflict before changing files.
   \`persist adr supersede <old> <new-title>\` — never overwrite an accepted decision.
 - A Proposed ADR does not clear the fence; it is reported for review until a human accepts it.
   Never write an ADR just to quiet a fence warning.
+- When doctor reports a fence warning and a human is in the conversation, ask before handing back:
+  one question per file, quoting the warning's lines ("Was the behaviour in \`splitEvenly\`
+  (lines 12-18) deliberate?"). Record their answer with the matching command — \`persist fence add
+  <path> --why "<reason>" --by <name>\` for a real constraint, \`persist fence add <path>
+  --no-constraint --by <name>\` when nothing is deliberate — and never pick the answer yourself.
+- Working unattended, put each fence warning in the "Needs your review" list with the question and
+  both ready-to-run commands, so the human answers with one command per file.
+- When a human explains in conversation why code must stay a certain way ("the four writes have to
+  stay separate because …"), record it with \`persist fence add\` right then, before any warning asks.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
   Never diverge quietly. Run the adr-compliance skill in full when the diff is large, touches several
   decisions, or touches money, auth, or the data model; otherwise step 4's quick check is enough.
-- Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
-  each warning, or name it and say why it stays. Never claim "done" without that evidence.
+- Work is done when \`persist doctor\` reports no errors, the tests pass, and every warning is fixed
+  or listed under Needs your review with what the human has to decide. \`PASSED\` is the goal — but
+  only a human can clear a warning that waits on them, so never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself; never ask the human to run it or web-search this project-local tool.
   If \`persist\` is not installed, run the same commands as \`npx persist-os <command>\`.
 
@@ -159,7 +169,7 @@ If two sources conflict, stop and report the conflict before changing files.
 
 ## Persist commands
 
-- \`persist doctor\` — validate repository memory; work is done only when it reports PASSED.
+- \`persist doctor\` — validate repository memory; work is done when it reports no errors, the tests pass, and every warning is fixed or listed under Needs your review.
 - \`persist feature create <name>\` — scaffold feature memory before non-trivial feature work.
 - \`persist adr create <title>\` — propose a decision; \`persist adr accept <name>\` — accept it yourself only when the human stated or confirmed the decision in this conversation (quote them in the hand-back), otherwise leave it Proposed.
 - \`persist adr supersede <old> <new-title>\` — record a changed decision (never overwrite an accepted ADR).
@@ -262,11 +272,17 @@ maintains area memory through cards.
   \`persist adr supersede <old> <new-title>\`.
 - A Proposed ADR does not clear the fence; it is reported for review until a human accepts it.
   Never write an ADR just to quiet a fence warning.
+- When doctor reports a fence warning and a human is in the conversation, ask one question per file
+  quoting the warning's lines, and record the answer with \`persist fence add\` (\`--why\` with their
+  reason, or \`--no-constraint\`); never pick the answer yourself. Working unattended, list each
+  warning under "Needs your review" with the question and both commands. When a human explains why
+  code must stay a certain way, record it with \`persist fence add\` right then.
 - A conflict with an accepted ADR means stop: fix the code, or ask a human and supersede the ADR.
   Never diverge quietly. For a large diff, several decisions, or money, auth, or data-model code,
   run the full adr-compliance review.
-- Work is done only when \`persist doctor\` reports PASSED and the tests pass. Fix every error; fix
-  each warning, or name it and say why it stays. Never claim "done" without that evidence.
+- Work is done when \`persist doctor\` reports no errors, the tests pass, and every warning is fixed
+  or listed under Needs your review with what the human has to decide. \`PASSED\` is the goal — but
+  only a human can clear a warning that waits on them. Never claim "done" without that evidence.
 - Run the \`persist\` CLI yourself (do not web-search this project-local tool); if it is not installed,
   use \`npx persist-os <command>\`. The full command reference is in \`AGENTS.md\`.
 `,

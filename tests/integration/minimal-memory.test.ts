@@ -81,13 +81,15 @@ describe("minimal-by-default memory", () => {
     expect(claude).toBe("@AGENTS.md\n");
   });
 
-  it("tells agents that done means doctor passes, and how to run Persist without installing it", async () => {
+  it("tells agents that done means no errors with warnings reviewed, and how to run Persist without installing it", async () => {
     const rootDir = await createRoot("minimal-agent-rules");
     await runInitCommand(rootDir);
 
     for (const file of ["AGENTS.md", ".cursor/rules/persist-memory.mdc"]) {
       const rules = await readFile(path.join(rootDir, file), "utf8");
-      expect(rules, file).toContain("reports PASSED");
+      expect(rules, file).toContain("reports no errors");
+      expect(rules, file).toContain("Needs your review with what the human has to decide");
+      expect(rules, file).toContain("`PASSED` is the goal");
       expect(rules, file).toContain("npx persist-os <command>");
     }
   });

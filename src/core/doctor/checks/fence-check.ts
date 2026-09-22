@@ -8,18 +8,17 @@ import {
   adrTitleOf,
   type AdrStanding,
 } from "../../adr/governing-adrs.js";
-import { fenceFileKey } from "../../fence/generate-fence.js";
+import { noConstraintFiles, whyReasonsByFile } from "../../fence/fence-entries.js";
 import { isTestFile } from "../../naming/test-files.js";
 import { NO_UPSTREAM_REASON, readChangeSet } from "../change-set.js";
+import { readDiffRanges, type FileDiffRanges } from "../diff-ranges.js";
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
 
 /** FENCES.md location under the configured docs dir (ADR-0010). Never required, only written. */
 const FENCES_FILE = "60-engineering/FENCES.md";
 
-/** A fence section heading: `## `<repo-relative path>`` with an optional symbol suffix. */
-const FENCE_HEADING_PATTERN = /^## `([^`]+)`/u;
-/** The one-sentence standing reason directly under a fence heading. */
-const FENCE_WHY_PATTERN = /^Why:\s*(.+)$/u;
+/** At most this many ranges in a warning; the rest collapse to `and N more`. */
+const MAX_RANGES_IN_MESSAGE = 3;
 
 /**
  * Obvious non-logic (ADR-0010): tests, styles, markdown, lockfiles, generated output,
@@ -121,12 +120,17 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
   }
 
   const fencesPath = path.posix.join(context.config.docsDir, FENCES_FILE);
-  const fences = await readFences(context.rootDir, fencesPath);
+  const fencesContent = await readFileIfExists(context.rootDir, fencesPath);
+  const reasons =
+    fencesContent === undefined ? new Map<string, string>() : whyReasonsByFile(fencesContent);
+  const cleared =
+    fencesContent === undefined ? new Set<string>() : noConstraintFiles(fencesContent);
   const adrs = await readFenceAdrs(context.rootDir, context.config.adrDir);
+  const diffs = await readDiffRanges(context.rootDir, change);
 
   const findings: DoctorFinding[] = [];
   for (const file of inScope) {
-    const reason = fences.get(file);
+    const reason = reasons.get(file);
     if (reason !== undefined) {
       findings.push({
         severity: "info",
@@ -136,6 +140,13 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
           `(see ${fencesPath}). Confirm the reason still holds before changing the logic.`,
         path: file,
       });
+      continue;
+    }
+
+    // A human-confirmed "no constraint" is an answer, recorded: the file stays quiet.
+    // A `Why:` entry for the file wins over it (see the shared reader), so a real reason
+    // is never replaced by its absence.
+    if (cleared.has(file)) {
       continue;
     }
 
@@ -166,18 +177,96 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
       continue;
     }
 
-    findings.push({
-      severity: "warning",
-      check: "fence",
-      message:
-        `${crossing} crosses the Chesterton fence with no record: no entry in ${fencesPath} and ` +
-        `no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence ` +
-        `skill walks through it) and record the human-confirmed reason.`,
-      path: file,
-    });
+    findings.push(warnCrossing(crossing, file, diffs.get(file)));
   }
 
   return { findings, outcome: { id: "fence", status: "evaluated" } };
+}
+
+/**
+ * The answerable question: which existing lines the diff rewrites (old-side
+ * ranges from one `git diff -U0` per change set), or where it only adds. The
+ * `Ask the person who knows` tail names both ready-to-run answers, so the
+ * human replies with one command per file. Severity, check id, and path are
+ * unchanged: everything that warned still warns, now with its lines named.
+ */
+function warnCrossing(
+  crossing: string,
+  file: string,
+  diff: FileDiffRanges | undefined,
+): DoctorFinding {
+  const ask =
+    `Ask the person who knows: was that behaviour deliberate? ` +
+    `If yes: persist fence add ${file} --why "<reason>" --by <name>. ` +
+    `If no: persist fence add ${file} --no-constraint --by <name>.`;
+
+  if (diff !== undefined && diff.rewrites.length > 0) {
+    return {
+      severity: "warning",
+      check: "fence",
+      message:
+        `${crossing} rewrites existing code in ${file} with no recorded reason: ` +
+        `${describeRanges(diff.rewrites)}. ${ask}`,
+      path: file,
+      ranges: diff.rewrites.map((range) => ({ ...range })),
+    };
+  }
+
+  if (diff !== undefined && diff.inserts.length > 0) {
+    return {
+      severity: "warning",
+      check: "fence",
+      message:
+        `${crossing} adds to ${file} with no recorded reason: ` +
+        `adds lines at ${describeInserts(diff.inserts)}. ${ask}`,
+      path: file,
+      ranges: diff.inserts.map((insert) => ({
+        start: insert.line,
+        end: insert.line,
+        context: insert.context,
+      })),
+    };
+  }
+
+  if (diff !== undefined && diff.binary) {
+    return {
+      severity: "warning",
+      check: "fence",
+      message: `${crossing} changes ${file} with no recorded reason: binary change. ${ask}`,
+      path: file,
+    };
+  }
+
+  return {
+    severity: "warning",
+    check: "fence",
+    message: `${crossing} changes ${file} with no recorded reason. ${ask}`,
+    path: file,
+  };
+}
+
+/** `line 40 (in …)`, `lines 12-18 (in …)`: at most three, then `and N more`. */
+function describeRanges(ranges: { start: number; end: number; context: string }[]): string {
+  const shown = ranges.slice(0, MAX_RANGES_IN_MESSAGE).map((range) => {
+    const lines =
+      range.start === range.end ? `line ${range.start}` : `lines ${range.start}-${range.end}`;
+    return range.context === "" ? lines : `${lines} (in \`${range.context}\`)`;
+  });
+  return withMore(shown, ranges.length);
+}
+
+function describeInserts(inserts: { line: number }[]): string {
+  return withMore(
+    inserts.slice(0, MAX_RANGES_IN_MESSAGE).map((insert) => `${insert.line}`),
+    inserts.length,
+  );
+}
+
+function withMore(shown: string[], total: number): string {
+  if (total <= MAX_RANGES_IN_MESSAGE) {
+    return shown.join(", ");
+  }
+  return `${shown.join(", ")} and ${total - MAX_RANGES_IN_MESSAGE} more`;
 }
 
 /**
@@ -238,33 +327,6 @@ export function isInScope(repoRelativePath: string): boolean {
   }
 
   return true;
-}
-
-/** Map of fenced path to its standing `Why:` reason. A missing FENCES.md means no crossings yet. */
-async function readFences(rootDir: string, fencesPath: string): Promise<Map<string, string>> {
-  const fences = new Map<string, string>();
-  const content = await readFileIfExists(rootDir, fencesPath);
-  if (content === undefined) {
-    return fences;
-  }
-
-  let current: string | null = null;
-  for (const line of content.split("\n")) {
-    const heading = FENCE_HEADING_PATTERN.exec(line);
-    if (heading !== null) {
-      current = (heading[1] ?? "").trim() || null;
-      continue;
-    }
-
-    if (current !== null && !fences.has(fenceFileKey(current))) {
-      const why = FENCE_WHY_PATTERN.exec(line);
-      if (why !== null) {
-        fences.set(fenceFileKey(current), (why[1] ?? "").trim());
-      }
-    }
-  }
-
-  return fences;
 }
 
 /**

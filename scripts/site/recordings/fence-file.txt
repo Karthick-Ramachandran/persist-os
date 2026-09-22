@@ -14,5 +14,5 @@ Add an entry with `persist fence add <path> --why "<reason>"`.
 
 Why: Writes four collections in one transaction so the ledger and the audit trail cannot diverge.
 
-- 2026-09-21 — recorded by Priya.
+- 2026-09-22 — recorded by Priya.
 [exit 0]

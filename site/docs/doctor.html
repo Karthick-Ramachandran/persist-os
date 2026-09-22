@@ -251,7 +251,7 @@ Result: <span class="warn">WARNINGS</span>
                 </tr>
                 <tr>
                   <td><code>fence</code></td>
-                  <td class="desc">A staged source change, or an unpushed one when nothing is staged, crosses the Chesterton fence with no record in <code>FENCES.md</code> and no Accepted ADR reference (warning). Brand-new files never count as crossings — only edits to existing logic do. A change named only by a Proposed ADR is reported for review as info, and a second crossing surfaces the recorded reason as info.</td>
+                  <td class="desc">A staged source change, or an unpushed one when nothing is staged, rewrites existing code with no record in <code>FENCES.md</code> and no Accepted ADR reference (warning). The warning names the rewritten lines, so the question is answerable. Brand-new files never count as crossings — only edits to existing logic do. A change named only by a Proposed ADR is reported for review as info, a second crossing surfaces the recorded reason as info, and a file a human cleared with <code>--no-constraint</code> stays quiet.</td>
                   <td class="sev-mixed">warning / info</td>
                 </tr>
                 <tr>
@@ -268,8 +268,10 @@ Result: <span class="warn">WARNINGS</span>
             A staged change to source with no recorded reason and no ADR reference is a fence
             crossing. Brand-new files never count — a new file has no existing logic to
             misunderstand — so creating a migration is quiet while editing an old one still
-            asks why. Generated and cache folders are out of scope too. Doctor asks why the
-            logic is shaped the way it is, and warns rather than blocks. When nothing is
+            asks why. Generated and cache folders are out of scope too. Doctor names the
+            rewritten lines with their hunk context, so the question is answerable as asked,
+            and warns rather than blocks. A change that only adds lines still warns, naming
+            its insertion points. When nothing is
             staged, for example because a commit was made with the hooks off, doctor checks
             the commits the branch hasn't pushed yet, so the question still comes up.
             Trimmed to the finding:
@@ -278,7 +280,7 @@ Result: <span class="warn">WARNINGS</span>
 Doctor Report
 
 <span class="warn">WARNING</span>
-- Change crosses the Chesterton fence with no record: no entry in docs/60-engineering/FENCES.md and no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence skill walks through it) and record the human-confirmed reason. (src/billing.js)
+- Change rewrites existing code in src/billing.js with no recorded reason: line 2 (in `export function writeOrder(order) {`). Ask the person who knows: was that behaviour deliberate? If yes: persist fence add src/billing.js --why "&lt;reason&gt;" --by &lt;name&gt;. If no: persist fence add src/billing.js --no-constraint --by &lt;name&gt;. (src/billing.js)
 …
 Result: <span class="warn">WARNINGS</span></code></pre>
           <p>
@@ -302,6 +304,15 @@ INFO
 - Change touches a recorded fence: Writes four collections in one transaction so the ledger and the audit trail cannot diverge. (see docs/60-engineering/FENCES.md). Confirm the reason still holds before changing the logic. (src/billing.js)
 …
 Result: <span class="ok">PASSED</span></code></pre>
+          <p>
+            The honest answer is sometimes that nothing in the file is deliberate — and that is
+            recorded too. <code>persist fence add src/billing.js --no-constraint --by Priya</code>
+            writes a <code>No constraint</code> entry naming who confirmed it, and the file stays
+            quiet from then on. A later <code>--why</code> for the same path replaces the standing
+            line and keeps the history; <code>--no-constraint</code> over a recorded reason is
+            refused. Cleared files are not injected into sessions — they answer nothing an agent
+            needs before editing.
+          </p>
           <p>
             The file starts empty and grows only through <code>fence add</code>; nothing generates
             it. Rename or delete a fenced file and doctor names the entry that now points at
