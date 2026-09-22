@@ -1,6 +1,8 @@
 import { execFile } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+
+import { codePathsIn, readCodeRoots, type CodeRoots } from "../memory/code-paths.js";
 import { promisify } from "node:util";
 
 import { type GoverningAdr, matchesPattern, readGoverningAdrs } from "../adr/governing-adrs.js";
@@ -52,7 +54,6 @@ const LESSONS_FILE = "60-engineering/LESSONS.md";
 
 const WHY_PATTERN = /^Why:\s*(.+)$/u;
 const BULLET_PATTERN = /^\s*[-*]\s+(.+?)\s*$/u;
-const CODE_PATH_PATTERN = /`((?:src|tests)\/[A-Za-z0-9._/-]+\.[A-Za-z0-9]+)`/gu;
 
 export type SecondaryKind = "adr" | "fence" | "convention" | "lesson";
 
@@ -219,16 +220,9 @@ function scoreSecondaryDocs(
   });
 }
 
-/** Backticked `src/`/`tests/` paths mentioned in a prose line. */
-function mentionedPaths(text: string): string[] {
-  const found: string[] = [];
-  for (const match of text.matchAll(CODE_PATH_PATTERN)) {
-    const value = match[1] ?? "";
-    if (value !== "" && !found.includes(value)) {
-      found.push(value);
-    }
-  }
-  return found;
+/** Backticked code paths mentioned in a prose line, for any repository layout. */
+function mentionedPaths(text: string, roots: CodeRoots): string[] {
+  return codePathsIn(text, roots);
 }
 
 function bulletsOf(content: string): string[] {
@@ -312,7 +306,11 @@ async function readFenceDocs(rootDir: string, docsDir: string): Promise<Secondar
   return docs;
 }
 
-async function readConventionDocs(rootDir: string, docsDir: string): Promise<SecondaryDocument[]> {
+async function readConventionDocs(
+  rootDir: string,
+  docsDir: string,
+  roots: CodeRoots,
+): Promise<SecondaryDocument[]> {
   const file = path.posix.join(docsDir, CONVENTIONS_FILE);
   const content = await readFileIfExists(rootDir, file);
   if (content === undefined) {
@@ -323,12 +321,16 @@ async function readConventionDocs(rootDir: string, docsDir: string): Promise<Sec
     label: "CONVENTIONS",
     file,
     text: bullet,
-    paths: mentionedPaths(bullet),
+    paths: mentionedPaths(bullet, roots),
     detail: bullet,
   }));
 }
 
-async function readLessonDocs(rootDir: string, docsDir: string): Promise<SecondaryDocument[]> {
+async function readLessonDocs(
+  rootDir: string,
+  docsDir: string,
+  roots: CodeRoots,
+): Promise<SecondaryDocument[]> {
   const file = path.posix.join(docsDir, LESSONS_FILE);
   const content = await readFileIfExists(rootDir, file);
   if (content === undefined) {
@@ -339,7 +341,7 @@ async function readLessonDocs(rootDir: string, docsDir: string): Promise<Seconda
     label: "LESSONS",
     file,
     text: bullet,
-    paths: mentionedPaths(bullet),
+    paths: mentionedPaths(bullet, roots),
     detail: bullet,
   }));
 }
@@ -408,13 +410,14 @@ export async function searchContext(
   dirs: ContextSearchDirs,
 ): Promise<ContextSearchResult> {
   const query = tokenize(task);
+  const roots = await readCodeRoots(rootDir, dirs.docsDir);
   const cards = await readCards(rootDir, dirs.docsDir);
   const adrs = await readGoverningAdrs(rootDir, dirs.adrDir);
   const secondary: SecondaryDocument[] = [
     ...adrDocs(adrs),
     ...(await readFenceDocs(rootDir, dirs.docsDir)),
-    ...(await readConventionDocs(rootDir, dirs.docsDir)),
-    ...(await readLessonDocs(rootDir, dirs.docsDir)),
+    ...(await readConventionDocs(rootDir, dirs.docsDir, roots)),
+    ...(await readLessonDocs(rootDir, dirs.docsDir, roots)),
   ];
 
   const fieldDocs = new Map<FieldName, string[][]>();

@@ -2,6 +2,8 @@ import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+
+import { codePathsIn, readCodeRoots } from "../../memory/code-paths.js";
 import { promisify } from "node:util";
 
 import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../doctor-check.js";
@@ -19,9 +21,6 @@ const COMPLETION_REPORT = "COMPLETION_REPORT.md";
 // classification the code-reference check applies.
 const FEATURE_DOCS = ["PRD.md", "ARCHITECTURE_IMPACT.md"];
 const MODULE_DOCS = ["MODULE.md", "DECISIONS.md"];
-
-const codePathPattern = /`((?:src|tests)\/[A-Za-z0-9._/-]+\.[A-Za-z0-9]+)`/gu;
-const placeholderMarkers = /[<>*]|\.\.\./u;
 
 // Conservative gap: only flag when the referenced code's last commit is this much newer than the
 // memory's last commit. A fresh repo commits docs and code together (no gap), so this stays quiet;
@@ -92,6 +91,7 @@ export async function checkStaleness(context: DoctorCheckContext): Promise<Stale
   };
 
   const findings: DoctorFinding[] = [];
+  const roots = await readCodeRoots(context.rootDir, context.config.docsDir);
 
   for (const docPath of docPaths) {
     const content = await readFileIfExists(context.rootDir, docPath);
@@ -104,14 +104,7 @@ export async function checkStaleness(context: DoctorCheckContext): Promise<Stale
       continue; // uncommitted memory has no history to compare against
     }
 
-    const seen = new Set<string>();
-    for (const match of content.matchAll(codePathPattern)) {
-      const reference = match[1];
-      if (placeholderMarkers.test(reference) || seen.has(reference)) {
-        continue;
-      }
-      seen.add(reference);
-
+    for (const reference of codePathsIn(content, roots)) {
       if (!existsSync(path.join(context.rootDir, reference))) {
         continue; // a missing reference is the code-reference check's job, not staleness
       }
