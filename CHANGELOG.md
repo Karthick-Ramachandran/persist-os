@@ -3,34 +3,42 @@
 ## 1.4.0
 
 What 1.0 cut, restored in the leaner format. The skill catalog grows from six to twelve:
-`implement-task` (the default for any code change), `write-tests`, `create-adr`,
-`drift-review`, and `completion-report` are rewritten from scratch, `module-memory` merges
-`plan-module` and `update-module-memory`, and `plan-feature` absorbs `create-prd` by writing a
-one-page PRD first when no requirements exist. Every skill carries WHAT and WHEN plus a Skip for
-clause so routing never overlaps, and every skill that can make or approve a change ends with the
-same Stop and ask list, defined once in `AGENTS.md`. `AGENTS.md` and the Cursor rule also gain the
-source-of-truth order and one line per skill. The retired-skills check now names only the four
-skills that stayed retired, each with its replacement.
+`implement-task` (the default for any code change), `write-tests`, `create-adr`, `drift-review`, and
+`completion-report` are rewritten from scratch, `module-memory` merges `plan-module` and
+`update-module-memory`, and `plan-feature` absorbs `create-prd` by writing a one-page PRD first when
+no requirements exist. Every skill carries WHAT and WHEN plus a Skip for clause so routing never
+overlaps, and every skill that can make or approve a change ends with the same Stop and ask list,
+defined once in `AGENTS.md`. `AGENTS.md` and the Cursor rule also gain the source-of-truth order and
+one line per skill. The retired-skills check now names only the four skills that stayed retired,
+each with its replacement.
 
-**Doctor judges uncommitted work.** With nothing staged, the change is the unpushed commits plus
-the working-tree edits (tracked and untracked, `.gitignore` respected); with no upstream it is the
+**Doctor judges uncommitted work.** With nothing staged, the change is the unpushed commits plus the
+working-tree edits (tracked and untracked, `.gitignore` respected); with no upstream it is the
 working tree alone. The staged-only view is unchanged for the pre-commit hook. Decision quotes take
 the whole first bullet or paragraph (capped near 300 characters at a word boundary) instead of the
 first sentence, and each accepted ADR with no Applies To list gets an info nudge to declare its
 paths. ADR-0016 records the catalog change and stays Proposed.
 
-**A/B evidence.** Twelve headless runs (0.6.1, 1.2.4, 1.3.0, and this build, three runs
-each) of the Splitr integer-cents decision and tip-feature scenes, one fresh session per
-scene, memory reset between runs: the ADR was written and accepted 12/12 with no follow-up,
-Applies To present in all nine 1.x runs, suites green 12/12, and the $47.30 + 15% trap case
-executed to whole cents in 12/12 — no version produced fractional-cent money. Agents ran
-doctor in 10/12 runs. The no-card runs never missed the decision, so the optional SessionStart
-ADR decision lines (Part C.3) are excluded. Full table in the release PR (24 sessions, ~$19
-of usage).
+**A/B evidence.** Twelve headless runs (0.6.1, 1.2.4, 1.3.0, and this build, three runs each) of the
+Splitr integer-cents decision and tip-feature scenes, one fresh session per scene, memory reset
+between runs: the ADR was written and accepted 12/12 with no follow-up, Applies To present in all
+nine 1.x runs, suites green 12/12, and the $47.30 + 15% trap case executed to whole cents in 12/12 —
+no version produced fractional-cent money. Agents ran doctor in 10/12 runs. The no-card runs never
+missed the decision, so the optional SessionStart ADR decision lines (Part C.3) are excluded. Full
+table in the release PR (24 sessions, ~$19 of usage).
 
 **Upgrading:** `persist skill create <name>` adds any restored skill to an existing repository
 (`module-memory` only with module memory enabled); re-running `init` adds missing skills without
 touching existing files. Skills from 1.0 that came back stop reporting as retired.
+
+**Unattended runs never wait on a human.** People hand an agent a PRD and a task list and walk away.
+The new Stop and ask block would have halted those runs, and `plan-feature` stopped after planning.
+`AGENTS.md` and the Cursor rule now carry a Working unattended section that replaces every "stop and
+ask" when nobody is there: keep every accepted ADR intact, and skip and mark blocked anything that
+could only be done by breaking one; record new decisions as Proposed ADRs, follow them, and leave
+accepting them to the human; write unclear requirements down as tested assumptions; never weaken a
+check to get unstuck. The run ends with a "Needs your review" list. Commits under a Proposed ADR
+pass the hooks with a warning, so nothing in the tooling blocks.
 
 ## 1.3.0
 

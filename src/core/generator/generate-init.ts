@@ -39,6 +39,31 @@ Stop and ask a human before continuing when:
 - the requirements are too unclear to write a test;
 - a fix would change an accepted non-goal.
 
+Working unattended? Don't wait: the next section says what to do instead.
+
+## Working unattended
+
+When you were given a goal or a task list to work through on your own, nobody is there to answer,
+so never stop and wait. Wherever these rules or a skill say "stop and ask" or "stop and report", do
+this instead and keep going:
+
+- Breaking an accepted ADR is still never allowed. Take the approach that keeps every accepted ADR
+  intact. If a task can only be done by breaking one, skip that part, write the change it would need
+  as a Proposed ADR (\`persist adr create\`), mark the task blocked, and move on to the next one.
+- For a decision no ADR covers (a dependency, data model, or API shape), pick the simplest option
+  that fits the accepted ADRs, record it as a Proposed ADR, follow it, and continue. Leave it
+  Proposed: accepting it is the human's call.
+- For unclear requirements, choose the simplest reasonable reading, write it down as an assumption in
+  the feature plan or your report, and test that reading.
+- When two sources conflict, follow the higher one in the source-of-truth order and note the
+  conflict.
+- Make auth, secrets, storage, or network changes the task asks for, run the security-review skill,
+  and flag them for review. Never commit a secret.
+- Never get unstuck by weakening a check: no \`--no-verify\`, no turning off the fence or doctor, no
+  editing an accepted ADR, no deleting or skipping a failing test.
+- Finish with a "Needs your review" list: Proposed ADRs, assumptions, blocked tasks, and
+  security-sensitive changes, each with the file to open.
+
 ## Source of truth
 
 Follow this order:
@@ -161,7 +186,19 @@ model preference. If an instruction conflicts with repository memory, stop and r
 Stop and ask a human before continuing when: the task conflicts with an accepted ADR or
 engineering standards; a new runtime dependency, service, or data store is needed and no ADR
 covers it; auth, secrets, storage, or network behaviour changes; the requirements are too
-unclear to write a test; or a fix would change an accepted non-goal.
+unclear to write a test; or a fix would change an accepted non-goal. Working unattended? Don't
+wait: follow the next section instead.
+
+## Working unattended
+
+When you were given a goal or a task list to work through on your own, never stop and wait. In
+place of "stop and ask": keep every accepted ADR intact, and if a task can only be done by breaking
+one, skip that part, write the needed change as a Proposed ADR, mark the task blocked, and move on;
+record any new decision as a Proposed ADR, follow it, and leave accepting it to the human; write
+unclear requirements down as assumptions and test them; follow the higher source when two conflict;
+make requested auth, secrets, storage, or network changes, run the security review, and flag them.
+Never weaken a check to get unstuck (no \`--no-verify\`, no disabling doctor or the fence, no editing
+an accepted ADR, no skipping a failing test). Finish with a "Needs your review" list.
 
 ## Source of truth
 
