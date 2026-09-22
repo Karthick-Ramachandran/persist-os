@@ -70,7 +70,12 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
     return notEvaluated(NO_UPSTREAM_REASON);
   }
   const changed = change.paths;
-  const unpushed = change.kind === "unpushed";
+  const crossing =
+    change.kind === "unpushed"
+      ? "Unpushed change"
+      : change.kind === "working-tree"
+        ? "Uncommitted change"
+        : "Change";
 
   const inScope = changed.filter((file) => isInScope(file));
   if (inScope.length === 0) {
@@ -89,7 +94,7 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
         severity: "info",
         check: "fence",
         message:
-          `${unpushed ? "Unpushed change" : "Change"} touches a recorded fence: ${reason} ` +
+          `${crossing} touches a recorded fence: ${reason} ` +
           `(see ${fencesPath}). Confirm the reason still holds before changing the logic.`,
         path: file,
       });
@@ -104,7 +109,7 @@ export async function checkFence(context: DoctorCheckContext): Promise<FenceChec
       severity: "warning",
       check: "fence",
       message:
-        `${unpushed ? "Unpushed change" : "Change"} crosses the Chesterton fence with no record: no entry in ${fencesPath} and ` +
+        `${crossing} crosses the Chesterton fence with no record: no entry in ${fencesPath} and ` +
         `no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence ` +
         `skill walks through it) and record the human-confirmed reason.`,
       path: file,

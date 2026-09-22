@@ -12,11 +12,17 @@ const WORD_CEILING = 600;
  * it no longer match, and the skill silently never fires.
  */
 const TRIGGER_TERMS: Record<string, string[]> = {
-  "plan-feature": ["implementation plan", "test plan", "approved requirements"],
+  "plan-feature": ["implementation plan", "test plan", "approved requirements", "one-page prd"],
   "security-review": ["security risk", "trust boundary", "secret"],
   "conventions-adherence": ["naming convention", "canonical", "reinvent"],
   "chestertons-fence": ["chesterton", "fence crossing", "fences.md"],
   context: ["area memory", "context card"],
+  "implement-task": ["code change", "five-step loop"],
+  "write-tests": ["acceptance criteria", "fails without the fix"],
+  "create-adr": ["record a decision", "applies to"],
+  "drift-review": ["fresh-context review", "non-trivial change"],
+  "completion-report": ["completion report", "commands run", "files changed"],
+  "module-memory": ["module memory", "ownership"],
 };
 
 const MUST_ACTIVATE: Record<string, string[]> = {
@@ -39,6 +45,30 @@ const MUST_ACTIVATE: Record<string, string[]> = {
   context: [
     "Starting work in the billing area; check its area memory before I read code",
     "Finished the rounding fix; record it on the area context card for the next task",
+  ],
+  "implement-task": [
+    "Make this code change with focused tests",
+    "Run the five-step loop on this code change before calling it done",
+  ],
+  "write-tests": [
+    "Write a test from the acceptance criteria that fails without the fix",
+    "Cover this bug fix with a test that fails without the fix",
+  ],
+  "create-adr": [
+    "Record our database choice as a decision with an Applies To list",
+    "Record a decision for the new auth flow before we build it",
+  ],
+  "drift-review": [
+    "Give this finished change a fresh-context review before it lands",
+    "This non-trivial change is done; review it against the ADRs and boundaries",
+  ],
+  "completion-report": [
+    "Write the completion report with files changed and commands run",
+    "Summarise the files changed and commands run for handover",
+  ],
+  "module-memory": [
+    "Plan the module memory for the billing area and its ownership",
+    "Update the module memory where the ownership changed",
   ],
 };
 
@@ -63,11 +93,41 @@ const MUST_NOT_ACTIVATE: Record<string, string[]> = {
     "Turn this approved plan into ordered tasks with completion evidence",
     "Check this diff for hardcoded passwords before merging",
   ],
+  "implement-task": [
+    "Review this diff for security risks before merging",
+    "Turn the roadmap into an implementation plan with a test plan",
+  ],
+  "write-tests": [
+    "Turn the roadmap into an implementation plan with a test plan",
+    "Check this refactor against canonical naming conventions",
+  ],
+  "create-adr": [
+    "Check this diff for hardcoded passwords before merging",
+    "Turn this approved plan into ordered tasks with completion evidence",
+  ],
+  "drift-review": [
+    "Turn this approved plan into ordered tasks with completion evidence",
+    "Check this diff for hardcoded passwords before merging",
+  ],
+  "completion-report": [
+    "Turn this approved plan into ordered tasks with completion evidence",
+    "Review this diff for security risks before merging",
+  ],
+  "module-memory": [
+    "Turn this approved plan into ordered tasks with completion evidence",
+    "Check this diff for hardcoded passwords before merging",
+  ],
 };
 
 describe("skill catalog", () => {
-  it("ships exactly the six catalog skills", () => {
+  it("ships exactly the twelve catalog skills", () => {
     expect(SKILL_CATALOG.map((skill) => skill.name)).toEqual([
+      "implement-task",
+      "write-tests",
+      "create-adr",
+      "drift-review",
+      "completion-report",
+      "module-memory",
       "plan-feature",
       "security-review",
       "conventions-adherence",
@@ -119,6 +179,29 @@ describe("skill catalog", () => {
       const words = skill.description.split(/\s+/u).filter(Boolean).length;
       expect(words, `${skill.name} description words`).toBeGreaterThanOrEqual(20);
       expect(words, `${skill.name} description words`).toBeLessThanOrEqual(60);
+    }
+  });
+
+  it("keeps the combined router size small enough to stay always loaded", () => {
+    // Every description rides in context on every task, so the sum is the router's
+    // always-loaded cost. 1.3.0 shipped six skills at 1,889 bytes; twelve skills at
+    // 3,599 bytes still cost less than one always-loaded agent file.
+    const bytes = SKILL_CATALOG.reduce(
+      (total, skill) => total + Buffer.byteLength(skill.description, "utf8"),
+      0,
+    );
+
+    expect(bytes).toBeLessThanOrEqual(4096);
+  });
+
+  it("ends every change-making skill with the shared Stop and ask list", () => {
+    const stopAndAsk = ["implement-task", "write-tests", "create-adr", "drift-review"];
+
+    for (const name of stopAndAsk) {
+      const skill = SKILL_CATALOG.find((entry) => entry.name === name)!;
+
+      expect(skill.workflow.at(-1), `${name} last step`).toContain("Stop and ask");
+      expect(skill.resources.join("\n"), `${name} resources`).toContain("AGENTS.md");
     }
   });
 

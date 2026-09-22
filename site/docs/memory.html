@@ -96,9 +96,9 @@ CLAUDE.md                               <span class="m">Claude Code entry point;
 .codex/hooks/context-prompt.sh          <span class="m">looks up context cards per prompt</span>
 .cursor/rules/persist-memory.mdc        <span class="m">always-apply Cursor rule</span>
 .github/workflows/persist.yml           <span class="m">runs persist doctor on pull requests</span>
-.claude/skills/&lt;skill&gt;/SKILL.md          <span class="m">6 workflow skills</span>
+.claude/skills/&lt;skill&gt;/SKILL.md          <span class="m">12 workflow skills (11 without --modules)</span>
 .claude/skills/security-review/scripts/scan-secrets.sh   <span class="m">read-only secret scan</span>
-.agents/skills/&lt;skill&gt;/SKILL.md          <span class="m">the same 6, portable layout</span>
+.agents/skills/&lt;skill&gt;/SKILL.md          <span class="m">the same 12, portable layout</span>
 .agents/skills/security-review/scripts/scan-secrets.sh</code></pre>
           <p>
             <code>--features</code> adds <code>docs/40-features/README.md</code> and
@@ -211,8 +211,12 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
 
           <h2 id="skills">Skills</h2>
           <p>
-            Six workflow skills are written to <code>.claude/skills/</code> and
-            <code>.agents/skills/</code>: <code>plan-feature</code>, <code>security-review</code>,
+            Twelve workflow skills are written to <code>.claude/skills/</code> and
+            <code>.agents/skills/</code>: <code>implement-task</code>, the default for any code
+            change, <code>write-tests</code>, <code>create-adr</code>,
+            <code>drift-review</code>, <code>completion-report</code>,
+            <code>module-memory</code> (only with <code>--modules</code>),
+            <code>plan-feature</code>, <code>security-review</code>,
             <code>conventions-adherence</code>, <code>chestertons-fence</code>,
             <code>adr-compliance</code>, which checks a change against the accepted ADRs that
             govern the files it touches, and <code>context</code>, which looks up the area memory
@@ -221,12 +225,12 @@ printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext
             it. <code>security-review</code> also ships
             <code>scripts/scan-secrets.sh</code>, a read-only scan for common accidentally
             committed secrets; the skill works with the script deleted, and init lists every
-            executable it writes. The earlier catalog of twelve was folded into the root files,
-            the CLI commands, and <code>MODULE_DELIVERY_WORKFLOW.md</code> under ADR-0008 and
-            ADR-0012. <code>persist skill create &lt;name&gt;</code> adds a skill by catalog name
-            or as a skeleton for one of your own. The doctor warns only about the nine skills
-            retired in 1.0 left on disk after an upgrade, with the command to remove each; your
-            own custom skills stay silent.
+            executable it writes. The 1.0 catalog of six grew back under ADR-0016: the restored
+            skills were rewritten in the current leaner format, and the still-retired ones point
+            at their replacements. <code>persist skill create &lt;name&gt;</code> adds a skill by
+            catalog name or as a skeleton for one of your own. The doctor warns only about the
+            four skills still retired left on disk after an upgrade, naming the replacement and
+            the command to remove each; your own custom skills stay silent.
           </p>
 
           <h2 id="conventions">Conventions and lessons</h2>

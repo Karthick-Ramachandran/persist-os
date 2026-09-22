@@ -11,7 +11,7 @@ export type GoverningAdr = {
   /** Repo-relative path to the ADR file. */
   file: string;
   title: string;
-  /** The first sentence or bullet of the Decision section, flattened to one line. */
+  /** The first bullet or paragraph of the Decision section, flattened to one line. */
   decision: string;
   /** Path patterns from `## Applies To`: `src/lib/**`, `src/billing.ts`, `src/api/`. */
   appliesTo: string[];
@@ -128,8 +128,10 @@ function section(content: string, heading: string): string {
 }
 
 /**
- * The decision in one line: the first sentence, or the first bullet. A lead-in that ends in a
- * colon introduces a list, so the first item comes with it ("… except activation: init asks").
+ * The decision in one line: the whole first bullet, or the whole first paragraph. Quoting
+ * only the first sentence once cut "Every amount … and intermediate math. Never floats." to
+ * "… intermediate math." A lead-in that ends in a colon introduces a list, so the first item
+ * comes with it ("… except activation: init asks").
  */
 function firstStatement(body: string): string {
   const blocks = body
@@ -147,10 +149,15 @@ function statementOf(block: string): string {
   const text = /^[-*]\s+|^\d+\.\s+/u.test(block)
     ? (block.split(/\n(?=\s*(?:[-*]|\d+\.)\s)/u)[0] ?? "").replace(/^[-*]\s+|^\d+\.\s+/u, "")
     : block;
-  const flat = text.replace(/\s+/gu, " ").trim();
-  return /^(.+?[.!?])(\s|$)/u.exec(flat)?.[1] ?? flat;
+  return text.replace(/\s+/gu, " ").trim();
 }
 
-function clip(sentence: string): string {
-  return sentence.length > 240 ? `${sentence.slice(0, 237)}…` : sentence;
+/** Cap near 300 characters, cutting at a word boundary so no word is ever half-quoted. */
+function clip(statement: string): string {
+  if (statement.length <= 300) {
+    return statement;
+  }
+  const cut = statement.slice(0, 300);
+  const boundary = cut.lastIndexOf(" ");
+  return `${(boundary === -1 ? cut : cut.slice(0, boundary)).replace(/\s+$/u, "")}…`;
 }

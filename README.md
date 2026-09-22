@@ -85,7 +85,7 @@ each commit and your tests run before each push.
 | One set of rules for every tool | `AGENTS.md` holds the rules. `CLAUDE.md` imports it, Cursor gets an always-on rule, and Codex reads it directly.                                    |
 | Session start map               | Each Claude Code session opens with the accepted decisions, modules, and fence reasons.                                                             |
 | Task lookup                     | A prompt hook in Claude Code and Codex matches your task against the context cards and adds where to start.                                         |
-| Workflow skills                 | Skills for planning a feature, security review with a secret scan, reusing conventions, fence questions, ADR compliance, and context lookup.        |
+| Workflow skills                 | Twelve skills: tasks, tests, decisions, drift review, reports, module and feature plans, security, conventions, fences, ADR checks, context lookup. |
 | **Keeping agents honest**       |                                                                                                                                                     |
 | Governing decisions             | Changing a file names the ADR that governs it, with the decision itself.                                                                            |
 | ADR compliance                  | The agent checks its diff against each governing decision, quoting the lines.                                                                       |

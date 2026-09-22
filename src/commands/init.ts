@@ -661,7 +661,16 @@ function createInitWriteFiles(
         ]),
     // Generate the agent skill set so a fresh repo has the workflows that guide AI agents,
     // not just the docs. Written to both the Claude and portable Agent Skills targets.
-    ...listCatalogSkillNames().flatMap((name) => generateSkillFiles(name).files),
+    // `module-memory` is the one conditional skill: it is generated only when module memory
+    // is enabled (`--modules`, or a modules directory that already exists).
+    ...listCatalogSkillNames()
+      .filter(
+        (name) =>
+          name !== "module-memory" ||
+          optIn.modules ||
+          existsSync(path.join(rootDir, config.modulesDir)),
+      )
+      .flatMap((name) => generateSkillFiles(name).files),
   ];
 
   return files.filter((file) => keepPathForTools(file.path, config.aiTools));

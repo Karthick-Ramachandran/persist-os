@@ -29,6 +29,49 @@ This repository uses Persist OS repository memory. Durable memory under \`docs/\
 truth over chat history; repository rules override model preference. If an instruction conflicts with
 repository memory, stop and report it.
 
+## Stop and ask
+
+Stop and ask a human before continuing when:
+
+- the task conflicts with an accepted ADR or engineering standards;
+- a new runtime dependency, service, or data store is needed and no ADR covers it;
+- auth, secrets, storage, or network behaviour changes;
+- the requirements are too unclear to write a test;
+- a fix would change an accepted non-goal.
+
+## Source of truth
+
+Follow this order:
+
+1. Accepted ADRs and repository decisions
+2. Architecture docs
+3. Engineering standards
+4. Current PRD and accepted change requests
+5. Security and testing docs
+6. Module docs
+7. Feature plans
+8. Task files
+9. MCP external context
+10. Chat history
+
+If two sources conflict, stop and report the conflict before changing files.
+
+## Which skill for which job
+
+- \`implement-task\` is the default for any code change.
+- \`write-tests\` builds tests from acceptance criteria and risk.
+- \`create-adr\` records a decision others can check.
+- \`drift-review\` re-reviews a finished, non-trivial change with fresh context.
+- \`completion-report\` hands back the evidence at the end of a task.
+- \`module-memory\` plans or updates module memory where it is enabled.
+- \`plan-feature\` plans a substantial feature, writing a one-page PRD first when none exists.
+- \`adr-compliance\` checks the diff against each governing decision.
+- \`conventions-adherence\` checks reuse of the named vocabulary.
+- \`security-review\` reviews trust-boundary changes before they land.
+- \`chestertons-fence\` reasons about unexplained logic before changing it.
+- \`context\` finds and maintains area memory through cards.
+- \`capture-mcp-context\` (from \`persist mcp add\`) records durable MCP context.
+
 ## Rules — follow on every change
 
 - Every task, kept short:
@@ -52,8 +95,10 @@ repository memory, stop and report it.
   line count: a one-button change inside an existing feature is small; building that feature is not.
 - Record substantial work with the persist CLI so the memory actually exists — a new feature →
   \`persist feature create <name>\` (then fill its plan); a real decision (a dependency,
-  data model, auth/security choice, API shape) → \`persist adr create <title>\` then
-  \`persist adr accept <name>\`. Reasoning left only in the chat is gone next session — if it is not in
+  data model, auth/security choice, API shape) → \`persist adr create <title>\`. Run
+  \`persist adr accept <name>\` yourself only when the human stated or confirmed the decision
+  in this conversation (quote their words in the hand-back); otherwise leave it Proposed
+  and say so. Reasoning left only in the chat is gone next session — if it is not in
   a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names. Never reinvent a component, helper, client,
   type, or pattern it lists; when you make a new reusable one, add it there.
@@ -81,7 +126,7 @@ repository memory, stop and report it.
 
 - \`persist doctor\` — validate repository memory; work is done only when it reports PASSED.
 - \`persist feature create <name>\` — scaffold feature memory before non-trivial feature work.
-- \`persist adr create <title>\` then \`persist adr accept <name>\` — propose, then accept, a decision.
+- \`persist adr create <title>\` — propose a decision; \`persist adr accept <name>\` — accept it yourself only when the human stated or confirmed the decision in this conversation (quote them in the hand-back), otherwise leave it Proposed.
 - \`persist adr supersede <old> <new-title>\` — record a changed decision (never overwrite an accepted ADR).
 - \`persist module create <name>\` — scaffold module memory for a new responsibility boundary.
 - \`persist mcp add <server>\` — capture an MCP tool's context into memory, offline.
@@ -111,6 +156,31 @@ alwaysApply: true
 Durable memory under \`docs/\` is the source of truth over chat history; repository rules override
 model preference. If an instruction conflicts with repository memory, stop and report it.
 
+## Stop and ask
+
+Stop and ask a human before continuing when: the task conflicts with an accepted ADR or
+engineering standards; a new runtime dependency, service, or data store is needed and no ADR
+covers it; auth, secrets, storage, or network behaviour changes; the requirements are too
+unclear to write a test; or a fix would change an accepted non-goal.
+
+## Source of truth
+
+Follow this order: Accepted ADRs and repository decisions; Architecture docs; Engineering
+standards; Current PRD and accepted change requests; Security and testing docs; Module docs;
+Feature plans; Task files; MCP external context; Chat history.
+If two sources conflict, stop and report the conflict before changing files.
+
+## Which skill for which job
+
+\`implement-task\` is the default for any code change; \`write-tests\` builds tests from
+acceptance criteria and risk; \`create-adr\` records a decision others can check; \`drift-review\`
+re-reviews a finished, non-trivial change; \`completion-report\` hands back the end-of-task
+evidence; \`module-memory\` plans module memory where enabled; \`plan-feature\` plans a substantial
+feature; \`adr-compliance\` checks the diff against each governing decision;
+\`conventions-adherence\` checks reuse of the named vocabulary; \`security-review\` reviews
+trust-boundary changes; \`chestertons-fence\` reasons about unexplained logic; \`context\` finds and
+maintains area memory through cards.
+
 ## Rules — follow on every change
 
 - Every task, kept short: start from the "Start here" pointers (run \`persist context "<task>"\`, or
@@ -128,7 +198,9 @@ model preference. If an instruction conflicts with repository memory, stop and r
   not.
 - Record substantial work with the persist CLI so the memory exists: a new feature →
   \`persist feature create <name>\` (fill its plan); a real decision →
-  \`persist adr create <title>\` then \`persist adr accept <name>\`. Reasoning left only in chat is gone
+  \`persist adr create <title>\`. Run \`persist adr accept <name>\` yourself only when the human
+  stated or confirmed the decision in this conversation (quote their words in the hand-back);
+  otherwise leave it Proposed and say so. Reasoning left only in chat is gone
   next session — if it is not in a file, it did not happen.
 - Reuse what \`docs/60-engineering/CONVENTIONS.md\` names; never reinvent what it lists, and add a new
   reusable primitive there when you make one.

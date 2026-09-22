@@ -6,22 +6,29 @@ import type { DoctorCheckContext, DoctorCheckOutcome, DoctorFinding } from "../d
 const SKILL_DIRS = [".claude/skills", ".agents/skills"] as const;
 
 /**
- * Skills retired in 1.0 (ADR-0007). Warn only on these explicit names: "not in the catalog"
- * conflates a skill we retired with a skill the user wrote, and a gate that permanently
- * complains about `skill create` — a supported workflow — stops being read. Anything on disk
- * but not on this list is custom and stays silent. Append here when a future release retires
- * more; do not build a migration framework for it.
+ * Skills retired in 1.0 (ADR-0007) that stayed retired in 1.4.0 (ADR-0016), each with the
+ * skill that absorbed its job. Names 1.4.0 brought back (`implement-task`, `write-tests`,
+ * `create-adr`, `completion-report`) are catalog skills again and stay silent; so does
+ * `capture-mcp-context`, which `persist mcp add` still generates. Warn only on these
+ * explicit names: "not in the catalog" conflates a skill we retired with a skill the user
+ * wrote, and a gate that permanently complains about `skill create` — a supported
+ * workflow — stops being read. Anything on disk but not on this list is custom and stays
+ * silent. Append here when a future release retires more; do not build a migration
+ * framework for it.
  */
 export const RETIRED_SKILL_NAMES: ReadonlySet<string> = new Set([
   "create-prd",
-  "create-adr",
   "plan-module",
-  "implement-task",
-  "write-tests",
   "update-module-memory",
-  "completion-report",
-  "capture-mcp-context",
   "architecture-drift-review",
+]);
+
+/** Where each still-retired skill's substance went, named in the warning. */
+export const RETIRED_SKILL_REPLACEMENTS: ReadonlyMap<string, string> = new Map([
+  ["create-prd", "plan-feature"],
+  ["plan-module", "module-memory"],
+  ["update-module-memory", "module-memory"],
+  ["architecture-drift-review", "drift-review"],
 ]);
 
 export type RetiredSkillsCheckResult = {
@@ -47,10 +54,14 @@ export async function checkRetiredSkills(
       sawDirectory = true;
       for (const name of names) {
         if (RETIRED_SKILL_NAMES.has(name)) {
+          const replacement = RETIRED_SKILL_REPLACEMENTS.get(name);
           findings.push({
             severity: "warning",
             check: "retired-skills",
-            message: `Skill "${name}" was retired in 1.0 — remove it with \`rm -rf ${skillsDir}/${name}\`.`,
+            message:
+              `Skill "${name}" was retired in 1.0` +
+              (replacement === undefined ? "" : ` — its job moved to "${replacement}"`) +
+              ` — remove it with \`rm -rf ${skillsDir}/${name}\`.`,
             path: `${skillsDir}/${name}/SKILL.md`,
           });
         }

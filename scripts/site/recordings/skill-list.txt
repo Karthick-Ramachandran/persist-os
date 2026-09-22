@@ -1,6 +1,12 @@
 $ persist skill list
 Persist OS skill catalog
 
+- implement-task: Implement Task
+- write-tests: Write Tests
+- create-adr: Create ADR
+- drift-review: Drift Review
+- completion-report: Completion Report
+- module-memory: Module Memory
 - plan-feature: Plan Feature
 - security-review: Security Review
 - conventions-adherence: Conventions Adherence
