@@ -111,42 +111,39 @@ adr_dir=$(config_dir adrDir docs/adrs)
 modules_dir=$(config_dir modulesDir docs/30-modules)
 fences_file="$docs_dir/${FENCES_FILE}"
 
-# ADR standing in a single awk pass over the ADR files: each file's ## Status section
-# (first non-blank line after the heading, case-insensitive, CR stripped) decides its
-# list, matching readAcceptedAdrs — accepted and still binding prints A:<name>, proposed
-# prints P:<name>, anything else prints nothing. Drafts under proposed/ count as proposed
-# by location, the way doctor reads them.
+# ADR standing in a single awk pass over the ADR files: each file's whole ## Status
+# section (every line up to the next ## heading, case-insensitive, CR stripped)
+# decides its list, matching adrStandingOf — the section holds accepted as a word with
+# no superseded-by prints A:<name>, holding proposed prints P:<name>, anything else
+# prints nothing. Drafts under proposed/ count as proposed by location, the way doctor
+# reads them.
 adr_classes=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | awk '
   {
     file = $0
-    status = ""
+    section = ""
     in_status = 0
-    have = 0
     while ((getline line < file) > 0) {
       stripped = line
       sub("\\r$", "", stripped)
-      if (!have) {
-        t = stripped
-        sub(/^[[:blank:]]+/, "", t)
-        sub(/[[:blank:]]+$/, "", t)
-        if (in_status) {
-          if (stripped ~ /^##[[:space:]]/) {
-            in_status = 0
-          } else if (t != "") {
-            status = t
-            have = 1
-          }
-        } else if (tolower(t) == "## status") {
-          in_status = 1
+      t = stripped
+      sub(/^[[:blank:]]+/, "", t)
+      sub(/[[:blank:]]+$/, "", t)
+      if (in_status) {
+        if (stripped ~ /^##[[:space:]]/) {
+          in_status = 0
+        } else {
+          section = (section == "" ? t : section "\\n" t)
         }
+      } else if (tolower(t) == "## status") {
+        in_status = 1
       }
     }
     close(file)
     name = file
     sub(/.*\\//, "", name)
     sub(/\\.md$/, "", name)
-    s = tolower(status)
-    if (s ~ /accepted/ && s !~ /superseded[[:blank:]][[:blank:]]*by/) {
+    s = tolower(section)
+    if (s ~ /(^|[^[:alnum:]_])accepted([^[:alnum:]_]|$)/ && s !~ /superseded[[:space:]][[:space:]]*by/) {
       printf "A:%s\\n", name
     } else if (s ~ /proposed/) {
       printf "P:%s\\n", name

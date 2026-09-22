@@ -51,6 +51,18 @@ describe("renderSessionStartHook ADR standing", () => {
         "\r\n",
       ),
       "docs/adrs/ADR-0006-nostatus.md": "# ADR-0006: No status\n\n## Decision\n\nNothing.\n",
+      "docs/adrs/ADR-0007-stale.md": adrDocument(
+        "ADR-0007",
+        "Stale",
+        "Accepted\n\nSuperseded by ADR-0009",
+      ),
+      "docs/adrs/ADR-0008-date-first.md": adrDocument(
+        "ADR-0008",
+        "Date first",
+        "Date: 2026-01-15\n\nAccepted",
+      ),
+      "docs/adrs/ADR-0009-bold.md": adrDocument("ADR-0009", "Bold", "**Accepted**"),
+      "docs/adrs/ADR-0010-dated.md": adrDocument("ADR-0010", "Dated", "Accepted (2026-02-01)"),
     };
   }
 
@@ -154,6 +166,31 @@ describe("renderSessionStartHook ADR standing", () => {
     expect(acceptedItems(context)).toContain("ADR-0005-crlf");
   });
 
+  it("lists an Accepted-then-Superseded-by ADR in neither list", async () => {
+    const context = await contextFor(parityFixture());
+
+    expect(acceptedItems(context)).not.toContain("ADR-0007-stale");
+    expect(proposedItems(context)).not.toContain("ADR-0007-stale");
+  });
+
+  it("lists a Date-before-Accepted ADR in the Accepted list", async () => {
+    const context = await contextFor(parityFixture());
+
+    expect(acceptedItems(context)).toContain("ADR-0008-date-first");
+  });
+
+  it("lists a bold **Accepted** ADR in the Accepted list", async () => {
+    const context = await contextFor(parityFixture());
+
+    expect(acceptedItems(context)).toContain("ADR-0009-bold");
+  });
+
+  it("lists a dated Accepted ADR in the Accepted list", async () => {
+    const context = await contextFor(parityFixture());
+
+    expect(acceptedItems(context)).toContain("ADR-0010-dated");
+  });
+
   it("lists an ADR with no Status section in neither list", async () => {
     const context = await contextFor(parityFixture());
 
@@ -178,7 +215,13 @@ describe("renderSessionStartHook ADR standing", () => {
       const expected = accepted.map((adr) => path.posix.basename(adr.file, ".md")).sort();
 
       expect(acceptedItems(context).sort()).toEqual(expected);
-      expect(expected).toEqual(["ADR-0001-ledger", "ADR-0005-crlf"]);
+      expect(expected).toEqual([
+        "ADR-0001-ledger",
+        "ADR-0005-crlf",
+        "ADR-0008-date-first",
+        "ADR-0009-bold",
+        "ADR-0010-dated",
+      ]);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
