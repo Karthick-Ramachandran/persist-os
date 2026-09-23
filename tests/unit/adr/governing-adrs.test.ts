@@ -28,6 +28,51 @@ describe("Applies To path patterns", () => {
   });
 });
 
+describe("what counts as accepted", () => {
+  const roots: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((rootDir) => removeTempRoot(rootDir)));
+  });
+
+  async function adrsWithStatus(status: string): Promise<string[]> {
+    const rootDir = await createTempRoot("adr-standing");
+    roots.push(rootDir);
+    const adrDir = "docs/adrs";
+    await mkdir(path.join(rootDir, adrDir), { recursive: true });
+    await writeFile(
+      path.join(rootDir, adrDir, "ADR-0001-ledger.md"),
+      ["# ADR-0001: Ledger", "", "## Status", "", status, "", "## Decision", "", "Kept.", ""].join(
+        "\n",
+      ),
+      "utf8",
+    );
+    return (await readAcceptedAdrs(rootDir, adrDir)).map((adr) => adr.id);
+  }
+
+  it.each(["Accepted", "**Accepted**", "Accepted (2026-02-01)", "Date: 2026-01-15\n\nAccepted"])(
+    "treats %j as accepted",
+    async (status) => {
+      expect(await adrsWithStatus(status)).toEqual(["ADR-0001"]);
+    },
+  );
+
+  it.each([
+    "Not accepted",
+    "not yet accepted",
+    "Never accepted",
+    "Unaccepted",
+    "Rejected",
+    "Proposed",
+    "Accepted — superseded by ADR-0009",
+    "Accepted\n\nSuperseded by ADR-0009",
+  ])("does not treat %j as accepted", async (status) => {
+    // A status that denies acceptance once read as approval, because only the word
+    // "accepted" was looked for: the decision was quoted to agents as binding.
+    expect(await adrsWithStatus(status)).toEqual([]);
+  });
+});
+
 describe("decision quotes", () => {
   const roots: string[] = [];
 

@@ -177,9 +177,8 @@ describe("doctor pending ADR proposals", () => {
     expect(findings.filter((finding) => finding.message.includes("awaiting your review"))).toEqual(
       [],
     );
-    expect(findings.map((finding) => finding.message)).toContain(
-      "1 ADRs detected (0 accepted, 0 proposed, 1 other).",
-    );
+    // Only the standings that exist: a zero count says nothing and reads like a defect.
+    expect(findings.map((finding) => finding.message)).toContain("1 ADRs detected (1 other).");
   });
 
   it("never warns or errors on a pending proposal, so commits go through", async () => {
