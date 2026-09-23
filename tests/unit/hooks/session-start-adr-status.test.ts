@@ -238,10 +238,10 @@ describe("renderSessionStartHook ADR standing", () => {
     expect(acceptedItems(context)).not.toContain("ADR-0008-quoted");
   });
 
-  it("is byte-identical to 1.6.0 when every ADR is Accepted", async () => {
-    // Golden: repositories with only accepted decisions see no change. The
-    // literal below is the 1.6.0 hook output for this fixture, captured before
-    // the standing split.
+  it("keeps the pinned base context when every ADR is Accepted", async () => {
+    // Golden: repositories with only accepted decisions see no change beyond
+    // the pinned base text. The literal below is the hook output for this
+    // fixture, updated once for the 1.7.0 done rule and fenced from drift.
     const context = await contextFor({
       "CLAUDE.md": "# x\n",
       "docs/adrs/ADR-0001-ledger.md": adrDocument("ADR-0001", "Ledger", "Accepted"),
@@ -256,8 +256,10 @@ describe("renderSessionStartHook ADR standing", () => {
         "(persist feature/adr/module create, persist adr accept and supersede, persist doctor) " +
         "yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. " +
         "Before calling work done, check the diff against every accepted ADR governing the files you " +
-        "changed (read its Decision, not just its title); work is done only when 'persist doctor' " +
-        "reports PASSED. When you finish work in an area, create or update its context card — above " +
+        "changed (read its Decision, not just its title); work is done when 'persist doctor' " +
+        "reports no errors, the tests pass, and every warning is fixed or listed under Needs your " +
+        "review with what the human has to decide ('PASSED' is the goal). When you finish work in " +
+        "an area, create or update its context card — above " +
         "all the Answers list, with the task you were just given phrased the way it was asked.",
     );
   });

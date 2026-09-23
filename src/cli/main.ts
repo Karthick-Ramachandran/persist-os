@@ -319,19 +319,31 @@ export function createCliProgram(
       "<path>",
       "Repo-relative path, optionally suffixed with a symbol, e.g. src/a.ts:write.",
     )
-    .requiredOption("--why <reason>", "One sentence. Why the code is shaped this way.")
+    .option("--why <reason>", "One sentence. Why the code is shaped this way.")
+    .option(
+      "--no-constraint",
+      "A human confirmed nothing in the file is deliberate; requires --by, never with --why.",
+    )
     .option("--by <name>", "Who confirmed the reason.")
     .option("--adr <link>", "A related decision, when one exists.")
     .option("--dry-run", "Show planned writes without writing files.")
     .action(
       async (
         fencedPath: string,
-        options: { why: string; by?: string; adr?: string; dryRun?: boolean },
+        options: {
+          why?: string;
+          /** Commander reads `--no-constraint` as the negation of `constraint`. */
+          constraint?: boolean;
+          by?: string;
+          adr?: string;
+          dryRun?: boolean;
+        },
       ) => {
         const result = await addFence({
           rootDir: cwd,
           path: fencedPath,
           why: options.why,
+          noConstraint: options.constraint === false,
           by: options.by,
           adr: options.adr,
           dryRun: options.dryRun,

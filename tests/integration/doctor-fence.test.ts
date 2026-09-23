@@ -114,7 +114,7 @@ describe("doctor fence integration", () => {
         severity: "warning",
         check: "fence",
         path: "src/split.ts",
-        message: expect.stringContaining("Unpushed change crosses the Chesterton fence"),
+        message: expect.stringContaining("Unpushed change rewrites existing code"),
       }),
     );
   });

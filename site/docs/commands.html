@@ -368,12 +368,18 @@ Persist OS test gate skipped: the gate is off — set testCommand in .persist/co
           <p>The generated pre-push hook runs this command. Details in <a href="hooks.html">Hooks, test gate, CI</a>.</p>
 
           <h2 id="fence-add">persist fence add</h2>
-          <pre><code>persist fence add &lt;path&gt; --why "&lt;reason&gt;" [--by &lt;name&gt;] [--adr &lt;link&gt;] [--dry-run]</code></pre>
+          <pre><code>persist fence add &lt;path&gt; --why "&lt;reason&gt;" [--by &lt;name&gt;] [--adr &lt;link&gt;] [--dry-run]
+persist fence add &lt;path&gt; --no-constraint --by &lt;name&gt; [--dry-run]</code></pre>
           <p>
             Records why a path is shaped the way it is, for reasoning that never rose to an ADR.
             The reason comes from a person; the command writes it in the exact shape doctor and the
             SessionStart hook read. It refuses a path that does not exist, and refuses to run
             outside an initialised repository, because a fence recorded there is never loaded.
+            When a human confirms nothing in the file is deliberate, <code>--no-constraint</code>
+            records that answer instead of a reason: <code>--by</code> is required, and
+            <code>--why</code> and <code>--adr</code> cannot be combined with it. A real reason
+            later replaces a <code>No constraint</code> entry; <code>--no-constraint</code> never
+            replaces a real reason.
           </p>
           <pre><code><span class="p">$</span> <span class="c">persist fence add src/billing.js --why "Writes four collections in one transaction so the ledger and the audit trail cannot diverge." --by Priya</span>
 Persist OS fence add complete.

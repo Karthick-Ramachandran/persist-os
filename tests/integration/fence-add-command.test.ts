@@ -57,7 +57,7 @@ describe("persist fence add", () => {
     const rootDir = await repoWithStagedChange("fence-add-loop");
 
     const before = await runCommand(rootDir, ["doctor"]);
-    expect(before.stdout).toContain("crosses the Chesterton fence");
+    expect(before.stdout).toContain("with no recorded reason");
 
     const added = await runCommand(rootDir, [
       "fence",
@@ -70,7 +70,7 @@ describe("persist fence add", () => {
 
     const after = await runCommand(rootDir, ["doctor"]);
     // The question is gone and the answer is in its place.
-    expect(after.stdout).not.toContain("crosses the Chesterton fence");
+    expect(after.stdout).not.toContain("with no recorded reason");
     expect(after.stdout).toContain("Four collection writes are deliberate.");
   });
 
@@ -90,7 +90,7 @@ describe("persist fence add", () => {
 
     const after = await runCommand(rootDir, ["doctor"]);
     expect(after.stdout).toContain("Symbol-scoped reason.");
-    expect(after.stdout).not.toContain("crosses the Chesterton fence");
+    expect(after.stdout).not.toContain("with no recorded reason");
   });
 
   it("records who confirmed it and a linked decision", async () => {
@@ -197,6 +197,128 @@ describe("persist fence add", () => {
 
     expect(result.exitCode).toBe(0);
     const after = await runCommand(rootDir, ["doctor"]);
-    expect(after.stdout).toContain("crosses the Chesterton fence");
+    expect(after.stdout).toContain("with no recorded reason");
+  });
+
+  it("records no-constraint with a name and quiets only that file", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint");
+
+    const added = await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--no-constraint",
+      "--by",
+      "Karthick",
+    ]);
+    expect(added.exitCode).toBe(0);
+
+    const fences = await readGeneratedFile(rootDir, "docs/60-engineering/FENCES.md");
+    expect(fences).toContain("## `src/billing.ts`");
+    expect(fences).toContain(
+      "No constraint: a human confirmed nothing here is deliberate; change it freely.",
+    );
+    expect(fences).toContain("no constraint, confirmed by Karthick.");
+
+    const after = await runCommand(rootDir, ["doctor"]);
+    expect(after.stdout).not.toContain("with no recorded reason");
+  });
+
+  it("refuses --no-constraint without --by", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint-noby");
+
+    const result = await runCommand(rootDir, ["fence", "add", "src/billing.ts", "--no-constraint"]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("--by <name> is required with --no-constraint");
+    const files = await listRelativeFiles(rootDir);
+    expect(files).not.toContain("docs/60-engineering/FENCES.md");
+  });
+
+  it("refuses --why together with --no-constraint", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint-why");
+
+    const result = await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--why",
+      "Deliberate.",
+      "--no-constraint",
+      "--by",
+      "Karthick",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("Pass either --why or --no-constraint, not both.");
+    const files = await listRelativeFiles(rootDir);
+    expect(files).not.toContain("docs/60-engineering/FENCES.md");
+  });
+
+  it("replaces no-constraint with a reason and keeps the history", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint-replace");
+    await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--no-constraint",
+      "--by",
+      "Karthick",
+    ]);
+
+    const replaced = await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--why",
+      "Four collection writes are deliberate.",
+      "--by",
+      "Priya",
+    ]);
+    expect(replaced.exitCode).toBe(0);
+
+    const fences = await readGeneratedFile(rootDir, "docs/60-engineering/FENCES.md");
+    expect(fences).toContain("Why: Four collection writes are deliberate.");
+    expect(fences).toContain("no constraint, confirmed by Karthick.");
+    expect(fences).toContain("reason recorded, replacing no constraint, by Priya.");
+  });
+
+  it("refuses --no-constraint over a recorded reason and writes nothing", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint-refused");
+    await runCommand(rootDir, ["fence", "add", "src/billing.ts", "--why", "Standing reason."]);
+    const before = await readGeneratedFile(rootDir, "docs/60-engineering/FENCES.md");
+
+    const result = await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--no-constraint",
+      "--by",
+      "Karthick",
+    ]);
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("has a recorded reason");
+    expect(await readGeneratedFile(rootDir, "docs/60-engineering/FENCES.md")).toBe(before);
+  });
+
+  it("flags a no-constraint entry for a deleted file like any fence entry", async () => {
+    const rootDir = await repoWithStagedChange("fence-add-no-constraint-rot");
+    await runCommand(rootDir, [
+      "fence",
+      "add",
+      "src/billing.ts",
+      "--no-constraint",
+      "--by",
+      "Karthick",
+    ]);
+    git(rootDir, "commit", "-q", "-m", "change billing", "--no-verify");
+    git(rootDir, "rm", "-q", "src/billing.ts");
+    git(rootDir, "commit", "-q", "-m", "remove billing", "--no-verify");
+
+    const report = await runCommand(rootDir, ["doctor"]);
+
+    expect(report.stdout).toContain("src/billing.ts");
+    expect(report.stdout).toContain("no longer exists");
   });
 });

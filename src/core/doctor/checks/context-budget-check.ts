@@ -1,6 +1,7 @@
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
+import { fenceIndexLines } from "../../fence/fence-entries.js";
 import { FENCES_FILE } from "../../fence/generate-fence.js";
 import {
   ALWAYS_LOADED_BUDGET_BYTES,
@@ -152,13 +153,13 @@ async function checkFenceAndAlwaysShare(
 }
 
 /**
- * The `full` variable in the SessionStart hook: `## ` and `Why: ` lines flattened to one line,
- * each trailing newline become a space. Mirrored here so the measured size is the injected size.
+ * The `full` variable in the SessionStart hook: the `## ` heading and `Why: `
+ * lines of entries that record a reason, flattened to one line, each trailing
+ * newline become a space. Mirrored here so the measured size is the injected
+ * size. No-constraint entries are not injected, so they are not measured.
  */
 function flattenFenceIndex(fences: string): string {
-  const lines = fences
-    .split("\n")
-    .filter((line) => line.startsWith("## ") || line.startsWith("Why: "));
+  const lines = fenceIndexLines(fences);
   return lines.length === 0 ? "" : `${lines.join(" ")} `;
 }
 

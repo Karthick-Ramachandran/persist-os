@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.7.0
+
+**The fence warning names the lines it means.** A crossing no longer says "ask why the existing
+logic is shaped this way" about a whole file: it names the old-side line ranges the diff rewrites
+with git's hunk context (`line 2 (in \`export function splitEvenly(items)
+{\`)`), the insertion points of a pure addition (`adds lines at 12, 40`), or `binary
+change`— at most three ranges, then`and N
+more`. A rename is judged as its new path with ranges from the rename pair's diff. `--json`carries the same spans as an additive optional`ranges`
+array. Same severity, check id, and scope: every change that warned still warns until a human
+answers for that file.
+
+**"No constraint" is an answer, and it is recorded.**
+`persist fence add <path> --no-constraint --by <name>` records that a named human confirmed nothing
+in the file is deliberate, and the file stays quiet from then on. A later `--why` replaces the
+standing line and keeps the history; `--no-constraint` over a recorded reason is refused and writes
+nothing. No-constraint entries are not injected into sessions — they answer nothing an agent needs
+before editing — and the rot checks treat them like any fence entry. ADR-0020 records the
+rule and refines ADR-0010.
+
+**The agent asks, or hands back something answerable.** With a human in the conversation, one
+question per file quoting the warning's ranges, recorded with the matching command (`--why` with
+their reason, or `--no-constraint`) — never picked by the agent. Unattended, each warning goes in
+the "Needs your review" list with the question and both ready-to-run commands. A reason given in
+conversation is recorded with `persist fence add` right then. And the "done" rule stops
+contradicting itself: done when doctor reports no errors, the tests pass, and every warning is fixed
+or listed under Needs your review — `PASSED` is the goal, not a condition an agent can meet without
+a human.
+
+**Upgrading:** the SessionStart hook changed (no-constraint entries are no longer injected, and the
+base text carries the new done rule): run `persist hooks sync` when doctor reports hook drift on
+`.claude/hooks/session-start.sh`. The config schema is unchanged; the CLI change is one additive
+option (`--no-constraint`).
+
 ## 1.6.1
 
 **The fence counts only a decision that holds.** An ADR reference now means an Accepted, not
@@ -16,12 +49,12 @@ ADR-0019 records the rule and refines ADR-0010.
 until a human accepts or rejects it. Info only: a pending proposal never warns, never errors, and
 never blocks a commit.
 
-**SessionStart stops calling every ADR accepted.** The SessionStart hook listed each ADR file
-under "Accepted ADRs" whatever its status, so a Proposed draft read as an accepted decision in
-every later session. Each ADR now goes on exactly one list by its `## Status` section: Accepted
-ones keep the existing list, Proposed ones (plus every file under `docs/adrs/proposed/`) ride a
-new "Proposed ADRs, pending review, not binding:" list right after it, and anything else stays
-unlisted. Repositories with only accepted decisions inject byte-identical text to before.
+**SessionStart stops calling every ADR accepted.** The SessionStart hook listed each ADR file under
+"Accepted ADRs" whatever its status, so a Proposed draft read as an accepted decision in every later
+session. Each ADR now goes on exactly one list by its `## Status` section: Accepted ones keep the
+existing list, Proposed ones (plus every file under `docs/adrs/proposed/`) ride a new "Proposed
+ADRs, pending review, not binding:" list right after it, and anything else stays unlisted.
+Repositories with only accepted decisions inject byte-identical text to before.
 
 **Upgrading:** if doctor reports a new fence info finding on a Proposed ADR, accept the ADR when it
 records why the code is shaped that way, or record the reason with `persist fence add`. The fence

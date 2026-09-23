@@ -45,7 +45,7 @@ export const ALWAYS_LOADED_BUDGET_BYTES = 24 * 1024;
  * through the same base-bytes subtraction; empty, it expands to nothing.
  */
 export const SESSION_START_BASE_CONTEXT =
-  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}.${proposed_adrs} Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done only when 'persist doctor' reports PASSED. When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked.";
+  "Persist OS repository memory is the source of truth over chat history. Before non-trivial work, read AGENTS.md and the docs it routes to; repository rules override model preference. Accepted ADRs (${adr_dir}/): ${adrs:-none yet}.${proposed_adrs} Modules (${modules_dir}/): ${modules:-none yet}. Use the Persist OS CLI commands listed in AGENTS.md (persist feature/adr/module create, persist adr accept and supersede, persist doctor) yourself, as 'npx persist-os <command>' if persist is not installed; do not web-search them. Before calling work done, check the diff against every accepted ADR governing the files you changed (read its Decision, not just its title); work is done when 'persist doctor' reports no errors, the tests pass, and every warning is fixed or listed under Needs your review with what the human has to decide ('PASSED' is the goal). When you finish work in an area, create or update its context card — above all the Answers list, with the task you were just given phrased the way it was asked.";
 
 /** The label the hook places between the base context and the fence index. */
 export const FENCE_INDEX_LABEL =
@@ -163,11 +163,14 @@ fi
 modules=$(ls -d "$modules_dir"/*/ 2>/dev/null | sed 's|/$||;s|.*/||' | tr '\\n' ' ')
 
 # Fence index: one flattened line of "## <path>" / "Why: <reason>" lines from FENCES.md.
-# A missing file means no fence crossed yet (FENCES.md is never required), and an empty index
-# injects nothing — silence is the correct signal in both cases.
+# Only entries with a Why: line are listed: a No constraint: entry answers nothing an agent
+# needs before editing, so its heading stays out. With no such entries the awk prints exactly
+# what the old grep printed, byte for byte. A missing file means no fence crossed yet
+# (FENCES.md is never required), and an empty index injects nothing — silence is the correct
+# signal in both cases.
 base="${SESSION_START_BASE_CONTEXT}"
 context="$base"
-full=$(grep -e '^## ' -e '^Why: ' "$fences_file" 2>/dev/null | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+full=$(awk '/^## /{h=$0; next} /^Why: /{if (h != "") print h; print; h=""; next} /^No constraint:/{h=""; next}' "$fences_file" 2>/dev/null | tr '\\n' ' ' | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
 lessons_file="$docs_dir/${LESSONS_FILE}"
 always=$(tr -d '\\r' < "$lessons_file" 2>/dev/null | awk 'BEGIN{w=0} /^##[ \\t]/{w=(tolower($0) ~ /^##[ \\t]+always[ \\t]*$/);next} w{print}' | sed -e 's/<!--.*-->//g' -e 's/^[[:space:]]*[-*][[:space:]]*//' -e 's/^[[:space:]]*//' | tr '\\n\\t' '  ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//' -e 's/\\\\/\\\\\\\\/g' -e 's/"/\\\\"/g')
 if [ -n "$always" ]; then

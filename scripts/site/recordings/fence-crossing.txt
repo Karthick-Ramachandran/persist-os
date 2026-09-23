@@ -2,7 +2,7 @@ $ persist doctor
 Doctor Report
 
 WARNING
-- Change crosses the Chesterton fence with no record: no entry in docs/60-engineering/FENCES.md and no ADR reference. Ask why the existing logic is shaped this way (the chestertons-fence skill walks through it) and record the human-confirmed reason. (src/billing.js)
+- Change rewrites existing code in src/billing.js with no recorded reason: line 2 (in `export function writeOrder(order) {`). Ask the person who knows: was that behaviour deliberate? If yes: persist fence add src/billing.js --why "<reason>" --by <name>. If no: persist fence add src/billing.js --no-constraint --by <name>. (src/billing.js)
 
 INFO
 - Persist OS config validates. (.persist/config.json)

@@ -25,6 +25,12 @@ export type DoctorFinding = {
   check: string;
   message: string;
   path?: string;
+  /**
+   * Fence-only: the old-side line ranges the change rewrites (or the insertion
+   * points, as `start === end`), with git's hunk context text. Additive:
+   * readers that do not know it ignore it.
+   */
+  ranges?: { start: number; end: number; context: string }[];
 };
 
 export type DoctorCheckStatus = "evaluated" | "not-evaluated";

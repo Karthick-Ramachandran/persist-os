@@ -19,7 +19,9 @@ import { appendNextSteps, appendWriteSummary } from "../write-summary.js";
 export type FenceAddOptions = {
   rootDir: string;
   path: string;
-  why: string;
+  why?: string;
+  /** Record a human's "nothing here is deliberate" answer instead of a reason. */
+  noConstraint?: boolean;
   by?: string;
   adr?: string;
   date?: string;
@@ -75,6 +77,7 @@ export async function addFence(options: FenceAddOptions): Promise<FenceAddResult
     content = addFenceEntry(existing, {
       path: options.path,
       why: options.why,
+      noConstraint: options.noConstraint,
       by: options.by,
       adr: options.adr,
       date: options.date,
