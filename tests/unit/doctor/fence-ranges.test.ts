@@ -108,10 +108,33 @@ describe("fence warning ranges", () => {
 
     expect(fence).toHaveLength(1);
     expect(fence[0]).toMatchObject({ severity: "warning", path: "src/ledger.ts" });
-    expect(fence[0]?.message).toContain("adds lines at 1");
+    // New-side line 2: the guard is the second line of the file now. The old-side
+    // anchor (1) is the line it follows, which the reader did not change.
+    expect(fence[0]?.message).toContain("adds lines at 2");
     expect(fence[0]?.ranges).toEqual([
-      { start: 1, end: 1, context: "export function writeLedger(db) {" },
+      { start: 2, end: 2, context: "export function writeLedger(db) {" },
     ]);
+  });
+
+  it("numbers insertions as they stand in the file, including the first line", async () => {
+    // Every insertion used to be reported at the line it follows: an insertion at the top
+    // of a file named line 0, which no file has, and later ones drifted further as earlier
+    // insertions pushed the lines down.
+    const rootDir = await createRoot("fence-ranges-add-many");
+    git(rootDir, ["init"]);
+    await write(rootDir, "src/x.ts", "const a = 1;\nconst b = 2;\nconst c = 3;\n");
+    commitAll(rootDir, "base");
+    await write(
+      rootDir,
+      "src/x.ts",
+      "// top\nconst a = 1;\nconst b = 2;\n// middle\nconst c = 3;\n// end\n",
+    );
+    git(rootDir, ["add", "src/x.ts"]);
+
+    const fence = await fenceFindings(rootDir);
+
+    expect(fence[0]?.message).toContain("adds lines at 1, 4, 6");
+    expect(fence[0]?.ranges?.map((range) => range.start)).toEqual([1, 4, 6]);
   });
 
   it("says binary change for a binary file", async () => {

@@ -146,10 +146,14 @@ export function parsePatch(patch: string): Map<string, FileDiffRanges> {
     if (hunk !== null && current !== null) {
       const oldStart = Number.parseInt(hunk[1] ?? "0", 10);
       const oldCount = hunk[2] === undefined ? 1 : Number.parseInt(hunk[2], 10);
+      const newStart = Number.parseInt(hunk[3] ?? "0", 10);
       const context = clipContext(hunk[5] ?? "");
       const diff = diffFor(diffs, current);
       if (oldCount === 0) {
-        diff.inserts.push({ line: oldStart, context });
+        // An insertion exists only on the new side: `@@ -1,0 +2 @@` adds line 2, and the
+        // old-side number is the line it follows. Reporting that anchor sent the reader to
+        // an unchanged line, and to line 0 for an insertion at the top of a file.
+        diff.inserts.push({ line: newStart, context });
       } else {
         diff.rewrites.push({ start: oldStart, end: oldStart + oldCount - 1, context });
       }
