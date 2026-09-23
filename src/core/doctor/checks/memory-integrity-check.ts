@@ -273,8 +273,13 @@ function adrCountLine(total: number, accepted: number, proposed: number, other: 
   if (proposed === 0 && other === 0) {
     return `${total} ADRs detected.`;
   }
-  const otherPart = other === 0 ? "" : `, ${other} other`;
-  return `${total} ADRs detected (${accepted} accepted, ${proposed} proposed${otherPart}).`;
+  // Only the standings that exist: "17 accepted, 2 other" rather than "…, 0 proposed, …".
+  const parts = [
+    ...(accepted === 0 ? [] : [`${accepted} accepted`]),
+    ...(proposed === 0 ? [] : [`${proposed} proposed`]),
+    ...(other === 0 ? [] : [`${other} other`]),
+  ];
+  return `${total} ADRs detected (${parts.join(", ")}).`;
 }
 
 /**

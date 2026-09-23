@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.7.1
+
+**A status that denies acceptance is no longer read as accepted.** Every reader decided an ADR's
+standing by looking for the word "accepted" anywhere in its `## Status` section, so "Not accepted",
+"not yet accepted", and "never accepted" all counted as accepted. A decision someone rejected in
+writing was quoted to agents as binding, listed to every session as accepted, counted as accepted by
+doctor, and able to clear the Chesterton fence for a path it named. `Rejected`, `Proposed`,
+superseded statuses, `**Accepted**`, and `Accepted (2026-02-01)` were always read correctly and are
+unchanged. The session hook and the TypeScript reader are checked against each other on every one of
+these wordings.
+
+**The ADR count drops standings that are not there.**
+`19 ADRs detected (17 accepted, 0 proposed, 2 other).` now reads
+`19 ADRs detected (17 accepted, 2 other).`, and a repository whose ADRs are all accepted still sees
+the plain `19 ADRs detected.` line.
+
+**Upgrading:** run `persist hooks sync` when doctor reports drift on
+`.claude/hooks/session-start.sh`. No configuration, severity, or command changed.
+
 ## 1.7.0
 
 **The fence warning names the lines it means.** A crossing no longer says "ask why the existing
@@ -16,8 +35,8 @@ answers for that file.
 in the file is deliberate, and the file stays quiet from then on. A later `--why` replaces the
 standing line and keeps the history; `--no-constraint` over a recorded reason is refused and writes
 nothing. No-constraint entries are not injected into sessions — they answer nothing an agent needs
-before editing — and the rot checks treat them like any fence entry. ADR-0020 records the
-rule and refines ADR-0010.
+before editing — and the rot checks treat them like any fence entry. ADR-0020 records the rule and
+refines ADR-0010.
 
 **The agent asks, or hands back something answerable.** With a human in the conversation, one
 question per file quoting the warning's ranges, recorded with the matching command (`--why` with

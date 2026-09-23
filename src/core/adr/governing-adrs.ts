@@ -30,9 +30,20 @@ export const PROPOSED_ADR_FILE_PATTERN = /^ADR-PROPOSED-([a-z0-9]+(?:-[a-z0-9]+)
  */
 export type AdrStanding = "accepted" | "proposed" | "other";
 
+/**
+ * A status that says the opposite: "Not accepted", "not yet accepted", "never accepted",
+ * "unaccepted". Reading only for the word "accepted" turned a decision someone rejected in
+ * writing into one agents were told to follow.
+ */
+const NEGATED_ACCEPTED = /\b(?:not\s+(?:yet\s+)?accepted|never\s+accepted|unaccepted)\b/iu;
+
 export function adrStandingOf(content: string): AdrStanding {
   const status = section(content, "Status");
-  if (/\baccepted\b/iu.test(status) && !/superseded\s+by/iu.test(status)) {
+  if (
+    /\baccepted\b/iu.test(status) &&
+    !NEGATED_ACCEPTED.test(status) &&
+    !/superseded\s+by/iu.test(status)
+  ) {
     return "accepted";
   }
   if (status.toLowerCase().includes("proposed")) {

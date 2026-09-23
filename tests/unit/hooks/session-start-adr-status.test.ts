@@ -63,6 +63,11 @@ describe("renderSessionStartHook ADR standing", () => {
       ),
       "docs/adrs/ADR-0009-bold.md": adrDocument("ADR-0009", "Bold", "**Accepted**"),
       "docs/adrs/ADR-0010-dated.md": adrDocument("ADR-0010", "Dated", "Accepted (2026-02-01)"),
+      // A status that says the opposite. Reading only for the word "accepted" told every
+      // session that a decision someone rejected in writing was binding.
+      "docs/adrs/ADR-0011-not-accepted.md": adrDocument("ADR-0011", "Not", "Not accepted"),
+      "docs/adrs/ADR-0012-not-yet.md": adrDocument("ADR-0012", "Not yet", "Not yet accepted"),
+      "docs/adrs/ADR-0013-never.md": adrDocument("ADR-0013", "Never", "Never accepted"),
     };
   }
 
@@ -141,6 +146,15 @@ describe("renderSessionStartHook ADR standing", () => {
 
     expect(acceptedItems(context)).not.toContain("ADR-0002-rounding");
     expect(proposedItems(context)).not.toContain("ADR-0002-rounding");
+  });
+
+  it("lists an ADR whose status denies acceptance in neither list", async () => {
+    const context = await contextFor(parityFixture());
+
+    for (const name of ["ADR-0011-not-accepted", "ADR-0012-not-yet", "ADR-0013-never"]) {
+      expect(acceptedItems(context), name).not.toContain(name);
+      expect(proposedItems(context), name).not.toContain(name);
+    }
   });
 
   it("lists a Rejected ADR in neither list", async () => {

@@ -143,7 +143,8 @@ adr_classes=$(ls "$adr_dir"/ADR-*.md 2>/dev/null | awk '
     sub(/.*\\//, "", name)
     sub(/\\.md$/, "", name)
     s = tolower(section)
-    if (s ~ /(^|[^[:alnum:]_])accepted([^[:alnum:]_]|$)/ && s !~ /superseded[[:space:]][[:space:]]*by/) {
+    negated = (s ~ /(^|[^[:alnum:]_])(not[[:space:]][[:space:]]*(yet[[:space:]][[:space:]]*)?accepted|never[[:space:]][[:space:]]*accepted|unaccepted)([^[:alnum:]_]|$)/)
+    if (s ~ /(^|[^[:alnum:]_])accepted([^[:alnum:]_]|$)/ && !negated && s !~ /superseded[[:space:]][[:space:]]*by/) {
       printf "A:%s\\n", name
     } else if (s ~ /proposed/) {
       printf "P:%s\\n", name
