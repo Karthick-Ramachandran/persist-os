@@ -16,7 +16,7 @@ answers for that file.
 in the file is deliberate, and the file stays quiet from then on. A later `--why` replaces the
 standing line and keeps the history; `--no-constraint` over a recorded reason is refused and writes
 nothing. No-constraint entries are not injected into sessions — they answer nothing an agent needs
-before editing — and the rot checks treat them like any fence entry. Proposed ADR-0020 records the
+before editing — and the rot checks treat them like any fence entry. ADR-0020 records the
 rule and refines ADR-0010.
 
 **The agent asks, or hands back something answerable.** With a human in the conversation, one
