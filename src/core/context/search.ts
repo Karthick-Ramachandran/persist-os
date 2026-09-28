@@ -277,14 +277,19 @@ function isSpecific(
   pathTerms: ReadonlySet<string>,
   bridge: string[],
 ): boolean {
+  // A bare number names nothing. Real use: a heading of "Subscription presets
+  // (ADR-0025 §4 terms record)" made the message "4" a naming match, which is
+  // the noise this rule exists to stop. An identifier that carries digits
+  // ("E11000", "utf8", "404error") is not a bare number and still counts.
+  const meaningful = matched.filter((term) => !/^\d+$/u.test(term));
   // `src/plans/import.ts` carries "src" and "ts" along with "plans" and
   // "import". Those say where code lives, not what it is, so they never make
   // an overlap specific on their own — otherwise typing one path matches every
   // card with a Start Here file.
-  if (matched.filter((term) => !PATH_NOISE.has(term)).length >= 2) {
+  if (meaningful.filter((term) => !PATH_NOISE.has(term)).length >= 2) {
     return true;
   }
-  const only = matched[0];
+  const only = meaningful[0];
   if (only === undefined) {
     return false;
   }

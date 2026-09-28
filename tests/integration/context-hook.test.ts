@@ -184,6 +184,41 @@ describe("persist context --hook over a pipe", () => {
     expect(unasked.stdout.trim()).toBe("");
   });
 
+  it("never treats a bare number in a heading as a name", async () => {
+    // From a real repository: an area headed "Subscription presets (ADR-0025 §4
+    // terms record)" made the single message "4" a naming match, and the lesson
+    // was injected. A number names nothing; an identifier carrying digits still does.
+    const rootDir = await repoWithTwoCards();
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/LESSONS.md"),
+      [
+        "# Lessons",
+        "",
+        "## Subscription presets (ADR-0025 §4 terms record)",
+        "",
+        "Applies To:",
+        "- `src/lib/billing.ts`",
+        "",
+        "Also Known As: E11000, headless terms",
+        "",
+        "- Headless terms are blessed per preset; stay in plan and share no credentials.",
+        "- The duplicate-key path is the one to read first.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const number = await runPiped(["context", "--hook", "claude"], rootDir, hookInput("4"));
+    expect(number.stdout.trim()).toBe("");
+
+    const identifier = await runPiped(
+      ["context", "--hook", "claude"],
+      rootDir,
+      hookInput("E11000"),
+    );
+    expect(identifier.stdout).toContain("Subscription presets");
+  });
+
   it("does not echo the prompt back into the context it adds", async () => {
     // The agent already has the prompt; repeating it spends the byte budget on nothing new.
     const rootDir = await repoWithCard();

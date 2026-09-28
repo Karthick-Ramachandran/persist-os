@@ -21,6 +21,10 @@ recall (0.69 to 0.44 at rank 3) for no gain the asker wanted. A score bar cannot
 measured on a four-card fixture the noise outscored the real single-word hits ("go" 5.69, "time"
 3.74 against "renewal" 2.46, "recipe" 2.12). ADR-0021 records the rule.
 
+A bare number never names anything either: a lesson area headed "Subscription presets (ADR-0025 §4
+terms record)" turned the message "4" into a naming match. An identifier that carries digits
+(`E11000`, `utf8`) still counts.
+
 **Upgrading:** nothing to run. Expect the hook to stay quiet on most messages. If a card should
 arrive for a phrasing it now misses, add that phrasing to the card's Answers list — the rules
 already ask agents to do this when they finish work in an area.

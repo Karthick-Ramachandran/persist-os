@@ -30,6 +30,9 @@ including the ones that matter.
   task spelled as a path together with a record that covers that file.
 - Layout words and file extensions (`src`, `lib`, `ts`, `test`, …) never count toward the two-term
   test: they say where code lives, not what it is.
+- A bare number never names a record and never counts toward the two-term test. An area headed
+  "Subscription presets (ADR-0025 §4 terms record)" made the message "4" a naming match in a real
+  repository. An identifier carrying digits (`E11000`, `utf8`) is not a bare number.
 - A file-name bridge is not specific on its own. It fires on the same everyday words, reaching
   every file under a folder whose name matches one.
 - The rule applies to context cards, to secondary records (ADRs, fences, conventions, loose
