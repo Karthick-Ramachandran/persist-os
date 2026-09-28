@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.8.0
+
+**The prompt hook speaks only when the match fits.** It runs on every message, and it was handing
+over a card whenever the message shared a single everyday word with one — "time", "go", "one", "4",
+"place", "said" — because BM25 rates a word by how rare it is among your records, not by whether it
+means anything. An outside project put it plainly: most cards injected in a session did not fit the
+task, and each one costs tokens.
+
+Handed over unasked, a record now needs a specific overlap: two or more distinct matched terms, one
+term that names it (its title or Also Known As), or a path the task spelled out together with a
+record that covers that file. Layout words and extensions (`src`, `lib`, `ts`, `test`) never count
+toward the two-term test, and a file-name bridge is no longer specific on its own. Cards, ADRs,
+fences, conventions and lesson areas all follow the same rule, and an area left out still rides the
+`More lessons:` index line.
+
+**An explicit `persist context "<task>"` is unchanged.** Someone asked, so a weaker lead is worth a
+glance; the hook is the only strict path. Applying the rule everywhere cost held-out paraphrase
+recall (0.69 to 0.44 at rank 3) for no gain the asker wanted. A score bar cannot do this job either:
+measured on a four-card fixture the noise outscored the real single-word hits ("go" 5.69, "time"
+3.74 against "renewal" 2.46, "recipe" 2.12). ADR-0021 records the rule.
+
+A bare number never names anything either: a lesson area headed "Subscription presets (ADR-0025 §4
+terms record)" turned the message "4" into a naming match. An identifier that carries digits
+(`E11000`, `utf8`) still counts.
+
+**Upgrading:** nothing to run. Expect the hook to stay quiet on most messages. If a card should
+arrive for a phrasing it now misses, add that phrasing to the card's Answers list — the rules
+already ask agents to do this when they finish work in an area.
+
 ## 1.7.1
 
 **A status that denies acceptance is no longer read as accepted.** Every reader decided an ADR's

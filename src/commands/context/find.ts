@@ -22,6 +22,14 @@ export type FindContextOptions = {
   task: string;
   /** Maximum cards shown. Defaults to 3. */
   limit?: number;
+  /**
+   * Nobody asked for this lookup: the prompt hook runs it on every message.
+   * Then only records whose overlap is specific are handed over (see
+   * `isSpecific`), because an everyday word in common is not a reason to spend
+   * a reader's attention. An explicit `persist context "<task>"` leaves this
+   * off and keeps every hit above `MIN_SCORE`.
+   */
+  unasked?: boolean;
 };
 
 export type FindContextCard = {
@@ -116,39 +124,49 @@ export async function findContext(options: FindContextOptions): Promise<FindCont
   });
 
   const adrs = await readAcceptedAdrs(options.rootDir, config.adrDir);
-  const cards = found.cards.slice(0, limit).map((hit: ScoredCard): FindContextCard => {
-    const decisions = decisionsFor(hit.card, adrs);
-    const quoted = new Set(decisions.map((adr) => adr.id));
-    return {
-      title: hit.card.title,
-      file: hit.card.file,
-      matched: hit.matched,
-      bridge: hit.bridge,
-      startHere: hit.card.startHere,
-      decisions,
-      // A Rules line that only restates a quoted ADR would repeat it in a byte budget.
-      rules: hit.card.rules.filter((rule) => !citedIds(rule).some((id) => quoted.has(id))),
-      pitfalls: hit.card.pitfalls,
-      score: round(hit.score),
-    };
-  });
+  const keep = <Hit extends { specific: boolean }>(hits: Hit[]): Hit[] =>
+    options.unasked === true ? hits.filter((hit) => hit.specific) : hits;
+  const cards = keep(found.cards)
+    .slice(0, limit)
+    .map((hit: ScoredCard): FindContextCard => {
+      const decisions = decisionsFor(hit.card, adrs);
+      const quoted = new Set(decisions.map((adr) => adr.id));
+      return {
+        title: hit.card.title,
+        file: hit.card.file,
+        matched: hit.matched,
+        bridge: hit.bridge,
+        startHere: hit.card.startHere,
+        decisions,
+        // A Rules line that only restates a quoted ADR would repeat it in a byte budget.
+        rules: hit.card.rules.filter((rule) => !citedIds(rule).some((id) => quoted.has(id))),
+        pitfalls: hit.card.pitfalls,
+        score: round(hit.score),
+      };
+    });
   // Secondary records show only when no card covers the task — they answer a
   // different question ("what did we decide here") than the cards do.
   const secondary =
     cards.length > 0
       ? []
-      : found.secondary.slice(0, limit).map(
-          (hit: ScoredSecondary): FindContextSecondary => ({
-            kind: hit.doc.kind,
-            label: hit.doc.label,
-            file: hit.doc.file,
-            matched: hit.matched,
-            bridge: hit.bridge,
-            detail: hit.doc.detail,
-          }),
-        );
+      : keep(found.secondary)
+          .slice(0, limit)
+          .map(
+            (hit: ScoredSecondary): FindContextSecondary => ({
+              kind: hit.doc.kind,
+              label: hit.doc.label,
+              file: hit.doc.file,
+              matched: hit.matched,
+              bridge: hit.bridge,
+              detail: hit.doc.detail,
+            }),
+          );
 
-  const { lessons, moreLessons } = selectLessons(found.lessonAreas, cards);
+  const { lessons, moreLessons } = selectLessons(
+    found.lessonAreas,
+    cards,
+    options.unasked === true,
+  );
 
   return {
     task,
@@ -176,6 +194,8 @@ const MAX_LESSON_BULLETS = 3;
 function selectLessons(
   scored: ScoredLessonArea[],
   cards: FindContextCard[],
+  /** Unasked: only areas whose overlap is specific are shown; the rest still ride the index line. */
+  requireSpecific = false,
 ): { lessons: FindContextLesson[]; moreLessons: string[] } {
   const cardFiles = cards.flatMap((card) => [
     ...card.startHere.map((entry) => entry.path),
@@ -183,11 +203,12 @@ function selectLessons(
   ]);
   const relevant = scored.filter(
     (hit) =>
-      hit.score >= MIN_AREA_SCORE ||
-      hit.area.appliesTo.some((pattern) =>
-        cardFiles.some((file) => matchesPattern(pattern, file)),
-      ) ||
-      isNamedArea(hit, scored),
+      (!requireSpecific || hit.specific) &&
+      (hit.score >= MIN_AREA_SCORE ||
+        hit.area.appliesTo.some((pattern) =>
+          cardFiles.some((file) => matchesPattern(pattern, file)),
+        ) ||
+        isNamedArea(hit, scored)),
   );
   const shown = relevant.slice(0, MAX_LESSON_AREAS);
   return {

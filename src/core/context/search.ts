@@ -107,6 +107,8 @@ export type ScoredCard = {
   matched: string[];
   /** Bridged file names covered by this card, present only when boosted. */
   bridge: string[];
+  /** Whether the overlap is specific enough to hand over unasked (`isSpecific`). */
+  specific: boolean;
 };
 
 export type ScoredSecondary = {
@@ -115,10 +117,14 @@ export type ScoredSecondary = {
   matched: string[];
   /** Bridged file names covered by this record, present only when boosted. */
   bridge: string[];
+  /** Whether the overlap is specific enough to hand over unasked (`isSpecific`). */
+  specific: boolean;
 };
 
 export type ScoredLessonArea = {
   area: LessonSection;
+  /** Whether the overlap is specific enough to hand over unasked (`isSpecific`). */
+  specific: boolean;
   /** Repo-relative LESSONS.md path, for display and the index line. */
   file: string;
   score: number;
@@ -191,9 +197,11 @@ function scoreFields<Field extends string>(
   weights: Readonly<Record<Field, number>>,
   docIndex: number,
   docCount: number,
-): { score: number; matched: string[] } {
+  namingFields: ReadonlySet<string> = new Set(),
+): { score: number; matched: string[]; naming: string[] } {
   let score = 0;
   const matched: string[] = [];
+  const naming: string[] = [];
 
   for (const [field, docs] of fieldDocs) {
     const weight = weights[field] ?? 0;
@@ -221,16 +229,128 @@ function scoreFields<Field extends string>(
       if (!matched.includes(term)) {
         matched.push(term);
       }
+      if (namingFields.has(field) && !naming.includes(term)) {
+        naming.push(term);
+      }
     }
   }
 
-  return { score, matched: query.filter((term) => matched.includes(term)) };
+  return { score, matched: query.filter((term) => matched.includes(term)), naming };
+}
+
+/**
+ * Fields that name a record rather than describe it. A single shared word is
+ * only a reason to show something when it is one of these — see `isSpecific`.
+ */
+const CARD_NAMING_FIELDS: ReadonlySet<string> = new Set(["title", "alsoKnownAs"]);
+
+/**
+ * One word in common is not a match.
+ *
+ * BM25 scores a term by how rare it is *in this repository's records*, so an
+ * everyday word that happens to appear in one card ("time", "go", "one", "4",
+ * "place") scores as highly as a real domain term and printed that card on
+ * every message that used the word. Real use showed most injected cards were
+ * unrelated to the task, and each one costs the reader tokens.
+ *
+ * A hit handed over *unasked* (the prompt hook, once per message) therefore
+ * needs one of:
+ * - two or more distinct matched terms — an overlap that is no longer chance;
+ * - one term that *names* the record: its title or Also Known As, so asking
+ *   for "plan" still finds the Plan import card;
+ * - one term the task spelled as a path (`src/plans/import.ts`) *and* a record
+ *   that covers that file — the task named the code, not a word about it.
+ *
+ * A file-name bridge is not enough on its own: it fires on the same everyday
+ * words ("check" reaching every file under `checks/`), and a path word alone
+ * reaches every record whose prose happens to use it.
+ *
+ * A score bar cannot do this job: BM25 rates a term by how rare it is here, so
+ * measured on a four-card fixture the noise ("go" 5.69, "time" 3.74) outscored
+ * the real single-word hits ("renewal" 2.46, "recipe" 2.12). Only what the term
+ * *is* separates them. An explicit `persist context "<task>"` keeps every hit
+ * above `MIN_SCORE`: someone asked, so a weaker lead is still worth reading.
+ */
+function isSpecific(
+  matched: string[],
+  naming: string[],
+  pathTerms: ReadonlySet<string>,
+  bridge: string[],
+): boolean {
+  // A bare number names nothing. Real use: a heading of "Subscription presets
+  // (ADR-0025 §4 terms record)" made the message "4" a naming match, which is
+  // the noise this rule exists to stop. An identifier that carries digits
+  // ("E11000", "utf8", "404error") is not a bare number and still counts.
+  const meaningful = matched.filter((term) => !/^\d+$/u.test(term));
+  // `src/plans/import.ts` carries "src" and "ts" along with "plans" and
+  // "import". Those say where code lives, not what it is, so they never make
+  // an overlap specific on their own — otherwise typing one path matches every
+  // card with a Start Here file.
+  if (meaningful.filter((term) => !PATH_NOISE.has(term)).length >= 2) {
+    return true;
+  }
+  const only = meaningful[0];
+  if (only === undefined) {
+    return false;
+  }
+  return naming.includes(only) || (pathTerms.has(only) && bridge.length > 0);
+}
+
+/**
+ * Layout words and file extensions: every repository has them, so they locate
+ * code without describing it.
+ */
+const PATH_NOISE: ReadonlySet<string> = new Set([
+  "src",
+  "lib",
+  "app",
+  "apps",
+  "packages",
+  "pkg",
+  "test",
+  "tests",
+  "spec",
+  "dist",
+  "build",
+  "index",
+  "ts",
+  "tsx",
+  "js",
+  "jsx",
+  "mjs",
+  "cjs",
+  "py",
+  "rb",
+  "rs",
+  "java",
+  "kt",
+  "php",
+  "css",
+  "scss",
+  "html",
+  "vue",
+  "svelte",
+]);
+
+/** Terms the task typed inside a path-shaped word (`src/a.ts`, `tip.ts`). */
+function pathShapedTerms(task: string): Set<string> {
+  const terms = new Set<string>();
+  for (const word of task.split(/\s+/u)) {
+    const bare = word.replace(/^[`'"([]+|[`'")\].,;:]+$/gu, "");
+    if (!bare.includes("/") && !/\.[A-Za-z0-9]{1,8}$/u.test(bare)) {
+      continue;
+    }
+    for (const term of tokenize(bare)) {
+      terms.add(term);
+    }
+  }
+  return terms;
 }
 
 function scoreSecondaryDocs(
   query: string[],
   docs: SecondaryDocument[],
-): { score: number; matched: string[] }[] {
+): { score: number; matched: string[]; naming: string[] }[] {
   const tokenized = docs.map((doc) => tokenize(doc.text));
   const avgLength =
     tokenized.reduce((sum, tokens) => sum + tokens.length, 0) / Math.max(docs.length, 1);
@@ -241,7 +361,8 @@ function scoreSecondaryDocs(
     }
   }
 
-  return tokenized.map((tokens) => {
+  return tokenized.map((tokens, index) => {
+    const labelTokens = new Set(tokenize(docs[index]?.label ?? ""));
     const counts = new Map<string, number>();
     for (const token of tokens) {
       counts.set(token, (counts.get(token) ?? 0) + 1);
@@ -261,7 +382,7 @@ function scoreSecondaryDocs(
       );
       matched.push(term);
     }
-    return { score, matched };
+    return { score, matched, naming: matched.filter((term) => labelTokens.has(term)) };
   });
 }
 
@@ -541,30 +662,46 @@ export async function searchContext(
   // run. Correcting up front demotes genuine exact matches (a real word like
   // "trip" "correcting" to "tip" outranks the card the asker meant), so the
   // fallback guarantees exact behavior is preserved bit-for-bit.
+  const pathTerms = pathShapedTerms(task);
   const scoreAll = (
     queryTerms: string[],
     named: Set<string>,
     display: (terms: string[]) => string[],
   ): Pick<ContextSearchResult, "cards" | "secondary" | "lessonAreas" | "lessonsFile"> => {
     const scored: ScoredCard[] = cards.map((card, index) => {
-      const { score, matched } = scoreFields(
+      const { score, matched, naming } = scoreFields(
         queryTerms,
         fieldDocs,
         FIELD_WEIGHTS,
         index,
         Math.max(cards.length, 1),
+        CARD_NAMING_FIELDS,
       );
       const { boost, bridge } = boosted(named, cardPaths(card), score);
       // A word typed three times is one reason to match, not three.
-      return { card, score: score + boost, matched: display(unique(matched)), bridge };
+      const terms = unique(matched);
+      return {
+        card,
+        score: score + boost,
+        matched: display(terms),
+        bridge,
+        specific: isSpecific(terms, naming, pathTerms, bridge),
+      };
     });
     scored.sort((a, b) => b.score - a.score || (a.card.file < b.card.file ? -1 : 1));
 
     const secondaryScores = scoreSecondaryDocs(queryTerms, secondary);
     const scoredSecondary: ScoredSecondary[] = secondary.map((doc, index) => {
-      const base = secondaryScores[index] ?? { score: 0, matched: [] };
+      const base = secondaryScores[index] ?? { score: 0, matched: [], naming: [] };
       const { boost, bridge } = boosted(named, doc.paths, base.score);
-      return { doc, score: base.score + boost, matched: display(unique(base.matched)), bridge };
+      const terms = unique(base.matched);
+      return {
+        doc,
+        score: base.score + boost,
+        matched: display(terms),
+        bridge,
+        specific: isSpecific(terms, base.naming, pathTerms, bridge),
+      };
     });
     scoredSecondary.sort((a, b) => b.score - a.score || (a.doc.file < b.doc.file ? -1 : 1));
 
@@ -607,12 +744,16 @@ export async function searchContext(
           title.matched.includes(term) || aka.matched.includes(term) || bestMatched.includes(term),
       );
       const { boost, bridge } = boosted(named, entry.paths, score);
+      const terms = unique(matched);
       return {
         area: entry.area,
         file: entry.file,
         score: score + boost,
-        matched: display(unique(matched)),
+        matched: display(terms),
         bridge,
+        // An area's heading and Also Known As name it; a word shared with one
+        // bullet does not, the same rule the cards follow.
+        specific: isSpecific(terms, [...title.matched, ...aka.matched], pathTerms, bridge),
       };
     });
     scoredAreas.sort((a, b) => b.score - a.score || (a.area.title < b.area.title ? -1 : 1));

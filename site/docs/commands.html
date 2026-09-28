@@ -418,6 +418,14 @@ Billing (docs/context/billing.md) — matched: simplify, bill, write (via src/bi
             way it was asked. A prompt hook (<code>persist context --hook</code>) injects the
             pointers per prompt in Claude Code and Codex.
           </p>
+          <p>
+            The hook is stricter than this command, because nobody asked it for anything: it
+            speaks only when the overlap is specific — two or more matched terms, one term that
+            names the record (its title or Also Known As), or a path the message spelled out.
+            One everyday word in common ("time", "go", "place") is not a match, so most messages
+            get nothing. Run the command yourself and every hit above the score threshold is
+            shown, weak leads included.
+          </p>
 
           <h2 id="context-add">persist context add</h2>
           <pre><code>persist context add &lt;name&gt; --purpose "&lt;one line&gt;" [--dry-run]</code></pre>

@@ -128,6 +128,97 @@ describe("persist context --hook over a pipe", () => {
     expect(parsed.hookSpecificOutput.additionalContext).toContain("Billing");
   });
 
+  /**
+   * Two cards, because a lone card gives every term the same weight: with one
+   * document BM25 has nothing to be rare against, and a hit scores under the
+   * threshold whatever the word.
+   */
+  async function repoWithTwoCards(): Promise<string> {
+    const rootDir = await repoWithCard();
+    await writeFile(
+      path.join(rootDir, "docs/context/sessions.md"),
+      ["# Sessions", "", "## Answers", "", "- how long does a login last", ""].join("\n"),
+      "utf8",
+    );
+    return rootDir;
+  }
+
+  it("stays silent when the message only shares an everyday word with a card", async () => {
+    // Real use: cards were injected on every message that happened to use
+    // "time", "go", "one", "4" or "place", and each one cost the reader tokens.
+    // The card here mentions "cent" only in a sentence, so one word in common
+    // is not a reason to spend a message on it.
+    const rootDir = await repoWithTwoCards();
+
+    const result = await runPiped(["context", "--hook", "claude"], rootDir, hookInput("cent"));
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("");
+  });
+
+  it("speaks when one word names the card, or when two words match", async () => {
+    const rootDir = await repoWithTwoCards();
+
+    // "billing" is the card's name (title and Also Known As), so one word is enough.
+    const named = await runPiped(["context", "--hook", "claude"], rootDir, hookInput("billing"));
+    expect(named.stdout).toContain("Billing");
+
+    // Two words in common is an overlap that is no longer chance.
+    const two = await runPiped(
+      ["context", "--hook", "claude"],
+      rootDir,
+      hookInput("who pays the extra cent"),
+    );
+    expect(two.stdout).toContain("Billing");
+  });
+
+  it("an explicit lookup still answers what the hook keeps quiet about", async () => {
+    // Someone asked, so a weaker lead is worth reading: only the unasked,
+    // once-per-message path is strict.
+    const rootDir = await repoWithTwoCards();
+
+    const asked = await runPiped(["context", "cent"], rootDir, "");
+    expect(asked.stdout).toContain("Billing");
+
+    const unasked = await runPiped(["context", "--hook", "claude"], rootDir, hookInput("cent"));
+    expect(unasked.stdout.trim()).toBe("");
+  });
+
+  it("never treats a bare number in a heading as a name", async () => {
+    // From a real repository: an area headed "Subscription presets (ADR-0025 §4
+    // terms record)" made the single message "4" a naming match, and the lesson
+    // was injected. A number names nothing; an identifier carrying digits still does.
+    const rootDir = await repoWithTwoCards();
+    await writeFile(
+      path.join(rootDir, "docs/60-engineering/LESSONS.md"),
+      [
+        "# Lessons",
+        "",
+        "## Subscription presets (ADR-0025 §4 terms record)",
+        "",
+        "Applies To:",
+        "- `src/lib/billing.ts`",
+        "",
+        "Also Known As: E11000, headless terms",
+        "",
+        "- Headless terms are blessed per preset; stay in plan and share no credentials.",
+        "- The duplicate-key path is the one to read first.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const number = await runPiped(["context", "--hook", "claude"], rootDir, hookInput("4"));
+    expect(number.stdout.trim()).toBe("");
+
+    const identifier = await runPiped(
+      ["context", "--hook", "claude"],
+      rootDir,
+      hookInput("E11000"),
+    );
+    expect(identifier.stdout).toContain("Subscription presets");
+  });
+
   it("does not echo the prompt back into the context it adds", async () => {
     // The agent already has the prompt; repeating it spends the byte budget on nothing new.
     const rootDir = await repoWithCard();
