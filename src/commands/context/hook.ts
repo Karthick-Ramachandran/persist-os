@@ -65,7 +65,13 @@ export async function hookContext(options: HookContextOptions): Promise<HookCont
 
   let pointers = "";
   try {
-    const found = await findContext({ rootDir: options.rootDir, task: prompt, limit: HOOK_LIMIT });
+    const found = await findContext({
+      rootDir: options.rootDir,
+      task: prompt,
+      limit: HOOK_LIMIT,
+      // Once per message, with nobody asking: only a specific overlap earns the room.
+      unasked: true,
+    });
     // Cards first; when no card matches, the best-matching lesson areas ride
     // on their own. Loose secondary hits alone stay silent, as before — the
     // hook is a nudge toward area memory, not the full lookup.
