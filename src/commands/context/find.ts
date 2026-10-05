@@ -223,7 +223,8 @@ function selectLessons(
       file: hit.file,
       matched: hit.matched,
       bridge: hit.bridge,
-      bullets: hit.area.bullets.slice(0, MAX_LESSON_BULLETS),
+      // Ranked for this task by `searchContext`: matched bullets first.
+      bullets: hit.bullets.slice(0, MAX_LESSON_BULLETS),
     })),
     moreLessons: scored.filter((hit) => !shown.includes(hit)).map((hit) => hit.area.title),
   };

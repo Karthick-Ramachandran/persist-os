@@ -360,6 +360,36 @@ describe("persist context with lessons by area", () => {
     expect(result.stdout).toContain("partial, filter, expression");
   });
 
+  it("hands over the bullets that matched, not the area's first ones", async () => {
+    // The area was right and the lines were wrong: a long area answered
+    // "keytar dependency-cruiser vitest" with its first three bullets —
+    // `git checkout`, `git stash pop`, a pre-commit note — while the bullets
+    // that matched sat further down. Three bullets is a small budget; they
+    // have to be the ones the task asked about.
+    const lines = ["# Lessons", "", "## Toolchain and gates", ""];
+    for (let i = 0; i < 10; i += 1) {
+      lines.push(`- Routine upkeep note number ${i} about scheduled rotation.`);
+    }
+    lines.push(
+      "- keytar ships a working arm64 prebuild; from ESM reach it via `mod.default ?? mod`.",
+      "",
+    );
+    const rootDir = await createTempRoot("context-lessons-ranked");
+    roots.push(rootDir);
+    await runInitCommand(rootDir, ["--yes"]);
+    await writeFile(path.join(rootDir, "docs/60-engineering/LESSONS.md"), lines.join("\n"), "utf8");
+
+    const result = await runCommand(rootDir, ["context", "keytar prebuild from ESM"]);
+
+    expect(result.exitCode).toBe(0);
+    // The matched bullet leads; the rest of the budget is filled in the
+    // author's order behind it.
+    expect(result.stdout.indexOf("keytar ships a working arm64 prebuild")).toBeGreaterThan(-1);
+    expect(result.stdout.indexOf("keytar ships a working arm64 prebuild")).toBeLessThan(
+      result.stdout.indexOf("Routine upkeep note number 0"),
+    );
+  });
+
   it("answers a prompt hook with lessons when no card matches", async () => {
     const rootDir = await createTempRoot("context-lessons-hook");
     roots.push(rootDir);

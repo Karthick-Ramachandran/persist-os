@@ -143,6 +143,12 @@ export type ScoredSecondary = {
 
 export type ScoredLessonArea = {
   area: LessonSection;
+  /**
+   * The area's bullets ordered for a reader of this task: those that matched
+   * first, best-scoring first, then the rest in the author's order. Callers
+   * that show only a few bullets show the ones the task asked about.
+   */
+  bullets: string[];
   /** Whether the overlap is specific enough to hand over unasked (`isSpecific`). */
   specific: boolean;
   /** Repo-relative LESSONS.md path, for display and the index line. */
@@ -652,11 +658,14 @@ export async function searchContext(
   ]);
   const bulletTokens: string[][] = [];
   const bulletOwner: number[] = [];
+  /** Each bullet's position inside its own area, so ties keep the author's order. */
+  const bulletPosition: number[] = [];
   lessonAreas.forEach((entry, areaIndex) => {
-    for (const bullet of entry.area.bullets) {
+    entry.area.bullets.forEach((bullet, position) => {
       bulletOwner.push(areaIndex);
+      bulletPosition.push(position);
       bulletTokens.push(tokenize(bullet));
-    }
+    });
   });
   const bulletFieldDocs = new Map<LessonAreaField, string[][]>([["bullets", bulletTokens]]);
 
@@ -752,12 +761,23 @@ export async function searchContext(
       );
       let best = 0;
       let bestMatched: string[] = [];
+      const ranked: { position: number; score: number }[] = [];
       bulletHits.forEach((hit, bulletIndex) => {
-        if (bulletOwner[bulletIndex] === index && hit.score > best) {
+        if (bulletOwner[bulletIndex] !== index) {
+          return;
+        }
+        ranked.push({ position: bulletPosition[bulletIndex] ?? 0, score: hit.score });
+        if (hit.score > best) {
           best = hit.score;
           bestMatched = hit.matched;
         }
       });
+      // Which bullets the reader is handed: the ones that matched, best first,
+      // then the rest in the author's order. Showing an area's first bullets
+      // instead meant a 15-bullet area answered "keytar dependency-cruiser
+      // vitest" with `git checkout`, `git stash pop` and a pre-commit note —
+      // the right area, three wrong lines.
+      ranked.sort((a, b) => b.score - a.score || a.position - b.position);
       const score = title.score + aka.score + best;
       const matched = queryTerms.filter(
         (term) =>
@@ -769,6 +789,7 @@ export async function searchContext(
         area: entry.area,
         file: entry.file,
         score: score + boost,
+        bullets: ranked.map(({ position }) => entry.area.bullets[position] ?? ""),
         matched: display(terms),
         bridge,
         // An area's heading and Also Known As name it; a word shared with one
