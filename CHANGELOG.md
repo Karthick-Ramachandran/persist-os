@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.9.0
+
+**Lesson areas arrive when they match, in short files too.** The area bar was
+a fixed score tuned on long areas, and BM25 magnitudes do not transfer across
+files: on short real-shape areas (8 areas of 2–5 short bullets) a genuine
+two-to-four-term match lands at 4.53–7.58, below the old bar of 8, while the
+long fixture's shared-word noise reaches 7.45 — no single number separates
+both. An area now clears the bar when it scores at least 3.5 **and** at least
+half the file's best-scoring area. The closest wanted second area sits at
+0.71 of its file's best; the strongest excluded overlaps at 0.36 and 0.45.
+ADR-0022 records the rule and the rejected alternatives.
+
+Unchanged: at most two areas with three bullets each, the flat legacy file,
+`Always`, the named-area rule, the `More lessons:` index line, the hook's
+specificity rule from 1.8.0, and the explicit/hook split. This changes how
+relevant an area must be, never how specific.
+
+**The site badge can no longer drift.** The footer badge sat at `v1.5.0`
+through five releases because the site checkers never ran on their own. A new
+`scripts/site/check-version.mjs` fails the build when the badge disagrees
+with `package.json` (or is missing or duplicated), and all three site
+checkers now run as `pnpm site:check`, wired into CI as a required step.
+
+**Upgrading:** nothing to run. Expect lessons to arrive more often on
+repositories with short lesson areas; the hook still stays silent unless the
+overlap is specific. If an area arrives that should not, narrow its bullets
+to the terms that name it.
+
 ## 1.8.0
 
 **The prompt hook speaks only when the match fits.** It runs on every message, and it was handing

@@ -62,18 +62,38 @@ export const LESSON_AREA_WEIGHTS = {
 } as const;
 
 /**
- * Below this total an area stays out of the pointers. Well above the card
- * threshold on purpose: per-bullet scoring lets one shared word ("code",
- * "new", "migration") score 2–7 through a single bullet, so areas need a bar
- * that genuine multi-term matches clear but one- or two-word overlap does
- * not. Tuned against the lessons fixture (`tests/fixtures/`): wanted areas
- * score 20–28 there, shared-word noise 2–7.5, so 8 separates them with
- * margin on both sides. A lone unique heading or Also Known As term
- * (e.g. `E11000`, ~7.4) rides below the bar through the named-area rule in
- * `selectLessons` instead, and an area whose Applies To covers a matched
- * card's files rides regardless — the card already grounds it.
+ * The floor below which an area stays out of the pointers on score alone.
+ * BM25 magnitudes are corpus-dependent — a term's idf is measured over the
+ * file's own bullets — so no fixed bar transfers across files. Measured on
+ * both corpora (see ADR-0022): the long lessons fixture (`tests/fixtures/`)
+ * has wanted areas at 9.96–31 with shared-word noise up to 7.45, while
+ * short real-shape areas (8 areas of 2–5 short bullets,
+ * `tests/fixtures/lessons-short-areas.md`) put a genuine two-to-four-term
+ * match at 4.53–7.58 and single-word noise at 0–2.88. The foreign 8-area
+ * file measured for this work showed the same short regime (wanted 3.0–7.8,
+ * below the old fixed bar of 8). No single number separates both, so the
+ * floor only answers "is anything here evidence at all": an area below it
+ * stays silent even when it tops the file, which is also what keeps a task
+ * with no relevant area silent. A lone unique heading or Also Known As term
+ * (e.g. `E11000`, ~7.4) clears the floor on score; still rarer names ride
+ * through the named-area rule in `selectLessons` instead, and an area whose
+ * Applies To covers a matched card's files rides regardless — the card
+ * already grounds it.
  */
-export const MIN_AREA_SCORE = 8;
+export const MIN_AREA_SCORE = 3.5;
+
+/**
+ * The relative bar: an area must also score at least this fraction of the
+ * file's best-scoring area. Relevance is comparative within a file — the
+ * strongest match sets what "about this task" means here — so a fixed
+ * score that is a genuine match in a short file does not admit noise in a
+ * long one. Measured: the closest wanted second area sits at 0.71 of its
+ * file's best ("migrate session storage", Auth 9.96 vs Mongo 14.12), while
+ * the strongest excluded overlaps sit at 0.36 (Deploy noise, Mongo 7.45 vs
+ * 20.69) and 0.45 (short-shape shared-word noise, 2.88 vs 6.39), so one
+ * half separates both corpora with margin on each side.
+ */
+export const AREA_FRACTION_OF_BEST = 0.5;
 
 const FENCES_FILE = "60-engineering/FENCES.md";
 const CONVENTIONS_FILE = "60-engineering/CONVENTIONS.md";
