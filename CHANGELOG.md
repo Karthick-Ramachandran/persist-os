@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.0
+## 1.8.1
 
 **Lesson areas arrive when they match, in short files too.** The area bar was
 a fixed score tuned on long areas, and BM25 magnitudes do not transfer across
