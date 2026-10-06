@@ -9,6 +9,7 @@ import {
 } from "../../core/adr/governing-adrs.js";
 import type { ContextCard } from "../../core/context/context-card.js";
 import {
+  AREA_FRACTION_OF_BEST,
   MIN_AREA_SCORE,
   searchContext,
   type ScoredCard,
@@ -185,11 +186,14 @@ const MAX_LESSON_BULLETS = 3;
 
 /**
  * Which lesson areas ride with the pointers: the areas whose Applies To
- * covers any matched card's file, whose heading, Also Known As, or bullets
- * clear the area bar on their own, or that the task names outright with a
- * single term unique to their heading or Also Known As (a rare name like
- * `E11000` scores below the bar alone but means exactly one area). When no
- * card matches, the same rules pick the best-matching areas on their own.
+ * covers any matched card's file, that clear the area bar on their own, or
+ * that the task names outright with a single term unique to their heading or
+ * Also Known As (a rare name like `E11000` means exactly one area even when
+ * it scores weakly). The bar is the score floor or half the file's best
+ * area, whichever is higher (see `MIN_AREA_SCORE`, `AREA_FRACTION_OF_BEST`):
+ * a fixed score cannot transfer across files, so the best-supported area
+ * sets what "about this task" means here. When no card matches, the same
+ * rules pick the best-matching areas on their own.
  */
 function selectLessons(
   scored: ScoredLessonArea[],
@@ -201,10 +205,12 @@ function selectLessons(
     ...card.startHere.map((entry) => entry.path),
     card.file,
   ]);
+  const best = Math.max(0, ...scored.map((hit) => hit.score));
+  const bar = Math.max(MIN_AREA_SCORE, AREA_FRACTION_OF_BEST * best);
   const relevant = scored.filter(
     (hit) =>
       (!requireSpecific || hit.specific) &&
-      (hit.score >= MIN_AREA_SCORE ||
+      (hit.score >= bar ||
         hit.area.appliesTo.some((pattern) =>
           cardFiles.some((file) => matchesPattern(pattern, file)),
         ) ||
@@ -217,7 +223,8 @@ function selectLessons(
       file: hit.file,
       matched: hit.matched,
       bridge: hit.bridge,
-      bullets: hit.area.bullets.slice(0, MAX_LESSON_BULLETS),
+      // Ranked for this task by `searchContext`: matched bullets first.
+      bullets: hit.bullets.slice(0, MAX_LESSON_BULLETS),
     })),
     moreLessons: scored.filter((hit) => !shown.includes(hit)).map((hit) => hit.area.title),
   };

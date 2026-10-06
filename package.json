@@ -1,6 +1,6 @@
 {
   "name": "persist-os",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Architecture-neutral repository memory for AI-assisted software teams.",
   "packageManager": "pnpm@10.12.3",
   "type": "module",
@@ -42,6 +42,7 @@
     "lint": "eslint .",
     "format:check": "prettier --check \"*.json\" \"*.js\" \"*.ts\" \".github/**/*.yml\" \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"README.md\" \"examples/**/*.md\" \"docs/40-features/F-013-persist-os-package-release/**/*.md\" \"docs/30-modules/package-release/**/*.md\"",
     "pack:check": "node scripts/check-package.mjs",
+    "site:check": "node scripts/site/check-commands.mjs && node scripts/site/check-transcripts.mjs && node scripts/site/check-version.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
