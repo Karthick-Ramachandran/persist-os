@@ -52,6 +52,15 @@ persist fence add src/billing.ts \
 
 From then on, every session gets that reason before anyone "simplifies" the code.
 
+Doctor names the lines the change rewrites, so the question is about specific code rather than a
+whole file. Often there is no hidden reason, and saying so is a complete answer:
+
+```sh
+persist fence add src/billing.ts --no-constraint --by "Priya"
+```
+
+That records that someone looked, and the question is not asked again.
+
 ### The right place to start
 
 A context card is a short file for one area of the code: what it's for, the tasks it covers in plain
@@ -59,7 +68,11 @@ words, the files to open first, and the rules that apply there. When you give an
 Persist matches it against the cards and tells the agent where to start. In Claude Code and Codex
 that happens through a prompt hook; other tools run `persist context "<task>"` from a skill.
 Matching is keyword search, with no model involved, and every result shows the words it matched.
-Agents add to the cards as they finish work, so matches improve with use.
+Handed over unasked, a card has to earn it: two or more distinct matched terms, or one term that
+names the card. Sharing an everyday word with a card gets you nothing, because a card that doesn't
+fit the task costs tokens on every message. Asking directly with `persist context "<task>"` is
+looser — you asked, so a weaker lead is worth a glance. Agents add to the cards as they finish work,
+so matches improve with use.
 
 ### A check on every commit
 
@@ -71,35 +84,35 @@ each commit and your tests run before each push.
 
 ## Everything it does
 
-| Feature                         | What it does for you                                                                                                                                |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Remembering**                 |                                                                                                                                                     |
-| Six-document memory             | `init` writes product, security, quality, standards, conventions, and lessons docs. Nothing else is required.                                       |
-| Decision records                | `adr create`, `accept`, and `supersede` keep every decision and the reason it changed.                                                              |
-| Chesterton fences               | `fence add` records why odd-looking code is shaped that way, in a person's words.                                                                   |
-| Context cards                   | `context add` gives each area of the code a card: what it's for, what tasks it covers, where to start.                                              |
-| Conventions and lessons         | Agents reuse the helpers you've listed. Always lessons load every session; area lessons arrive with the task pointers, the rest only indexed.       |
-| Existing codebases              | `adopt` reads your manifests and proposes decisions. Nothing is accepted until you agree.                                                           |
-| MCP context                     | `mcp add` saves what an MCP server knows as reviewable files, offline.                                                                              |
-| **Getting it to the agent**     |                                                                                                                                                     |
-| One set of rules for every tool | `AGENTS.md` holds the rules. `CLAUDE.md` imports it, Cursor gets an always-on rule, and Codex reads it directly.                                    |
-| Session start map               | Each Claude Code session opens with the accepted decisions, modules, and fence reasons.                                                             |
-| Task lookup                     | A prompt hook in Claude Code and Codex matches your task against the context cards and adds where to start.                                         |
-| Workflow skills                 | Twelve skills: tasks, tests, decisions, drift review, reports, module and feature plans, security, conventions, fences, ADR checks, context lookup. |
-| **Keeping agents honest**       |                                                                                                                                                     |
-| Governing decisions             | Changing a file names the ADR that governs it, with the decision itself.                                                                            |
-| ADR compliance                  | The agent checks its diff against each governing decision, quoting the lines.                                                                       |
-| Definition of done              | Agents are told work is done only when doctor passes and the tests pass.                                                                            |
-| **Checking**                    |                                                                                                                                                     |
-| Doctor                          | 19 checks: missing files, broken links, decisions cited after they were replaced, stale memory, dead card paths, work marked done without evidence. |
-| Honest results                  | A check that can't run says "not evaluated" and why, and it never counts that as a pass.                                                            |
-| Git hooks                       | Doctor runs before each commit and your tests before each push. `init` switches them on; they fall back to `npx` if Persist isn't installed.        |
-| Team checks                     | Doctor warns when memory is git-ignored, when a clone has hooks off, and when always-loaded memory grows past 24 KB.                                |
-| CI                              | `init` writes a GitHub Actions workflow, and `doctor --json` gives CI a machine-readable report.                                                    |
-| **Fitting in**                  |                                                                                                                                                     |
-| Your layout                     | Move the memory out of `docs/` by setting four paths in the config.                                                                                 |
-| Safe by default                 | Persist never overwrites a file you have. `hooks sync` refreshes hooks without touching docs or config.                                             |
-| Local only                      | No network calls, no telemetry, and no AI API. It runs on your machine and doesn't choose your framework, database, or architecture.                |
+| Feature                         | What it does for you                                                                                                                                            |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Remembering**                 |                                                                                                                                                                 |
+| Six-document memory             | `init` writes product, security, quality, standards, conventions, and lessons docs. Nothing else is required.                                                   |
+| Decision records                | `adr create`, `accept`, and `supersede` keep every decision and the reason it changed.                                                                          |
+| Chesterton fences               | `fence add` records why odd-looking code is shaped that way, in a person's words — or that nothing there was deliberate.                                        |
+| Context cards                   | `context add` gives each area of the code a card: what it's for, what tasks it covers, where to start.                                                          |
+| Conventions and lessons         | Agents reuse the helpers you've listed. Always lessons load every session; area lessons arrive with the task pointers, best match first, the rest only indexed. |
+| Existing codebases              | `adopt` reads your manifests and proposes decisions. Nothing is accepted until you agree.                                                                       |
+| MCP context                     | `mcp add` saves what an MCP server knows as reviewable files, offline.                                                                                          |
+| **Getting it to the agent**     |                                                                                                                                                                 |
+| One set of rules for every tool | `AGENTS.md` holds the rules. `CLAUDE.md` imports it, Cursor gets an always-on rule, and Codex reads it directly.                                                |
+| Session start map               | Each Claude Code session opens with the accepted decisions, modules, and fence reasons.                                                                         |
+| Task lookup                     | A prompt hook in Claude Code and Codex matches your task against the context cards and adds where to start, when the overlap is specific enough to be worth it. |
+| Workflow skills                 | Twelve skills: tasks, tests, decisions, drift review, reports, module and feature plans, security, conventions, fences, ADR checks, context lookup.             |
+| **Keeping agents honest**       |                                                                                                                                                                 |
+| Governing decisions             | Changing a file names the ADR that governs it, with the decision itself.                                                                                        |
+| ADR compliance                  | The agent checks its diff against each governing decision, quoting the lines.                                                                                   |
+| Definition of done              | Agents are told work is done only when doctor passes and the tests pass.                                                                                        |
+| **Checking**                    |                                                                                                                                                                 |
+| Doctor                          | 19 checks: missing files, broken links, decisions cited after they were replaced, stale memory, dead card paths, work marked done without evidence.             |
+| Honest results                  | A check that can't run says "not evaluated" and why, and it never counts that as a pass.                                                                        |
+| Git hooks                       | Doctor runs before each commit and your tests before each push. `init` switches them on; they fall back to `npx` if Persist isn't installed.                    |
+| Team checks                     | Doctor warns when memory is git-ignored, when a clone has hooks off, and when always-loaded memory grows past 24 KB.                                            |
+| CI                              | `init` writes a GitHub Actions workflow, and `doctor --json` gives CI a machine-readable report.                                                                |
+| **Fitting in**                  |                                                                                                                                                                 |
+| Your layout                     | Move the memory out of `docs/` by setting four paths in the config.                                                                                             |
+| Safe by default                 | Persist never overwrites a file you have. `hooks sync` refreshes hooks without touching docs or config.                                                         |
+| Local only                      | No network calls, no telemetry, and no AI API. It runs on your machine and doesn't choose your framework, database, or architecture.                            |
 
 ## What it writes
 
