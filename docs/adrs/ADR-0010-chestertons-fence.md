@@ -96,6 +96,19 @@ of a fence is that nothing crosses it unrecorded.
 
 `FENCES.md` is fed back to the agent, so the reasoning accumulates rather than being rediscovered.
 
+## Applies To
+
+- `src/core/doctor/checks/fence-check.ts`
+- `src/core/fence/fence-entries.ts`
+- `src/core/fence/generate-fence.ts`
+- `src/commands/fence/add.ts`
+- `src/commands/adr/create.ts`
+- `src/commands/adr/supersede.ts`
+- `src/core/hooks/generate-hook.ts`
+- `src/core/generator/generate-init.ts`
+- `src/core/adopt/inspect-repo.ts`
+- `src/core/skills/skill-catalog.ts`
+
 ## Alternatives Considered
 
 - **Trigger on ADR events only.** Free and fires before the change, and it was the strongest

@@ -33,6 +33,11 @@ Supported context values are strings, numbers, and booleans.
 The renderer must reject execution markers, template logic, expressions, conditionals, loops,
 helpers, partials, includes, dot paths, and bracket paths.
 
+## Applies To
+
+- `src/core/generator/render-template.ts`
+- `src/core/generator/template-context.ts`
+
 ## Alternatives Considered
 
 Eta:

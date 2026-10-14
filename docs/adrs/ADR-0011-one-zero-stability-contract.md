@@ -66,6 +66,15 @@ checks that would silently pass once their input documents became optional. Both
 while evaluating nothing. For a tool whose entire pitch is a deterministic gate, a check that cannot
 run must say so.
 
+## Applies To
+
+- `src/cli/main.ts`
+- `src/core/config/config-schema.ts`
+- `src/core/config/default-config.ts`
+- `src/core/config/load-config.ts`
+- `src/core/doctor/doctor-report.ts`
+- `src/commands/doctor.ts`
+
 ## Alternatives Considered
 
 - **Ship as 0.7.0 and defer 1.0.** Safer, and it avoids making promises before the new shape has
